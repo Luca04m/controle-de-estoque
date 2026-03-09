@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, type ReactNode } from 'react'
+import { createContext, useCallback, useContext, useEffect, type ReactNode } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/authStore'
 import { IS_MOCK, mockGetSession } from '@/lib/mockAuth'
@@ -8,6 +8,15 @@ const AuthContext = createContext<null>(null)
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const { setUser, setProfile, setLoading } = useAuthStore()
+
+  const fetchProfile = useCallback(async (userId: string) => {
+    const { data } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('user_id', userId)
+      .single()
+    if (data) setProfile(data as Profile)
+  }, [setProfile])
 
   useEffect(() => {
     // Mock mode — no Supabase
@@ -46,20 +55,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     })
 
     return () => subscription.unsubscribe()
-  }, [setUser, setProfile, setLoading])
-
-  async function fetchProfile(userId: string) {
-    const { data } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('user_id', userId)
-      .single()
-    if (data) setProfile(data as Profile)
-  }
+  }, [setUser, setProfile, setLoading, fetchProfile])
 
   return <AuthContext.Provider value={null}>{children}</AuthContext.Provider>
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useAuth() {
   useContext(AuthContext)
   return useAuthStore()

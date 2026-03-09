@@ -69,14 +69,24 @@ function KpiCard({ label, value, icon, colorClass }: KpiCardProps) {
 
 // ─── Recharts custom tooltip ─────────────────────────────────────────────────
 
-function CustomTooltip({ active, payload, label }: any) {
+interface TooltipEntry {
+  name: string
+  value: number
+  fill: string
+}
+
+function CustomTooltip({ active, payload, label }: {
+  active?: boolean
+  payload?: TooltipEntry[]
+  label?: string
+}) {
   if (!active || !payload?.length) return null
   const d = new Date(label + 'T00:00:00')
   const dateStr = d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })
   return (
     <div className="bg-card border border-border rounded-lg p-3 text-xs shadow-lg">
       <p className="font-semibold text-foreground mb-1">{dateStr}</p>
-      {payload.map((entry: any) => (
+      {payload.map((entry) => (
         <p key={entry.name} style={{ color: entry.fill }} className="font-medium">
           {entry.name}: {entry.value}
         </p>

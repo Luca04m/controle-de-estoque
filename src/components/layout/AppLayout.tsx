@@ -100,6 +100,114 @@ function ConnectionStatus({
   )
 }
 
+interface SidebarContentProps {
+  collapsed: boolean
+  pendingCount: number
+  profile: { role: string; full_name?: string | null } | null
+  onNavClick?: () => void
+  onSignOut: () => void
+}
+
+function SidebarContent({ collapsed, pendingCount, profile, onNavClick, onSignOut }: SidebarContentProps) {
+  const roleLabel = profile?.role === 'manager' ? 'Gestor' : 'Operador'
+
+  return (
+    <>
+      {/* Logo area */}
+      <div className={`border-b border-border flex items-center ${collapsed ? 'px-0 py-5 justify-center' : 'px-5 py-6'}`}>
+        {collapsed ? (
+          <img src={novalogo} alt="Mr. Lion" className="w-8 h-8 rounded-lg object-contain" />
+        ) : (
+          <div className="flex items-center gap-2.5">
+            <img src={novalogo} alt="Mr. Lion" className="w-8 h-8 rounded-lg object-contain flex-shrink-0" />
+            <span
+              className="text-base font-bold tracking-tight"
+              style={{
+                background: 'linear-gradient(135deg, hsl(42 65% 68%), hsl(42 60% 55%))',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                backgroundClip: 'text',
+              }}
+            >
+              Mr. Lion
+            </span>
+          </div>
+        )}
+      </div>
+
+      {/* User badge */}
+      {!collapsed && (
+        <div className="px-4 py-4 border-b border-border space-y-1.5">
+          <div className="inline-flex items-center px-2.5 py-1 rounded-full bg-gold/10 border border-gold/20">
+            <span className="text-[10px] font-semibold tracking-[0.15em] uppercase text-gold">
+              {roleLabel}
+            </span>
+          </div>
+          <p className="text-sm font-medium text-foreground truncate">
+            {profile?.full_name ?? '—'}
+          </p>
+        </div>
+      )}
+
+      {/* Nav links */}
+      <nav className="flex-1 p-2 space-y-0.5 overflow-y-auto" aria-label="Navegação principal">
+        {NAV_ITEMS.map((item) => (
+          <NavLink
+            key={item.to}
+            to={item.to}
+            onClick={onNavClick}
+            title={collapsed ? item.label : undefined}
+            className={({ isActive }) =>
+              `flex items-center gap-3 rounded-lg text-sm transition-all ${
+                collapsed ? 'justify-center px-0 py-2.5' : 'px-3 py-2.5'
+              } ${
+                isActive
+                  ? `bg-gold/10 text-gold font-semibold ${collapsed ? '' : 'border-l-2 border-gold pl-[10px]'}`
+                  : `text-muted-foreground hover:bg-secondary hover:text-foreground ${collapsed ? '' : 'border-l-2 border-transparent pl-[10px]'}`
+              }`
+            }
+          >
+            {item.icon}
+            {!collapsed && item.label}
+          </NavLink>
+        ))}
+      </nav>
+
+      {/* Bottom: connection + logout */}
+      <div className="p-2 border-t border-border space-y-1">
+        <div className={`flex items-center py-2 ${!collapsed ? 'px-3' : 'justify-center'}`}>
+          {/* B-03: passa pendingCount para o desktop ConnectionStatus */}
+          <ConnectionStatus collapsed={collapsed} pendingCount={pendingCount} />
+        </div>
+        <a
+          href={`${import.meta.env.BASE_URL}guia.html`}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Abrir guia de uso"
+          title={collapsed ? 'Guia de uso' : undefined}
+          className={`w-full flex items-center gap-3 rounded-lg text-sm text-muted-foreground hover:bg-secondary hover:text-foreground transition-all ${
+            collapsed ? 'justify-center px-0 py-2.5' : 'px-3 py-2.5'
+          }`}
+        >
+          <HelpCircle size={18} />
+          {!collapsed && 'Guia de uso'}
+        </a>
+        <button
+          onClick={onSignOut}
+          aria-label="Sair do sistema"
+          title={collapsed ? 'Sair' : undefined}
+          className={`w-full flex items-center gap-3 rounded-lg text-sm text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-all ${
+            collapsed ? 'justify-center px-0 py-2.5' : 'px-3 py-2.5'
+          }`}
+        >
+          <LogOut size={18} />
+          {!collapsed && 'Sair'}
+        </button>
+      </div>
+    </>
+  )
+}
+
 export function AppLayout({ children }: { children: ReactNode }) {
   const { profile } = useAuthStore()
   const { pendingCount, connected } = useRealtimeStore()
@@ -122,7 +230,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
     })
   }, [])
 
-  async function handleSignOut() {
+  const handleSignOut = useCallback(async () => {
     if (IS_MOCK) {
       mockLogout()
       useAuthStore.getState().setUser(null)
@@ -132,107 +240,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
     }
     await supabase.auth.signOut()
     navigate('/login')
-  }
-
-  const roleLabel = profile?.role === 'manager' ? 'Gestor' : 'Operador'
-
-  function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
-    return (
-      <>
-        {/* Logo area */}
-        <div className={`border-b border-border flex items-center ${collapsed ? 'px-0 py-5 justify-center' : 'px-5 py-6'}`}>
-          {collapsed ? (
-            <img src={novalogo} alt="Mr. Lion" className="w-8 h-8 rounded-lg object-contain" />
-          ) : (
-            <div className="flex items-center gap-2.5">
-              <img src={novalogo} alt="Mr. Lion" className="w-8 h-8 rounded-lg object-contain flex-shrink-0" />
-              <span
-                className="text-base font-bold tracking-tight"
-                style={{
-                  background: 'linear-gradient(135deg, hsl(42 65% 68%), hsl(42 60% 55%))',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                  backgroundClip: 'text',
-                }}
-              >
-                Mr. Lion
-              </span>
-            </div>
-          )}
-        </div>
-
-        {/* User badge */}
-        {!collapsed && (
-          <div className="px-4 py-4 border-b border-border space-y-1.5">
-            <div className="inline-flex items-center px-2.5 py-1 rounded-full bg-gold/10 border border-gold/20">
-              <span className="text-[10px] font-semibold tracking-[0.15em] uppercase text-gold">
-                {roleLabel}
-              </span>
-            </div>
-            <p className="text-sm font-medium text-foreground truncate">
-              {profile?.full_name ?? '—'}
-            </p>
-          </div>
-        )}
-
-        {/* Nav links */}
-        <nav className="flex-1 p-2 space-y-0.5 overflow-y-auto" aria-label="Navegação principal">
-          {NAV_ITEMS.map((item) => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              onClick={onNavClick}
-              title={collapsed ? item.label : undefined}
-              className={({ isActive }) =>
-                `flex items-center gap-3 rounded-lg text-sm transition-all ${
-                  collapsed ? 'justify-center px-0 py-2.5' : 'px-3 py-2.5'
-                } ${
-                  isActive
-                    ? `bg-gold/10 text-gold font-semibold ${collapsed ? '' : 'border-l-2 border-gold pl-[10px]'}`
-                    : `text-muted-foreground hover:bg-secondary hover:text-foreground ${collapsed ? '' : 'border-l-2 border-transparent pl-[10px]'}`
-                }`
-              }
-            >
-              {item.icon}
-              {!collapsed && item.label}
-            </NavLink>
-          ))}
-        </nav>
-
-        {/* Bottom: connection + logout */}
-        <div className="p-2 border-t border-border space-y-1">
-          <div className={`flex items-center py-2 ${!collapsed ? 'px-3' : 'justify-center'}`}>
-            {/* B-03: passa pendingCount para o desktop ConnectionStatus */}
-            <ConnectionStatus collapsed={collapsed} pendingCount={pendingCount} />
-          </div>
-          <a
-            href={`${import.meta.env.BASE_URL}guia.html`}
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label="Abrir guia de uso"
-            title={collapsed ? 'Guia de uso' : undefined}
-            className={`w-full flex items-center gap-3 rounded-lg text-sm text-muted-foreground hover:bg-secondary hover:text-foreground transition-all ${
-              collapsed ? 'justify-center px-0 py-2.5' : 'px-3 py-2.5'
-            }`}
-          >
-            <HelpCircle size={18} />
-            {!collapsed && 'Guia de uso'}
-          </a>
-          <button
-            onClick={handleSignOut}
-            aria-label="Sair do sistema"
-            title={collapsed ? 'Sair' : undefined}
-            className={`w-full flex items-center gap-3 rounded-lg text-sm text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-all ${
-              collapsed ? 'justify-center px-0 py-2.5' : 'px-3 py-2.5'
-            }`}
-          >
-            <LogOut size={18} />
-            {!collapsed && 'Sair'}
-          </button>
-        </div>
-      </>
-    )
-  }
+  }, [navigate])
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -243,7 +251,12 @@ export function AppLayout({ children }: { children: ReactNode }) {
         style={{ background: 'hsl(240 22% 5%)', width: sidebarW }}
         aria-label="Barra lateral"
       >
-        <SidebarContent />
+        <SidebarContent
+          collapsed={collapsed}
+          pendingCount={pendingCount}
+          profile={profile}
+          onSignOut={handleSignOut}
+        />
 
         {/* C-03: botão de colapso ampliado (24px → 32px) para cumprir WCAG 2.5.5
             Também usa padding negativo para manter a posição visual */}
@@ -284,7 +297,13 @@ export function AppLayout({ children }: { children: ReactNode }) {
               <X size={16} />
             </button>
 
-            <SidebarContent onNavClick={handleDrawerClose} />
+            <SidebarContent
+              collapsed={false}
+              pendingCount={pendingCount}
+              profile={profile}
+              onNavClick={handleDrawerClose}
+              onSignOut={handleSignOut}
+            />
           </aside>
         </div>
       )}

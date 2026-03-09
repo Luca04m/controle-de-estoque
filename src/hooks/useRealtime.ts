@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useCallback, useEffect, useRef } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
 import { useRealtimeStore } from '@/stores/realtimeStore'
@@ -9,6 +9,22 @@ export function useRealtime() {
   const { setConnected, setLastSyncAt, setPendingCount } = useRealtimeStore()
   const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const realtimeActiveRef = useRef(false)
+
+  const syncOfflineQueue = useCallback(async () => {
+    const pending = await getPendingMovements()
+    setPendingCount(pending.length)
+
+    for (const mv of pending) {
+      const { synced: _synced, sync_error: _err, ...payload } = mv
+      const { error } = await supabase.from('stock_movements').insert([payload])
+      if (!error) {
+        await markMovementSynced(mv.id)
+      }
+    }
+
+    const remaining = await getPendingMovements()
+    setPendingCount(remaining.length)
+  }, [setPendingCount])
 
   useEffect(() => {
     const channel = supabase
@@ -50,21 +66,5 @@ export function useRealtime() {
       channel.unsubscribe()
       if (pollIntervalRef.current) clearInterval(pollIntervalRef.current)
     }
-  }, [qc, setConnected, setLastSyncAt])
-
-  async function syncOfflineQueue() {
-    const pending = await getPendingMovements()
-    setPendingCount(pending.length)
-
-    for (const mv of pending) {
-      const { synced: _synced, sync_error: _err, ...payload } = mv
-      const { error } = await supabase.from('stock_movements').insert([payload])
-      if (!error) {
-        await markMovementSynced(mv.id)
-      }
-    }
-
-    const remaining = await getPendingMovements()
-    setPendingCount(remaining.length)
-  }
+  }, [qc, setConnected, setLastSyncAt, syncOfflineQueue])
 }
