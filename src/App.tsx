@@ -14,7 +14,6 @@ const StockEntryPage = lazy(() => import('@/pages/StockEntryPage').then(m => ({ 
 const OrdersPage    = lazy(() => import('@/pages/OrdersPage').then(m => ({ default: m.OrdersPage })))
 const ProductsPage  = lazy(() => import('@/pages/ProductsPage').then(m => ({ default: m.ProductsPage })))
 const ReportsPage   = lazy(() => import('@/pages/ReportsPage').then(m => ({ default: m.ReportsPage })))
-const InventoryPage = lazy(() => import('@/pages/InventoryPage').then(m => ({ default: m.InventoryPage })))
 
 // ── QueryClient otimizado para zero latência em modo mock ──
 const qc = new QueryClient({
@@ -64,8 +63,7 @@ function AppRoutes() {
                     <Route path="/pedidos"   element={<OrdersPage />} />
                     <Route path="/produtos"  element={<ProductsPage />} />
                     <Route path="/relatorios" element={<ReportsPage />} />
-                    <Route path="/inventario" element={<InventoryPage />} />
-                    <Route path="*"          element={<Navigate to="/" replace />} />
+<Route path="*"          element={<Navigate to="/" replace />} />
                   </Routes>
                 </Suspense>
               </AppLayout>

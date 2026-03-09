@@ -5,7 +5,10 @@ import {
   useCreateOrder,
   useUpdateOrderStatus,
   useCancelOrder,
+  useUpdateOrder,
+  useDeleteOrder,
 } from '@/hooks/useDeliveryOrders'
+import type { UpdateOrderInput } from '@/hooks/useDeliveryOrders'
 import { CancelOrderDialog } from '@/components/CancelOrderDialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -24,6 +27,10 @@ import {
   FileText,
   Download,
   MoreVertical,
+  X,
+  Pencil,
+  Trash2,
+  ArrowUpDown,
 } from 'lucide-react'
 import type { OrderItem, DeliveryOrder, Product, ProductCategory } from '@/types'
 import type { CreateOrderInput } from '@/hooks/useDeliveryOrders'
@@ -94,6 +101,7 @@ function exportOrdersToCSV(orders: DeliveryOrder[], filename = 'pedidos.csv') {
 
 type DateFilter = 'today' | 'week' | 'month' | 'all'
 type StatusFilter = 'all' | 'confirmed' | 'delivered' | 'cancelled'
+type SortBy = 'newest' | 'oldest' | 'highest' | 'lowest'
 
 function isToday(dateStr: string) {
   const d = new Date(dateStr)
@@ -811,6 +819,113 @@ function NewOrderWizard({ prefillItems, onDone, onSuccessNewOrder }: NewOrderWiz
   )
 }
 
+// ─── Edit Order Modal ─────────────────────────────────────────────────────────
+
+interface EditOrderModalProps {
+  order: DeliveryOrder | null
+  onClose: () => void
+  onSave: (input: UpdateOrderInput) => void
+  isPending: boolean
+}
+
+function EditOrderModal({ order, onClose, onSave, isPending }: EditOrderModalProps) {
+  const [reference, setReference] = useState(order?.reference ?? '')
+  const [address, setAddress] = useState(order?.address ?? '')
+  const [notes, setNotes] = useState(order?.notes ?? '')
+
+  if (!order) return null
+
+  return (
+    <>
+      <div className="fixed inset-0 z-[60] bg-black/70" onClick={onClose} />
+      <div
+        className="fixed inset-x-4 top-1/2 -translate-y-1/2 z-[61] rounded-2xl border shadow-2xl p-5 space-y-4 w-full max-w-sm mx-auto"
+        style={{ backgroundColor: 'hsl(240 20% 8%)', borderColor: 'hsl(240 15% 15%)' }}
+      >
+        <div className="flex items-center justify-between">
+          <h2 className="font-bold text-white text-base">Editar Pedido</h2>
+          <button
+            onClick={onClose}
+            className="p-1.5 rounded-lg text-white/40 hover:text-white transition-colors"
+          >
+            <X size={16} />
+          </button>
+        </div>
+
+        <div className="space-y-3">
+          <div className="space-y-1.5">
+            <label className="text-xs font-medium tracking-wider uppercase text-white/35 flex items-center gap-1.5">
+              <User className="w-3 h-3" />
+              Referência / Nome
+            </label>
+            <input
+              type="text"
+              placeholder="Nome do cliente ou referência"
+              value={reference}
+              onChange={(e) => setReference(e.target.value)}
+              className="w-full rounded-lg border px-3 py-2 text-sm text-foreground placeholder:text-white/35 focus:outline-none transition-all"
+              style={{ backgroundColor: 'hsl(240 22% 7%)', borderColor: 'hsl(240 15% 11%)' }}
+              onFocus={(e) => { e.currentTarget.style.borderColor = 'hsl(42 60% 55% / 0.5)' }}
+              onBlur={(e) => { e.currentTarget.style.borderColor = 'hsl(240 15% 11%)' }}
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-xs font-medium tracking-wider uppercase text-white/35 flex items-center gap-1.5">
+              <MapPin className="w-3 h-3" />
+              Endereço
+            </label>
+            <textarea
+              rows={2}
+              placeholder="Endereço de entrega"
+              value={address}
+              onChange={(e) => setAddress(e.target.value)}
+              className="w-full rounded-lg border px-3 py-2 text-sm text-foreground placeholder:text-white/35 resize-none focus:outline-none transition-all"
+              style={{ backgroundColor: 'hsl(240 22% 7%)', borderColor: 'hsl(240 15% 11%)' }}
+              onFocus={(e) => { e.currentTarget.style.borderColor = 'hsl(42 60% 55% / 0.5)' }}
+              onBlur={(e) => { e.currentTarget.style.borderColor = 'hsl(240 15% 11%)' }}
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-xs font-medium tracking-wider uppercase text-white/35">
+              Observações
+            </label>
+            <input
+              type="text"
+              placeholder="Ex: deixar na portaria, ligar antes..."
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              className="w-full rounded-lg border px-3 py-2 text-sm text-foreground placeholder:text-white/35 focus:outline-none transition-all"
+              style={{ backgroundColor: 'hsl(240 22% 7%)', borderColor: 'hsl(240 15% 11%)' }}
+              onFocus={(e) => { e.currentTarget.style.borderColor = 'hsl(42 60% 55% / 0.5)' }}
+              onBlur={(e) => { e.currentTarget.style.borderColor = 'hsl(240 15% 11%)' }}
+            />
+          </div>
+        </div>
+
+        <div className="flex gap-2 pt-1">
+          <button
+            onClick={() => onSave({ id: order.id, reference: reference || null, address: address || null, notes: notes || null })}
+            disabled={isPending}
+            className="flex-1 h-11 rounded-lg font-semibold text-sm transition-all disabled:opacity-40"
+            style={{ backgroundColor: 'hsl(42 60% 55%)', color: 'hsl(240 25% 4%)' }}
+          >
+            {isPending ? 'Salvando...' : 'Salvar'}
+          </button>
+          <button
+            onClick={onClose}
+            className="h-11 px-4 rounded-lg text-sm border text-white/50 hover:text-white transition-colors"
+            style={{ borderColor: 'hsl(240 15% 15%)' }}
+          >
+            Cancelar
+          </button>
+        </div>
+      </div>
+    </>
+  )
+}
+
 // ─── Order Card ───────────────────────────────────────────────────────────────
 
 interface OrderCardProps {
@@ -822,6 +937,8 @@ interface OrderCardProps {
   onToggleSelect?: () => void
   onUpdateNotes?: (id: string, notes: string) => void
   onCancelOrder?: (id: string) => void
+  onEdit?: (order: DeliveryOrder) => void
+  onDelete?: (id: string) => void
 }
 
 function OrderCard({
@@ -833,6 +950,8 @@ function OrderCard({
   onToggleSelect,
   onUpdateNotes,
   onCancelOrder,
+  onEdit,
+  onDelete,
 }: OrderCardProps) {
   const items = order.items as OrderItem[]
   const totalValue =
@@ -921,7 +1040,7 @@ function OrderCard({
                 </button>
                 {menuOpen && (
                   <div
-                    className="absolute right-0 top-8 z-50 rounded-lg border shadow-xl min-w-[160px] overflow-hidden"
+                    className="absolute right-0 top-8 z-50 rounded-lg border shadow-xl min-w-[170px] overflow-hidden"
                     style={{
                       backgroundColor: 'hsl(240 20% 10%)',
                       borderColor: 'hsl(240 15% 15%)',
@@ -929,18 +1048,30 @@ function OrderCard({
                   >
                     <button
                       type="button"
-                      onClick={() => { setEditingNotes(true); setCancelConfirm(false); setMenuOpen(false) }}
-                      className="w-full text-left px-3 py-2.5 text-sm text-white/80 hover:bg-white/5 transition-colors"
+                      onClick={() => { onEdit?.(order); setMenuOpen(false) }}
+                      className="w-full text-left px-3 py-2.5 text-sm text-white/80 hover:bg-white/5 transition-colors flex items-center gap-2"
                     >
-                      Editar notas
+                      <Pencil className="w-3.5 h-3.5 text-white/40" />
+                      Editar pedido
                     </button>
                     {order.status !== 'cancelled' && order.status !== 'delivered' && (
                       <button
                         type="button"
                         onClick={() => { setCancelConfirm(true); setEditingNotes(false); setMenuOpen(false) }}
-                        className="w-full text-left px-3 py-2.5 text-sm text-red-400 hover:bg-red-950/30 transition-colors"
+                        className="w-full text-left px-3 py-2.5 text-sm text-red-400 hover:bg-red-950/30 transition-colors flex items-center gap-2"
                       >
+                        <Trash2 className="w-3.5 h-3.5" />
                         Cancelar pedido
+                      </button>
+                    )}
+                    {(order.status === 'cancelled' || order.status === 'delivered') && onDelete && (
+                      <button
+                        type="button"
+                        onClick={() => { onDelete(order.id); setMenuOpen(false) }}
+                        className="w-full text-left px-3 py-2.5 text-sm text-red-400 hover:bg-red-950/30 transition-colors flex items-center gap-2"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                        Excluir registro
                       </button>
                     )}
                   </div>
@@ -1222,7 +1353,12 @@ export function OrdersPage() {
   const [search, setSearch] = useState('')
   const [dateFilter, setDateFilter] = useState<DateFilter>('all')
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
+  const [sortBy, setSortBy] = useState<SortBy>('newest')
   const [orderToCancel, setOrderToCancel] = useState<DeliveryOrder | null>(null)
+  const [orderToEdit, setOrderToEdit] = useState<DeliveryOrder | null>(null)
+
+  const updateOrder = useUpdateOrder()
+  const deleteOrder = useDeleteOrder()
 
   // ── Selection mode state ───────────────────────────────────────────────────
   const [selectionMode, setSelectionMode] = useState(false)
@@ -1261,6 +1397,20 @@ export function OrdersPage() {
       { orderId: orderToCancel.id, order: orderToCancel },
       { onSettled: () => setOrderToCancel(null) }
     )
+  }
+
+  // ── Edit order ─────────────────────────────────────────────────────────────
+  function handleEditOrder(order: DeliveryOrder) {
+    setOrderToEdit(order)
+  }
+
+  function handleSaveEdit(input: UpdateOrderInput) {
+    updateOrder.mutate(input, { onSuccess: () => setOrderToEdit(null) })
+  }
+
+  // ── Delete order ───────────────────────────────────────────────────────────
+  function handleDeleteOrder(id: string) {
+    deleteOrder.mutate(id)
   }
 
   // ── KPIs ──────────────────────────────────────────────────────────────────
@@ -1313,8 +1463,18 @@ export function OrdersPage() {
       )
     }
 
+    // Sort
+    result = [...result].sort((a, b) => {
+      if (sortBy === 'newest') return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      if (sortBy === 'oldest') return new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+      const aVal = a.total_value ?? (a.items as OrderItem[]).reduce((s, i) => s + i.quantity * (i.unit_price ?? 0), 0)
+      const bVal = b.total_value ?? (b.items as OrderItem[]).reduce((s, i) => s + i.quantity * (i.unit_price ?? 0), 0)
+      if (sortBy === 'highest') return bVal - aVal
+      return aVal - bVal
+    })
+
     return result
-  }, [orders, dateFilter, statusFilter, search])
+  }, [orders, dateFilter, statusFilter, search, sortBy])
 
   const confirmedOrders = useMemo(
     () => filteredOrders.filter((o) => o.status === 'confirmed' || o.status === 'pending'),
@@ -1326,10 +1486,17 @@ export function OrdersPage() {
     [filteredOrders]
   )
 
-  const cancelledOrders = useMemo(
-    () => (orders ?? []).filter((o) => o.status === 'cancelled'),
-    [orders]
-  )
+  const cancelledOrders = useMemo(() => {
+    const list = (orders ?? []).filter((o) => o.status === 'cancelled')
+    return [...list].sort((a, b) => {
+      if (sortBy === 'newest') return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      if (sortBy === 'oldest') return new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+      const aVal = a.total_value ?? 0
+      const bVal = b.total_value ?? 0
+      if (sortBy === 'highest') return bVal - aVal
+      return aVal - bVal
+    })
+  }, [orders, sortBy])
 
   // Orders currently visible (for bulk export)
   const visibleOrders = statusFilter === 'confirmed'
@@ -1423,6 +1590,14 @@ export function OrdersPage() {
         onClose={() => setOrderToCancel(null)}
         isPending={cancelOrder.isPending}
       />
+
+      {/* Edit order modal */}
+      <EditOrderModal
+        order={orderToEdit}
+        onClose={() => setOrderToEdit(null)}
+        onSave={handleSaveEdit}
+        isPending={updateOrder.isPending}
+      />
       {/* Header */}
       <div className="flex items-center justify-between gap-2 pt-1">
         <h1 className="text-2xl font-bold text-white">Pedidos</h1>
@@ -1508,8 +1683,8 @@ export function OrdersPage() {
           />
         </div>
 
-        {/* Date chips + Status chips */}
-        <div className="flex flex-wrap gap-2">
+        {/* Date chips + Status chips + Sort */}
+        <div className="flex flex-wrap gap-2 items-center">
           {dateChips.map((chip) => (
             <PillButton
               key={chip.key}
@@ -1529,6 +1704,21 @@ export function OrdersPage() {
               {chip.label}
             </PillButton>
           ))}
+          <div className="w-px self-stretch" style={{ backgroundColor: 'hsl(240 15% 13%)' }} />
+          <div className="flex items-center gap-1.5">
+            <ArrowUpDown className="w-3 h-3 text-white/30 shrink-0" />
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as SortBy)}
+              className="h-7 px-2 rounded-md text-xs font-medium bg-transparent border text-white/60 focus:outline-none cursor-pointer"
+              style={{ borderColor: 'hsl(240 15% 13%)' }}
+            >
+              <option value="newest">Mais recentes</option>
+              <option value="oldest">Mais antigos</option>
+              <option value="highest">Maior valor</option>
+              <option value="lowest">Menor valor</option>
+            </select>
+          </div>
         </div>
       </div>
 
@@ -1562,6 +1752,8 @@ export function OrdersPage() {
                   onToggleSelect={() => toggleSelect(order.id)}
                   onUpdateNotes={handleUpdateNotes}
                   onCancelOrder={handleCancelOrder}
+                  onEdit={handleEditOrder}
+                  onDelete={handleDeleteOrder}
                 />
               ))}
             </>
@@ -1577,6 +1769,8 @@ export function OrdersPage() {
               onToggleSelect={() => toggleSelect(order.id)}
               onUpdateNotes={handleUpdateNotes}
               onCancelOrder={handleCancelOrder}
+              onEdit={handleEditOrder}
+              onDelete={handleDeleteOrder}
             />
           ))}
 
@@ -1595,6 +1789,8 @@ export function OrdersPage() {
                   onToggleSelect={() => toggleSelect(order.id)}
                   onUpdateNotes={handleUpdateNotes}
                   onCancelOrder={handleCancelOrder}
+                  onEdit={handleEditOrder}
+                  onDelete={handleDeleteOrder}
                 />
               ))}
             </>
@@ -1610,6 +1806,8 @@ export function OrdersPage() {
               onToggleSelect={() => toggleSelect(order.id)}
               onUpdateNotes={handleUpdateNotes}
               onCancelOrder={handleCancelOrder}
+              onEdit={handleEditOrder}
+              onDelete={handleDeleteOrder}
             />
           ))}
 
@@ -1617,7 +1815,7 @@ export function OrdersPage() {
           {statusFilter === 'cancelled' && cancelledOrders.map((order) => (
             <div
               key={order.id}
-              className="rounded-xl border p-4 space-y-3 opacity-60"
+              className="rounded-xl border p-4 space-y-3 opacity-70"
               style={{
                 backgroundColor: 'hsl(240 22% 7%)',
                 borderColor: 'hsl(0 60% 25% / 0.4)',
@@ -1632,9 +1830,19 @@ export function OrdersPage() {
                     {new Date(order.created_at).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' })}
                   </p>
                 </div>
-                <span className="text-[10px] border border-red-800/40 bg-red-950/50 text-red-400 rounded-md px-2 py-0.5 font-semibold uppercase tracking-wide shrink-0">
-                  Cancelado
-                </span>
+                <div className="flex items-center gap-2 shrink-0">
+                  <span className="text-[10px] border border-red-800/40 bg-red-950/50 text-red-400 rounded-md px-2 py-0.5 font-semibold uppercase tracking-wide">
+                    Cancelado
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteOrder(order.id)}
+                    className="w-7 h-7 rounded-md flex items-center justify-center text-red-400/60 hover:text-red-400 hover:bg-red-950/30 transition-colors"
+                    title="Excluir registro"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
               </div>
               <div className="space-y-1">
                 {(order.items as OrderItem[]).map((item, i) => (

@@ -10,6 +10,58 @@ import { toast } from 'sonner'
 
 let _mockOrders = [...MOCK_ORDERS]
 
+export interface UpdateOrderInput {
+  id: string
+  reference: string | null
+  address: string | null
+  notes: string | null
+}
+
+export function useUpdateOrder() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async (input: UpdateOrderInput) => {
+      if (IS_MOCK) {
+        _mockOrders = _mockOrders.map((o) =>
+          o.id === input.id
+            ? { ...o, reference: input.reference, address: input.address, notes: input.notes }
+            : o
+        )
+        return
+      }
+      const { error } = await supabase
+        .from('delivery_orders')
+        .update({ reference: input.reference, address: input.address, notes: input.notes })
+        .eq('id', input.id)
+      if (error) throw error
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['delivery_orders'] })
+      toast.success('Pedido atualizado')
+    },
+    onError: (err: Error) => toast.error(err.message),
+  })
+}
+
+export function useDeleteOrder() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async (orderId: string) => {
+      if (IS_MOCK) {
+        _mockOrders = _mockOrders.filter((o) => o.id !== orderId)
+        return
+      }
+      const { error } = await supabase.from('delivery_orders').delete().eq('id', orderId)
+      if (error) throw error
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['delivery_orders'] })
+      toast.success('Pedido excluído')
+    },
+    onError: (err: Error) => toast.error(err.message),
+  })
+}
+
 export interface CreateOrderInput {
   items: OrderItem[]
   reference: string | null

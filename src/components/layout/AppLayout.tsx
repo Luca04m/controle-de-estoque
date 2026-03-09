@@ -8,7 +8,6 @@ import {
   ShoppingBag,
   Package,
   BarChart3,
-  ClipboardCheck,
   LogOut,
   Wifi,
   WifiOff,
@@ -34,7 +33,6 @@ const NAV_ITEMS: NavItem[] = [
   { to: '/entrada',    label: 'Movimentação', icon: <PackagePlus size={18} /> },
   { to: '/pedidos',    label: 'Pedidos',      icon: <ShoppingBag size={18} /> },
   { to: '/produtos',   label: 'Produtos',     icon: <Package size={18} /> },
-  { to: '/inventario', label: 'Inventário',   icon: <ClipboardCheck size={18} /> },
   { to: '/relatorios', label: 'Relatórios',   icon: <BarChart3 size={18} /> },
 ]
 

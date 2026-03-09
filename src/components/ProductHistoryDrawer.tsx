@@ -100,18 +100,17 @@ export function ProductHistoryDrawer({ product, onClose }: ProductHistoryDrawerP
 
   return (
     <>
-      {/* Backdrop */}
+      {/* Backdrop — z-[60] to sit above sidebar (z-40) and mobile nav (z-40) */}
       <div
-        className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm"
+        className="fixed inset-0 z-[60] bg-black/70"
         onClick={onClose}
       />
 
-      {/* Drawer — slides in from right on desktop, up from bottom on mobile */}
+      {/* Drawer — z-[61] above backdrop */}
       <div
-        className="fixed z-50 bg-card border-border shadow-2xl flex flex-col
+        className="fixed z-[61] bg-card border-border shadow-2xl flex flex-col
           inset-x-0 bottom-0 h-[85vh] rounded-t-2xl border
           sm:inset-y-0 sm:right-0 sm:left-auto sm:w-[420px] sm:h-full sm:rounded-none sm:rounded-l-2xl sm:border-l"
-        style={{ animation: 'slideUp 0.25s ease, sm:slideRight 0.25s ease' }}
       >
         {/* Header */}
         <div className="flex items-start gap-3 p-5 border-b border-border shrink-0">

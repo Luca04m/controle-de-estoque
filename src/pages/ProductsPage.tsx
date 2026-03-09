@@ -478,8 +478,8 @@ export function ProductsPage() {
   function openNew()              { setEditingProduct(undefined); setDialogOpen(true) }
   function openEdit(p: Product)   { setEditingProduct(p);         setDialogOpen(true) }
   function closeDialog()          { setDialogOpen(false);         setEditingProduct(undefined) }
-  function openDrillDown(p: Product) { setDrillProduct(p);        setDrillOpen(true) }
-  function closeDrillDown()       { setDrillOpen(false) }
+  function openDrillDown(p: Product) { setDrillProduct(p); setDrillOpen(true) }
+  function closeDrillDown()       { setDrillOpen(false); setTimeout(() => setDrillProduct(null), 300) }
 
   function handleToggle(id: string, active: boolean) {
     toggle.mutate({ id, active })
