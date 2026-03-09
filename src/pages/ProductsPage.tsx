@@ -5,11 +5,10 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import {
   Search, Plus, Package, Edit2, ToggleLeft, ToggleRight,
-  AlertTriangle, MapPin,
-  Truck, ChevronRight, ArrowDownLeft, ArrowUpRight, SlidersHorizontal, Minus,
+  AlertTriangle,
+  Truck, ChevronRight,
 } from 'lucide-react'
 import { useAllProducts, useCreateProduct, useUpdateProduct, useToggleProduct } from '@/hooks/useProducts'
-import { useStockMovements } from '@/hooks/useStockMovements'
 import { ProductHistoryDrawer } from '@/components/ProductHistoryDrawer'
 import { useAuthStore } from '@/stores/authStore'
 import { getProductImage } from '@/lib/productImages'
@@ -19,7 +18,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Skeleton } from '@/components/ui/skeleton'
-import type { Product, ProductCategory, MovementAction } from '@/types'
+import type { Product, ProductCategory } from '@/types'
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -127,28 +126,6 @@ function StockBar({ current, min }: { current: number; min: number }) {
   )
 }
 
-// ─── MovementActionBadge ─────────────────────────────────────────────────────
-
-const ACTION_CONFIG: Record<MovementAction, { label: string; color: string; bg: string; icon: React.ElementType }> = {
-  in:         { label: 'Entrada',   color: '#22C55E', bg: 'hsl(142 65% 40% / 0.12)', icon: ArrowDownLeft   },
-  out:        { label: 'Saída',     color: '#EF4444', bg: 'hsl(0 70% 55% / 0.12)',   icon: ArrowUpRight    },
-  adjustment: { label: 'Ajuste',   color: '#D4A843', bg: 'hsl(42 60% 55% / 0.12)',  icon: SlidersHorizontal },
-  loss:       { label: 'Perda',    color: '#F97316', bg: 'hsl(25 90% 50% / 0.12)',   icon: Minus           },
-}
-
-function MovementActionBadge({ action }: { action: MovementAction }) {
-  const cfg = ACTION_CONFIG[action]
-  const Icon = cfg.icon
-  return (
-    <span
-      style={{ color: cfg.color, backgroundColor: cfg.bg, borderColor: `${cfg.color}40` }}
-      className="text-xs border rounded-md px-2 py-0.5 font-medium flex items-center gap-1 w-fit"
-    >
-      <Icon size={10} aria-hidden />
-      {cfg.label}
-    </span>
-  )
-}
 
 
 // ─── ProductFormDialog ───────────────────────────────────────────────────────

@@ -729,12 +729,10 @@ export function StockEntryPage() {
   // ── Step: Quantity + Origin ───────────────────────────────────────────────
 
   if (step === 'quantity' && selectedProduct) {
-    const submitQty = getSubmitQuantity()
     const projectedStock = getProjectedStock(selectedProduct.current_stock, quantity)
     const isQuickQty = (QUICK_QTY as readonly number[]).includes(quantity)
     const qtyImg = getProductImage(selectedProduct.sku)
     const qtyMeta = CATEGORY_META[selectedProduct.category]
-    const displaySign = submitQty >= 0 ? '+' : ''
 
     return (
       <div className="w-full px-4 pt-4 space-y-4 pb-10">
