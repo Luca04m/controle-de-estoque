@@ -5,8 +5,9 @@ import {
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useProducts } from '@/hooks/useProducts'
-import { useStockMovements } from '@/hooks/useStockMovements'
+import { useStockMovements, useMovementTrend } from '@/hooks/useStockMovements'
 import { useDeliveryOrders } from '@/hooks/useDeliveryOrders'
+import { MovementTrendChart } from '@/components/MovementTrendChart'
 import { useRealtimeStore } from '@/stores/realtimeStore'
 import { Skeleton } from '@/components/ui/skeleton'
 import { getProductImage } from '@/lib/productImages'
@@ -120,15 +121,34 @@ export function DashboardPage() {
   const { data: products, isLoading: loadingProducts } = useProducts()
   const { data: movements, isLoading: loadingMovements } = useStockMovements({ limit: 30 })
   const { data: orders, isLoading: loadingOrders } = useDeliveryOrders()
+  const { data: trendData } = useMovementTrend(30)
 
   // ── Derived stats ─────────────────────────────────────────────────────────
   const criticalProducts = products?.filter(p => p.current_stock <= p.min_stock) ?? []
 
   const today = new Date().toISOString().slice(0, 10)
-  const todayMovements    = movements?.filter(m => m.created_at.startsWith(today)) ?? []
-  const todayIns          = todayMovements.filter(m => m.action === 'in').reduce((s, m) => s + m.quantity, 0)
-  const pendingOrders     = orders?.filter(o => o.status === 'pending' || o.status === 'confirmed') ?? []
-  const deliveredToday    = orders?.filter(o => o.status === 'delivered' && o.delivered_at?.startsWith(today)) ?? []
+  const yesterdayDate = new Date()
+  yesterdayDate.setDate(yesterdayDate.getDate() - 1)
+  const yesterday = yesterdayDate.toISOString().slice(0, 10)
+
+  const todayMovements     = movements?.filter(m => m.created_at.startsWith(today)) ?? []
+  const yesterdayMovements = movements?.filter(m => m.created_at.startsWith(yesterday)) ?? []
+
+  const todayIns      = todayMovements.filter(m => m.action === 'in').reduce((s, m) => s + m.quantity, 0)
+  const yesterdayIns  = yesterdayMovements.filter(m => m.action === 'in').reduce((s, m) => s + m.quantity, 0)
+
+  const pendingOrders   = orders?.filter(o => o.status === 'pending' || o.status === 'confirmed') ?? []
+  const deliveredToday  = orders?.filter(o => o.status === 'delivered' && o.delivered_at?.startsWith(today)) ?? []
+  const deliveredYesterday = orders?.filter(o => o.status === 'delivered' && o.delivered_at?.startsWith(yesterday)) ?? []
+
+  // Variation helper: returns label string like "↑ 12%" or "↓ 5%"
+  function calcVariation(current: number, previous: number): { value: number; label: string } | undefined {
+    if (previous === 0 && current === 0) return undefined
+    if (previous === 0) return { value: 100, label: '+100% vs ontem' }
+    const pct = Math.round(((current - previous) / previous) * 100)
+    const sign = pct >= 0 ? '+' : ''
+    return { value: pct, label: `${sign}${pct}% vs ontem` }
+  }
 
   const stockValue = products?.reduce((acc, p) => acc + p.current_stock * (p.price_sale ?? 0), 0) ?? 0
   const costValue  = products?.reduce((acc, p) => acc + p.current_stock * (p.price_cost ?? 0), 0) ?? 0
@@ -196,24 +216,43 @@ export function DashboardPage() {
         <RealtimeIndicator />
       </div>
 
-      {/* ── Critical alert (compact inline) ── */}
+      {/* ── Critical alert banner ── */}
       {criticalProducts.length > 0 && (
-        <button
-          onClick={() => navigate('/entrada')}
-          className="w-full flex items-center gap-3 p-3 rounded-xl text-left transition-all hover:opacity-90 active:scale-[0.99]"
-          style={{ background: 'hsl(0 60% 12% / 0.6)', border: '1px solid hsl(0 70% 30% / 0.4)' }}
+        <div
+          className="w-full rounded-xl p-4"
+          style={{ background: 'hsl(0 60% 10% / 0.7)', border: '1px solid hsl(0 70% 28% / 0.5)' }}
         >
-          <AlertTriangle size={15} className="text-red-400 shrink-0" />
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-red-400">
-              {criticalProducts.length} produto{criticalProducts.length > 1 ? 's' : ''} em estoque crítico
-            </p>
-            <p className="text-xs text-red-400/60 truncate">
-              {criticalProducts.map(p => p.name).join(', ')}
-            </p>
+          <div className="flex items-start gap-3">
+            <AlertTriangle size={16} className="text-red-400 shrink-0 mt-0.5" />
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-bold text-red-400 mb-1">
+                {criticalProducts.length} produto{criticalProducts.length > 1 ? 's' : ''} em estoque crítico
+              </p>
+              <div className="flex flex-wrap gap-1.5 mb-3">
+                {criticalProducts.slice(0, 5).map(p => (
+                  <span
+                    key={p.id}
+                    className="text-[10px] font-semibold px-2 py-0.5 rounded-md"
+                    style={{ background: 'hsl(0 60% 20% / 0.6)', color: 'hsl(0 70% 70%)' }}
+                  >
+                    {p.name} · {p.sku}
+                  </span>
+                ))}
+                {criticalProducts.length > 5 && (
+                  <span className="text-[10px] text-red-400/60">
+                    +{criticalProducts.length - 5} mais
+                  </span>
+                )}
+              </div>
+              <button
+                onClick={() => navigate('/produtos', { state: { criticalOnly: true } })}
+                className="flex items-center gap-1.5 text-xs font-semibold text-red-400 hover:text-red-300 transition-colors"
+              >
+                Ver Produtos Críticos <ArrowRight size={12} />
+              </button>
+            </div>
           </div>
-          <ArrowRight size={14} className="text-red-400/60 shrink-0" />
-        </button>
+        </div>
       )}
 
       {/* ── KPI Row 1: Operacional ── */}
@@ -240,6 +279,7 @@ export function DashboardPage() {
             sub="pedidos entregues"
             accent="green"
             icon={Activity}
+            trend={calcVariation(deliveredToday.length, deliveredYesterday.length)}
           />
           <KpiCard
             title="Entradas Hoje"
@@ -247,6 +287,7 @@ export function DashboardPage() {
             sub="unidades adicionadas"
             accent="green"
             icon={PackagePlus}
+            trend={calcVariation(todayIns, yesterdayIns)}
           />
         </div>
       </div>
@@ -378,18 +419,23 @@ export function DashboardPage() {
 
               return (
                 <div key={p.id} className="flex items-center gap-3">
-                  {/* Product image/fallback */}
-                  <div
-                    className="w-8 h-8 rounded-lg flex-shrink-0 overflow-hidden flex items-center justify-center"
-                    style={{ background: 'hsl(240 18% 8%)' }}
-                  >
-                    {img ? (
-                      <img src={img} alt={p.name} className="w-full h-full object-contain p-0.5" />
-                    ) : (
-                      <span className="text-xs font-bold" style={{ color: catCfg?.color }}>
-                        {p.name.charAt(0)}
-                      </span>
+                  {/* Product image/fallback with critical indicator */}
+                  <div className="relative flex-shrink-0">
+                    {isCrit && (
+                      <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse z-10 ring-2 ring-background" />
                     )}
+                    <div
+                      className="w-8 h-8 rounded-lg overflow-hidden flex items-center justify-center"
+                      style={{ background: 'hsl(240 18% 8%)' }}
+                    >
+                      {img ? (
+                        <img src={img} alt={p.name} className="w-full h-full object-contain p-0.5" />
+                      ) : (
+                        <span className="text-xs font-bold" style={{ color: catCfg?.color }}>
+                          {p.name.charAt(0)}
+                        </span>
+                      )}
+                    </div>
                   </div>
                   {/* Bar + labels */}
                   <div className="flex-1 min-w-0">
@@ -419,6 +465,30 @@ export function DashboardPage() {
         </div>
 
       </div>
+
+      {/* ── Movement Trend Chart ── */}
+      {trendData && trendData.length > 0 && (
+        <div className="bg-card border border-border rounded-xl p-5">
+          <div className="flex items-center justify-between mb-1">
+            <p className="text-xs tracking-widest uppercase text-muted-foreground font-medium">
+              Tendência — Últimos 30 dias
+            </p>
+            <div className="flex items-center gap-3 text-[10px] text-muted-foreground">
+              <span className="flex items-center gap-1">
+                <span className="w-3 h-0.5 bg-emerald-500 inline-block rounded" />
+                Entradas
+              </span>
+              <span className="flex items-center gap-1">
+                <span className="w-3 h-0.5 bg-red-500 inline-block rounded" />
+                Saídas
+              </span>
+            </div>
+          </div>
+          <div className="h-[200px] md:h-[280px]">
+            <MovementTrendChart data={trendData} height={-1} />
+          </div>
+        </div>
+      )}
 
       {/* ── Movements + Orders ── */}
       <div className="grid md:grid-cols-2 gap-5">

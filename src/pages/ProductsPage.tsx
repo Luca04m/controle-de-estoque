@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
+import { useLocation } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -9,6 +10,7 @@ import {
 } from 'lucide-react'
 import { useAllProducts, useCreateProduct, useUpdateProduct, useToggleProduct } from '@/hooks/useProducts'
 import { useStockMovements } from '@/hooks/useStockMovements'
+import { ProductHistoryDrawer } from '@/components/ProductHistoryDrawer'
 import { useAuthStore } from '@/stores/authStore'
 import { getProductImage } from '@/lib/productImages'
 import { Input } from '@/components/ui/input'
@@ -148,140 +150,6 @@ function MovementActionBadge({ action }: { action: MovementAction }) {
   )
 }
 
-// ─── ProductDrillDown ────────────────────────────────────────────────────────
-
-function ProductDrillDown({
-  product,
-  open,
-  onClose,
-}: {
-  product: Product | null
-  open: boolean
-  onClose: () => void
-}) {
-  const { data: movements, isLoading } = useStockMovements(
-    product ? { product_id: product.id, limit: 10 } : undefined,
-  )
-
-  if (!product) return null
-
-  const cfg = CATEGORY_CONFIG[product.category as CategoryKey]
-  const isCritical = product.current_stock <= product.min_stock
-
-  return (
-    <Dialog open={open} onOpenChange={(_, o) => { if (!o) onClose() }}>
-      <DialogContent className="bg-card border-border max-w-lg">
-        <DialogHeader>
-          <DialogTitle className="text-foreground flex items-center gap-2">
-            <Package size={16} className="text-gold shrink-0" />
-            <span style={{ fontFamily: '"DM Serif Display", Georgia, serif' }}>
-              {product.name}
-            </span>
-          </DialogTitle>
-        </DialogHeader>
-
-        {/* Product summary */}
-        <div className="grid grid-cols-2 gap-3 pt-1">
-          <div className="rounded-lg bg-secondary/60 border border-border p-3 space-y-0.5">
-            <p className="text-xs text-muted-foreground uppercase tracking-wider">Estoque</p>
-            <p className={`text-xl font-bold tabular-nums ${isCritical ? 'text-red-400' : 'text-foreground'}`}>
-              {product.current_stock}
-              {isCritical && <AlertTriangle size={13} className="inline ml-1.5 -translate-y-0.5" />}
-            </p>
-            <StockBar current={product.current_stock} min={product.min_stock} />
-          </div>
-          <div className="rounded-lg bg-secondary/60 border border-border p-3 space-y-0.5">
-            <p className="text-xs text-muted-foreground uppercase tracking-wider">Preço Venda</p>
-            <p className="text-xl font-bold text-gold tabular-nums">{fmt(product.price_sale)}</p>
-            <p className="text-xs text-muted-foreground">Custo: {fmt(product.price_cost)}</p>
-          </div>
-          <div className="col-span-2 rounded-lg bg-secondary/60 border border-border p-3 flex items-start gap-2">
-            <Truck size={13} className="text-muted-foreground mt-0.5 shrink-0" />
-            <div>
-              <p className="text-xs text-muted-foreground">Fornecedor</p>
-              <p className="text-sm text-foreground font-medium">{product.supplier}</p>
-            </div>
-            <div className="ml-auto flex items-start gap-2">
-              <MapPin size={13} className="text-muted-foreground mt-0.5 shrink-0" />
-              <div>
-                <p className="text-xs text-muted-foreground">Localização</p>
-                <p className="text-sm text-foreground font-medium">{product.location}</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Badges row */}
-        <div className="flex items-center gap-2 flex-wrap">
-          <CategoryBadge category={product.category} />
-          <span className="font-mono text-xs text-muted-foreground border border-border rounded-md px-2 py-0.5">
-            {product.sku}
-          </span>
-          <StatusBadge isCritical={isCritical} active={product.active} />
-          {cfg && (
-            <span
-              className="text-xs text-muted-foreground"
-              style={{ color: cfg.color }}
-            >
-              Margem: {Math.round(((product.price_sale - product.price_cost) / product.price_sale) * 100)}%
-            </span>
-          )}
-        </div>
-
-        {/* Last 10 movements */}
-        <div>
-          <p className="text-xs uppercase tracking-wider text-muted-foreground mb-2 font-medium">
-            Últimas Movimentações
-          </p>
-          {isLoading ? (
-            <div className="space-y-2">
-              {Array.from({ length: 4 }).map((_, i) => (
-                <Skeleton key={i} className="h-10 w-full bg-secondary rounded-lg" />
-              ))}
-            </div>
-          ) : !movements || movements.length === 0 ? (
-            <p className="text-sm text-muted-foreground py-4 text-center">
-              Nenhuma movimentação registrada.
-            </p>
-          ) : (
-            <div className="space-y-1.5 max-h-64 overflow-y-auto pr-1">
-              {movements.map((mv) => (
-                <div
-                  key={mv.id}
-                  className="flex items-start gap-3 rounded-lg bg-secondary/50 border border-border px-3 py-2"
-                >
-                  <MovementActionBadge action={mv.action} />
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="text-sm font-semibold tabular-nums text-foreground">
-                        {mv.action === 'out' || mv.action === 'loss' ? '−' : mv.action === 'in' ? '+' : ''}
-                        {Math.abs(mv.quantity)} un.
-                      </span>
-                      <span className="text-xs text-muted-foreground shrink-0">
-                        {mv.profile?.full_name ?? '—'}
-                      </span>
-                    </div>
-                    {mv.notes && (
-                      <p className="text-xs text-muted-foreground truncate">{mv.notes}</p>
-                    )}
-                    <p className="text-xs text-muted-foreground/60">
-                      {new Date(mv.created_at).toLocaleString('pt-BR', {
-                        day: '2-digit',
-                        month: '2-digit',
-                        hour: '2-digit',
-                        minute: '2-digit',
-                      })}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </DialogContent>
-    </Dialog>
-  )
-}
 
 // ─── ProductFormDialog ───────────────────────────────────────────────────────
 
@@ -612,9 +480,19 @@ export function ProductsPage() {
   const toggle = useToggleProduct()
   const { profile } = useAuthStore()
   const isManager = profile?.role === 'manager'
+  const location = useLocation()
+
+  // Initialize criticalOnly from navigation state (Dashboard alert button)
+  const initialCriticalOnly = useMemo(() => {
+    const fromNav = !!(location.state as { criticalOnly?: boolean } | null)?.criticalOnly
+    if (fromNav) window.history.replaceState({}, '')
+    return fromNav
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const [search, setSearch]             = useState('')
   const [categoryFilter, setCategoryFilter] = useState<CategoryKey | 'all'>('all')
+  const [criticalOnly, setCriticalOnly] = useState(initialCriticalOnly)
   const [dialogOpen, setDialogOpen]     = useState(false)
   const [editingProduct, setEditingProduct] = useState<Product | undefined>(undefined)
   const [drillProduct, setDrillProduct] = useState<Product | null>(null)
@@ -635,7 +513,8 @@ export function ProductsPage() {
       p.name.toLowerCase().includes(search.toLowerCase()) ||
       p.sku.toLowerCase().includes(search.toLowerCase())
     const matchCategory = categoryFilter === 'all' || p.category === categoryFilter
-    return matchSearch && matchCategory
+    const matchCritical = !criticalOnly || p.current_stock <= p.min_stock
+    return matchSearch && matchCategory && matchCritical
   }) ?? []
 
   const activeCount = products?.filter((p) => p.active).length ?? 0
@@ -715,6 +594,18 @@ export function ProductsPage() {
               </button>
             )
           })}
+          {/* Critical-only filter chip */}
+          <button
+            onClick={() => setCriticalOnly(v => !v)}
+            className={`flex items-center gap-1.5 text-xs px-3 py-1 rounded-full border transition-all font-medium ${
+              criticalOnly
+                ? 'text-red-400 border-red-700/50 bg-red-950/30'
+                : 'border-border text-muted-foreground hover:text-foreground hover:border-border/80'
+            }`}
+          >
+            <span className={`w-2 h-2 rounded-full ${criticalOnly ? 'bg-red-400 animate-pulse' : 'bg-muted-foreground'}`} />
+            Críticos
+          </button>
         </div>
       </div>
 
@@ -871,9 +762,9 @@ export function ProductsPage() {
         />
       )}
 
-      <ProductDrillDown
-        product={drillProduct}
-        open={drillOpen}
+      {/* Full history drawer (replaces dialog) */}
+      <ProductHistoryDrawer
+        product={drillOpen ? drillProduct : null}
         onClose={closeDrillDown}
       />
     </div>

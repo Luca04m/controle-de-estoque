@@ -3,7 +3,9 @@ import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/authStore'
 import { IS_MOCK } from '@/lib/mockAuth'
 import { MOCK_ORDERS } from '@/lib/mockData'
-import type { DeliveryOrder, OrderItem } from '@/types'
+import { addMockRestockMovements } from '@/hooks/useStockMovements'
+import { formatOrderNumber } from '@/lib/utils'
+import type { DeliveryOrder, OrderItem, StockMovement } from '@/types'
 import { toast } from 'sonner'
 
 let _mockOrders = [...MOCK_ORDERS]
@@ -144,5 +146,82 @@ export function useUpdateOrderStatus() {
       qc.invalidateQueries({ queryKey: ['delivery_orders'] })
       toast.success('Status atualizado')
     },
+  })
+}
+
+export function useCancelOrder() {
+  const qc = useQueryClient()
+  const { user } = useAuthStore()
+
+  return useMutation({
+    mutationFn: async ({ orderId, order }: { orderId: string; order: DeliveryOrder }) => {
+      const orderNumber = formatOrderNumber(orderId)
+
+      if (IS_MOCK) {
+        // Update order status
+        _mockOrders = _mockOrders.map((o) =>
+          o.id === orderId ? { ...o, status: 'cancelled' as const } : o
+        )
+        // Create restock movements for each item
+        const restockMovements: StockMovement[] = (order.items as OrderItem[]).map((item) => ({
+          id: `mock-restock-${crypto.randomUUID()}`,
+          product_id: item.product_id,
+          action: 'in' as const,
+          quantity: item.quantity,
+          notes: `Devolução por cancelamento do pedido ${orderNumber}`,
+          order_id: orderId,
+          user_id: user?.id ?? 'mock-user',
+          created_at: new Date().toISOString(),
+          product: { name: item.product_name, sku: '' },
+          profile: { full_name: 'Sistema' },
+        }))
+        addMockRestockMovements(restockMovements)
+        return { restocked: order.items.length }
+      }
+
+      // Supabase: run atomically using a transaction-like approach
+      // 1. Update order status
+      const { error: orderError } = await supabase
+        .from('delivery_orders')
+        .update({ status: 'cancelled' })
+        .eq('id', orderId)
+      if (orderError) throw orderError
+
+      // 2. Create restock movements + update stock for each item
+      const items = order.items as OrderItem[]
+      const results = await Promise.allSettled(
+        items.map(async (item) => {
+          const { error: mvError } = await supabase.from('stock_movements').insert([{
+            product_id: item.product_id,
+            action: 'in',
+            quantity: item.quantity,
+            notes: `Devolução por cancelamento do pedido ${orderNumber}`,
+            order_id: orderId,
+            user_id: user?.id,
+            created_at: new Date().toISOString(),
+          }])
+          if (mvError) throw mvError
+
+          const { error: stockError } = await supabase.rpc('update_stock', {
+            p_product_id: item.product_id,
+            p_delta: item.quantity,
+          })
+          if (stockError) throw stockError
+        })
+      )
+
+      const failed = results.filter(r => r.status === 'rejected').length
+      if (failed > 0) throw new Error(`${failed} item(ns) não puderam ser revertidos ao estoque`)
+
+      return { restocked: items.length }
+    },
+    onSuccess: ({ restocked }) => {
+      qc.invalidateQueries({ queryKey: ['delivery_orders'] })
+      qc.invalidateQueries({ queryKey: ['products'] })
+      qc.invalidateQueries({ queryKey: ['stock_movements'] })
+      qc.invalidateQueries({ queryKey: ['movement_trend'] })
+      toast.success(`Pedido cancelado. ${restocked} produto${restocked !== 1 ? 's' : ''} devolvido${restocked !== 1 ? 's' : ''} ao estoque.`)
+    },
+    onError: (err: Error) => toast.error(err.message),
   })
 }
