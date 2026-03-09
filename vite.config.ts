@@ -5,7 +5,7 @@ import { VitePWA } from 'vite-plugin-pwa'
 import path from 'path'
 
 export default defineConfig({
-  base: process.env.GITHUB_ACTIONS ? '/aiox/' : '/',
+  base: process.env.GITHUB_ACTIONS ? '/controle-de-estoque/' : '/',
   plugins: [
     react(),
     tailwindcss(),
