@@ -11,36 +11,24 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Skeleton } from '@/components/ui/skeleton'
 import {
   Search,
-  Package,
   MapPin,
   User,
   RotateCcw,
-  Phone,
   ChevronRight,
   CheckCircle2,
-  TrendingUp,
-  ShoppingBag,
   Truck,
   Calendar,
+  Plus,
+  ArrowLeft,
+  FileText,
 } from 'lucide-react'
 import type { OrderItem, DeliveryOrder, Product, ProductCategory } from '@/types'
 import type { CreateOrderInput } from '@/hooks/useDeliveryOrders'
 
-// ─── Formatters ──────────────────────────────────────────────────────────────
+// ─── Formatters ───────────────────────────────────────────────────────────────
 
 const fmt = (v: number) =>
   new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v)
-
-function timeAgo(dateStr: string): string {
-  const diff = Date.now() - new Date(dateStr).getTime()
-  const mins = Math.floor(diff / 60000)
-  if (mins < 1) return 'agora'
-  if (mins < 60) return `há ${mins} min`
-  const hours = Math.floor(mins / 60)
-  if (hours < 24) return `há ${hours}h`
-  const days = Math.floor(hours / 24)
-  return `há ${days}d`
-}
 
 function formatDate(dateStr: string): string {
   return new Date(dateStr).toLocaleString('pt-BR', {
@@ -48,6 +36,14 @@ function formatDate(dateStr: string): string {
     month: '2-digit',
     hour: '2-digit',
     minute: '2-digit',
+  })
+}
+
+function formatDateShort(dateStr: string): string {
+  return new Date(dateStr).toLocaleDateString('pt-BR', {
+    day: '2-digit',
+    month: '2-digit',
+    year: '2-digit',
   })
 }
 
@@ -87,75 +83,75 @@ const categoryStyles: Record<ProductCategory, { label: string; className: string
 
 function StatusBadge({ status }: { status: string }) {
   const map: Record<string, { label: string; className: string }> = {
-    pending: { label: 'Pendente', className: 'bg-amber-950/50 text-amber-400 border-amber-800/30' },
-    confirmed: { label: 'Confirmado', className: 'bg-[hsl(42_60%_55%/0.12)] text-[hsl(42_60%_55%)] border-[hsl(42_60%_55%/0.25)]' },
-    delivered: { label: 'Entregue', className: 'bg-emerald-950/50 text-emerald-400 border-emerald-800/30' },
+    pending: {
+      label: 'Pendente',
+      className: 'bg-amber-950/50 text-amber-400 border-amber-800/40',
+    },
+    confirmed: {
+      label: 'Confirmado',
+      className: 'bg-[hsl(42_60%_55%/0.1)] text-[hsl(42_60%_55%)] border-[hsl(42_60%_55%/0.3)]',
+    },
+    delivered: {
+      label: 'Entregue',
+      className: 'bg-emerald-950/60 text-emerald-400 border-emerald-800/40',
+    },
   }
-  const cfg = map[status] ?? { label: status, className: 'bg-secondary text-muted-foreground border-border' }
+  const cfg = map[status] ?? {
+    label: status,
+    className: 'bg-secondary text-muted-foreground border-border',
+  }
   return (
-    <span className={`text-[10px] border rounded-full px-2 py-0.5 font-semibold tracking-wide ${cfg.className}`}>
+    <span
+      className={`text-[10px] border rounded-md px-2 py-0.5 font-semibold tracking-wide uppercase ${cfg.className}`}
+    >
       {cfg.label}
     </span>
   )
 }
 
-// ─── KPI pill ────────────────────────────────────────────────────────────────
+// ─── KPI card ─────────────────────────────────────────────────────────────────
 
-interface KpiPillProps {
-  icon: React.ReactNode
+interface KpiCardProps {
   label: string
   value: string
   highlight?: boolean
 }
 
-function KpiPill({ icon, label, value, highlight }: KpiPillProps) {
+function KpiCard({ label, value, highlight }: KpiCardProps) {
   return (
     <div
-      className={`flex items-center gap-2.5 shrink-0 rounded-xl px-4 py-2.5 border ${
-        highlight
-          ? 'bg-[hsl(42_60%_55%/0.08)] border-[hsl(42_60%_55%/0.2)]'
-          : 'bg-card border-border'
-      }`}
+      className="rounded-xl border px-4 py-3 flex flex-col gap-1"
+      style={{
+        backgroundColor: highlight ? 'hsl(42 60% 55% / 0.06)' : 'hsl(240 22% 7%)',
+        borderColor: highlight ? 'hsl(42 60% 55% / 0.25)' : 'hsl(240 15% 11%)',
+      }}
     >
-      <span className={highlight ? 'text-[hsl(42_60%_55%)]' : 'text-muted-foreground'}>
-        {icon}
-      </span>
-      <div>
-        <p className="text-[10px] text-muted-foreground leading-none mb-0.5">{label}</p>
-        <p className={`text-sm font-bold tabular-nums ${highlight ? 'text-[hsl(42_60%_55%)]' : 'text-foreground'}`}>
-          {value}
-        </p>
-      </div>
+      <p className="text-[11px] font-medium text-white/35 uppercase tracking-wider">{label}</p>
+      <p
+        className="text-xl font-bold tabular-nums"
+        style={{ color: highlight ? 'hsl(42 60% 55%)' : 'white' }}
+      >
+        {value}
+      </p>
     </div>
   )
 }
 
-// ─── Stepper progress bar ────────────────────────────────────────────────────
+// ─── Step bar ─────────────────────────────────────────────────────────────────
 
 function StepBar({ step }: { step: 1 | 2 | 3 }) {
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-1.5">
       {[1, 2, 3].map((s) => (
-        <div key={s} className="flex items-center gap-2">
+        <div key={s} className="flex items-center gap-1.5">
           <div
-            className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold border-2 transition-all duration-300 ${
-              s < step
-                ? 'bg-[hsl(42_60%_55%)] border-[hsl(42_60%_55%)] text-[hsl(240_25%_4%)]'
-                : s === step
-                ? 'border-[hsl(42_60%_55%)] text-[hsl(42_60%_55%)] bg-transparent'
-                : 'border-border text-muted-foreground bg-transparent'
-            }`}
-          >
-            {s < step ? '✓' : s}
-          </div>
-          {s < 3 && (
-            <div
-              className="h-0.5 w-8 rounded-full transition-all duration-300"
-              style={{
-                backgroundColor: s < step ? 'hsl(42 60% 55%)' : 'hsl(var(--border))',
-              }}
-            />
-          )}
+            className="h-1.5 rounded-full transition-all duration-300"
+            style={{
+              width: s === step ? '24px' : '8px',
+              backgroundColor:
+                s <= step ? 'hsl(42 60% 55%)' : 'hsl(240 15% 11%)',
+            }}
+          />
         </div>
       ))}
     </div>
@@ -182,39 +178,27 @@ function Step1Recipient({ reference, address, notes, onChange, onNext }: Step1Pr
   const canProceed = address.trim().length > 3
 
   return (
-    <div
-      className="space-y-6"
-      style={{ animation: 'slideIn 0.22s ease-out' }}
-    >
-      <div>
-        <p className="text-xs font-semibold tracking-[0.18em] uppercase text-muted-foreground mb-1">
-          Passo 1 de 3
-        </p>
-        <h2
-          className="text-2xl text-foreground"
-          style={{ fontFamily: '"DM Serif Display", Georgia, serif' }}
-        >
-          Destinatário
-        </h2>
-      </div>
-
-      {/* Reference / WhatsApp */}
+    <div className="space-y-5" style={{ animation: 'slideIn 0.2s ease-out' }}>
       <div className="space-y-1.5">
-        <Label className="text-xs tracking-wider uppercase text-muted-foreground flex items-center gap-1.5">
-          <Phone className="w-3 h-3" />
-          WhatsApp / Referência
+        <Label className="text-xs font-medium tracking-wider uppercase text-white/35 flex items-center gap-1.5">
+          <User className="w-3 h-3" />
+          Referência / Nome
+          <span className="normal-case tracking-normal font-normal text-white/35">(opcional)</span>
         </Label>
         <Input
-          placeholder="+55 21 99999-0000"
-          className="h-12 bg-card border-border text-sm"
+          placeholder="Nome do cliente ou referência"
+          className="h-11 text-sm"
+          style={{
+            backgroundColor: 'hsl(240 22% 7%)',
+            borderColor: 'hsl(240 15% 11%)',
+          }}
           value={reference}
           onChange={(e) => onChange('reference', e.target.value)}
         />
       </div>
 
-      {/* Address */}
       <div className="space-y-1.5">
-        <Label className="text-xs tracking-wider uppercase text-muted-foreground flex items-center gap-1.5">
+        <Label className="text-xs font-medium tracking-wider uppercase text-white/35 flex items-center gap-1.5">
           <MapPin className="w-3 h-3" />
           Endereço de Entrega
           <span className="text-red-400 normal-case tracking-normal font-bold">*</span>
@@ -222,24 +206,35 @@ function Step1Recipient({ reference, address, notes, onChange, onNext }: Step1Pr
         <textarea
           rows={3}
           placeholder="Nome completo + endereço completo. Usado como prova de entrega."
-          className="w-full rounded-xl border border-border bg-card px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground resize-none focus:outline-none focus:ring-2 focus:ring-[hsl(42_60%_55%/0.4)] focus:border-[hsl(42_60%_55%/0.5)] transition-all"
+          className="w-full rounded-lg border px-3 py-2.5 text-sm text-foreground placeholder:text-white/35 resize-none focus:outline-none focus:ring-2 transition-all"
+          style={{
+            backgroundColor: 'hsl(240 22% 7%)',
+            borderColor: 'hsl(240 15% 11%)',
+          }}
+          onFocus={(e) => {
+            e.currentTarget.style.borderColor = 'hsl(42 60% 55% / 0.5)'
+          }}
+          onBlur={(e) => {
+            e.currentTarget.style.borderColor = 'hsl(240 15% 11%)'
+          }}
           value={address}
           onChange={(e) => onChange('address', e.target.value)}
         />
-        <p className="text-[11px] text-muted-foreground">
-          Nome completo + endereço. Prova de entrega.
-        </p>
+        <p className="text-[11px] text-white/35">Prova de entrega. Campo obrigatório.</p>
       </div>
 
-      {/* Notes */}
       <div className="space-y-1.5">
-        <Label className="text-xs tracking-wider uppercase text-muted-foreground">
+        <Label className="text-xs font-medium tracking-wider uppercase text-white/35">
           Observações
-          <span className="ml-1.5 normal-case tracking-normal font-normal text-muted-foreground/60">(opcional)</span>
+          <span className="ml-1.5 normal-case tracking-normal font-normal">(opcional)</span>
         </Label>
         <Input
           placeholder="Ex: deixar na portaria, ligar antes..."
-          className="h-12 bg-card border-border text-sm"
+          className="h-11 text-sm"
+          style={{
+            backgroundColor: 'hsl(240 22% 7%)',
+            borderColor: 'hsl(240 15% 11%)',
+          }}
           value={notes}
           onChange={(e) => onChange('notes', e.target.value)}
         />
@@ -248,11 +243,11 @@ function Step1Recipient({ reference, address, notes, onChange, onNext }: Step1Pr
       <button
         disabled={!canProceed}
         onClick={onNext}
-        className="w-full h-14 rounded-xl font-bold text-sm tracking-wide flex items-center justify-center gap-2 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+        className="w-full h-12 rounded-lg font-semibold text-sm flex items-center justify-center gap-2 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
         style={{
-          backgroundColor: canProceed ? 'hsl(42 60% 55%)' : undefined,
-          color: canProceed ? 'hsl(240 25% 4%)' : undefined,
-          border: canProceed ? 'none' : '1px solid hsl(var(--border))',
+          backgroundColor: canProceed ? 'hsl(42 60% 55%)' : 'hsl(240 22% 7%)',
+          color: canProceed ? 'hsl(240 25% 4%)' : 'hsl(var(--muted-foreground))',
+          border: canProceed ? 'none' : '1px solid hsl(240 15% 11%)',
         }}
       >
         Próximo
@@ -282,23 +277,10 @@ function Step2Products({ products, items, onUpdateQty, onNext, onBack }: Step2Pr
   }
 
   return (
-    <div
-      className="space-y-5 pb-28"
-      style={{ animation: 'slideIn 0.22s ease-out' }}
-    >
-      <div>
-        <p className="text-xs font-semibold tracking-[0.18em] uppercase text-muted-foreground mb-1">
-          Passo 2 de 3
-        </p>
-        <h2
-          className="text-2xl text-foreground"
-          style={{ fontFamily: '"DM Serif Display", Georgia, serif' }}
-        >
-          Produtos
-        </h2>
-      </div>
+    <div className="space-y-4 pb-32" style={{ animation: 'slideIn 0.2s ease-out' }}>
+      <h2 className="text-lg font-bold text-white">Produtos</h2>
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-2 gap-2.5">
         {products.map((product) => {
           const qty = getQty(product.id)
           const selected = qty > 0
@@ -308,18 +290,23 @@ function Step2Products({ products, items, onUpdateQty, onNext, onBack }: Step2Pr
           return (
             <div
               key={product.id}
-              className={`relative rounded-2xl border p-3 transition-all duration-200 ${
-                outOfStock
-                  ? 'opacity-50 cursor-not-allowed border-border bg-card'
-                  : selected
-                  ? 'border-[hsl(42_60%_55%/0.6)] bg-[hsl(42_60%_55%/0.05)] shadow-[0_0_0_1px_hsl(42_60%_55%/0.2)]'
-                  : 'border-border bg-card hover:border-[hsl(42_60%_55%/0.3)] cursor-pointer'
-              }`}
+              className="relative rounded-xl border p-3 transition-all duration-150"
+              style={{
+                backgroundColor: selected
+                  ? 'hsl(42 60% 55% / 0.06)'
+                  : 'hsl(240 22% 7%)',
+                borderColor: selected
+                  ? 'hsl(42 60% 55% / 0.5)'
+                  : outOfStock
+                  ? 'hsl(240 15% 11%)'
+                  : 'hsl(240 15% 11%)',
+                opacity: outOfStock ? 0.5 : 1,
+                cursor: outOfStock ? 'not-allowed' : 'default',
+              }}
             >
-              {/* Qty badge */}
               {selected && (
                 <div
-                  className="absolute -top-2 -right-2 w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-black"
+                  className="absolute -top-2 -right-2 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black"
                   style={{
                     backgroundColor: 'hsl(42 60% 55%)',
                     color: 'hsl(240 25% 4%)',
@@ -330,40 +317,45 @@ function Step2Products({ products, items, onUpdateQty, onNext, onBack }: Step2Pr
               )}
 
               <div className="space-y-2">
-                {/* Category chip */}
-                <span className={`text-[9px] font-semibold tracking-wider uppercase border rounded-full px-1.5 py-0.5 ${catStyle.className}`}>
+                <span
+                  className={`text-[9px] font-semibold tracking-wider uppercase border rounded px-1.5 py-0.5 ${catStyle.className}`}
+                >
                   {catStyle.label}
                 </span>
 
-                {/* Name */}
-                <p className="text-sm font-bold text-foreground leading-snug line-clamp-2">
+                <p className="text-sm font-semibold text-white leading-snug line-clamp-2">
                   {product.name}
                 </p>
 
-                {/* Stock + price */}
-                <div className="flex items-center justify-between">
-                  <p className={`text-[11px] ${outOfStock ? 'text-red-400' : 'text-muted-foreground'}`}>
-                    {outOfStock ? 'Sem estoque' : `${product.current_stock} em estoque`}
-                  </p>
-                </div>
-                <p className="text-sm font-black tabular-nums text-[hsl(42_60%_55%)]">
+                <p
+                  className={`text-[11px] ${
+                    outOfStock ? 'text-red-400' : 'text-white/35'
+                  }`}
+                >
+                  {outOfStock ? 'Sem estoque' : `${product.current_stock} em estoque`}
+                </p>
+
+                <p
+                  className="text-sm font-bold tabular-nums"
+                  style={{ color: 'hsl(42 60% 55%)' }}
+                >
                   {fmt(product.price_sale)}
                 </p>
 
-                {/* Stepper (shown when selected or on tap) */}
                 {!outOfStock && (
                   <div className="flex items-center gap-1 mt-1">
                     <button
                       type="button"
                       onClick={() => onUpdateQty(product.id, -1)}
                       disabled={qty === 0}
-                      className="w-8 h-8 rounded-lg border border-border bg-secondary text-foreground font-bold text-base flex items-center justify-center hover:bg-muted transition-all disabled:opacity-30"
+                      className="w-7 h-7 rounded-md border text-white/60 font-bold text-sm flex items-center justify-center hover:text-white transition-colors disabled:opacity-30"
+                      style={{ borderColor: 'hsl(240 15% 11%)', backgroundColor: 'hsl(240 22% 9%)' }}
                     >
                       −
                     </button>
-                    <div className="flex-1 text-center text-sm font-black tabular-nums text-foreground">
+                    <div className="flex-1 text-center text-sm font-bold tabular-nums text-white">
                       {qty === 0 ? (
-                        <span className="text-[11px] text-muted-foreground font-normal">add</span>
+                        <span className="text-[11px] text-white/35 font-normal">—</span>
                       ) : (
                         qty
                       )}
@@ -371,7 +363,12 @@ function Step2Products({ products, items, onUpdateQty, onNext, onBack }: Step2Pr
                     <button
                       type="button"
                       onClick={() => onUpdateQty(product.id, 1)}
-                      className="w-8 h-8 rounded-lg border border-[hsl(42_60%_55%/0.4)] bg-[hsl(42_60%_55%/0.08)] text-[hsl(42_60%_55%)] font-bold text-base flex items-center justify-center hover:bg-[hsl(42_60%_55%/0.15)] transition-all"
+                      className="w-7 h-7 rounded-md flex items-center justify-center font-bold text-sm transition-colors"
+                      style={{
+                        backgroundColor: 'hsl(42 60% 55% / 0.12)',
+                        border: '1px solid hsl(42 60% 55% / 0.3)',
+                        color: 'hsl(42 60% 55%)',
+                      }}
                     >
                       +
                     </button>
@@ -383,45 +380,49 @@ function Step2Products({ products, items, onUpdateQty, onNext, onBack }: Step2Pr
         })}
       </div>
 
-      {/* Sticky cart footer */}
+      {/* Sticky footer */}
       <div
         className="fixed bottom-0 left-0 right-0 z-50 px-4 pb-6 pt-4"
         style={{
           background: 'linear-gradient(to top, hsl(240 25% 4%) 70%, transparent)',
         }}
       >
-        <div className="w-full space-y-3">
+        <div className="w-full space-y-2">
           {canProceed && (
             <div
-              className="flex items-center justify-between px-4 py-2.5 rounded-xl border text-sm"
+              className="flex items-center justify-between px-4 py-2.5 rounded-lg border text-sm"
               style={{
-                backgroundColor: 'hsl(42 60% 55% / 0.1)',
-                borderColor: 'hsl(42 60% 55% / 0.25)',
+                backgroundColor: 'hsl(42 60% 55% / 0.08)',
+                borderColor: 'hsl(42 60% 55% / 0.2)',
               }}
             >
-              <span className="text-muted-foreground">
+              <span className="text-white/60 text-xs">
                 {totalItems} produto{totalItems !== 1 ? 's' : ''}
               </span>
-              <span className="font-black tabular-nums text-[hsl(42_60%_55%)]">
+              <span
+                className="font-bold tabular-nums text-sm"
+                style={{ color: 'hsl(42 60% 55%)' }}
+              >
                 {fmt(totalValue)}
               </span>
             </div>
           )}
-          <div className="flex gap-3">
+          <div className="flex gap-2">
             <button
               onClick={onBack}
-              className="h-14 w-14 shrink-0 rounded-xl border border-border bg-card text-muted-foreground hover:text-foreground transition-all flex items-center justify-center"
+              className="h-12 w-12 shrink-0 rounded-lg border text-white/40 hover:text-white transition-colors flex items-center justify-center"
+              style={{ borderColor: 'hsl(240 15% 11%)', backgroundColor: 'hsl(240 22% 7%)' }}
             >
-              ←
+              <ArrowLeft className="w-4 h-4" />
             </button>
             <button
               disabled={!canProceed}
               onClick={onNext}
-              className="flex-1 h-14 rounded-xl font-bold text-sm tracking-wide flex items-center justify-center gap-2 transition-all disabled:opacity-40"
+              className="flex-1 h-12 rounded-lg font-semibold text-sm flex items-center justify-center gap-2 transition-all disabled:opacity-40"
               style={{
-                backgroundColor: canProceed ? 'hsl(42 60% 55%)' : 'hsl(var(--secondary))',
+                backgroundColor: canProceed ? 'hsl(42 60% 55%)' : 'hsl(240 22% 7%)',
                 color: canProceed ? 'hsl(240 25% 4%)' : 'hsl(var(--muted-foreground))',
-                border: canProceed ? 'none' : '1px solid hsl(var(--border))',
+                border: canProceed ? 'none' : '1px solid hsl(240 15% 11%)',
               }}
             >
               Próximo
@@ -451,80 +452,62 @@ function Step3Confirm({ reference, address, notes, items, isPending, onBack, onC
   const totalUnits = items.reduce((s, i) => s + i.quantity, 0)
 
   return (
-    <div
-      className="space-y-6"
-      style={{ animation: 'slideIn 0.22s ease-out' }}
-    >
-      <div>
-        <p className="text-xs font-semibold tracking-[0.18em] uppercase text-muted-foreground mb-1">
-          Passo 3 de 3
-        </p>
-        <h2
-          className="text-2xl text-foreground"
-          style={{ fontFamily: '"DM Serif Display", Georgia, serif' }}
-        >
-          Confirmar
-        </h2>
-      </div>
+    <div className="space-y-5" style={{ animation: 'slideIn 0.2s ease-out' }}>
+      <h2 className="text-lg font-bold text-white">Confirmar Pedido</h2>
 
-      {/* Summary card */}
       <div
-        className="rounded-2xl border p-5 space-y-4"
+        className="rounded-xl border overflow-hidden"
         style={{
-          backgroundColor: 'hsl(240 25% 7%)',
+          backgroundColor: 'hsl(240 22% 7%)',
           borderColor: 'hsl(42 60% 55% / 0.2)',
-          boxShadow: '0 0 0 1px hsl(42 60% 55% / 0.08), inset 0 1px 0 hsl(42 60% 55% / 0.05)',
         }}
       >
-        {/* Recipient info */}
-        <div className="space-y-2">
-          {reference && (
-            <div className="flex items-center gap-2 text-sm">
-              <Phone className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-              <span className="font-mono text-foreground">{reference}</span>
-            </div>
-          )}
-          {address && (
-            <div className="flex items-start gap-2 text-sm">
-              <MapPin className="w-3.5 h-3.5 text-[hsl(42_60%_55%)] shrink-0 mt-0.5" />
-              <span className="text-foreground leading-snug">{address}</span>
-            </div>
-          )}
-          {notes && (
-            <p className="text-xs text-muted-foreground pl-5">{notes}</p>
-          )}
-        </div>
-
-        <div className="h-px bg-border" />
-
-        {/* Items */}
-        <div className="space-y-2.5">
-          {items.map((item) => (
-            <div key={item.tempId} className="flex items-center justify-between text-sm">
-              <div className="flex items-center gap-2 flex-1 min-w-0">
-                <span className="text-muted-foreground tabular-nums shrink-0">{item.quantity}×</span>
-                <span className="text-foreground truncate">{item.product_name}</span>
+        {/* Recipient block */}
+        {(reference || address || notes) && (
+          <div className="px-4 py-3 space-y-2 border-b" style={{ borderColor: 'hsl(240 15% 11%)' }}>
+            {reference && (
+              <div className="flex items-center gap-2 text-sm">
+                <User className="w-3.5 h-3.5 text-white/35 shrink-0" />
+                <span className="text-white font-medium">{reference}</span>
               </div>
-              <span className="font-bold tabular-nums text-foreground ml-3 shrink-0">
+            )}
+            {address && (
+              <div className="flex items-start gap-2 text-sm">
+                <MapPin className="w-3.5 h-3.5 text-[hsl(42_60%_55%)] shrink-0 mt-0.5" />
+                <span className="text-white/80 leading-snug">{address}</span>
+              </div>
+            )}
+            {notes && (
+              <p className="text-xs text-white/35 pl-5">{notes}</p>
+            )}
+          </div>
+        )}
+
+        {/* Items table */}
+        <div className="px-4 py-3 space-y-1.5">
+          {items.map((item) => (
+            <div key={item.tempId} className="grid text-sm" style={{ gridTemplateColumns: '1fr auto auto auto' }}>
+              <span className="text-white/80 pr-3 truncate">{item.product_name}</span>
+              <span className="text-white/35 tabular-nums text-right pr-3">×{item.quantity}</span>
+              <span className="text-white/35 tabular-nums text-right pr-3">{fmt(item.unit_price)}</span>
+              <span className="text-white font-semibold tabular-nums text-right">
                 {fmt(item.quantity * item.unit_price)}
               </span>
             </div>
           ))}
         </div>
 
-        <div
-          className="h-px"
-          style={{ backgroundColor: 'hsl(42 60% 55% / 0.2)' }}
-        />
-
         {/* Total */}
-        <div className="flex items-center justify-between">
+        <div
+          className="flex items-center justify-between px-4 py-3 border-t"
+          style={{ borderColor: 'hsl(42 60% 55% / 0.15)' }}
+        >
           <div>
-            <p className="text-xs text-muted-foreground">Total do pedido</p>
-            <p className="text-xs text-muted-foreground">{totalUnits} unidade{totalUnits !== 1 ? 's' : ''}</p>
+            <p className="text-xs text-white/35">Total do pedido</p>
+            <p className="text-xs text-white/35">{totalUnits} unidade{totalUnits !== 1 ? 's' : ''}</p>
           </div>
           <span
-            className="text-3xl font-black tabular-nums"
+            className="text-2xl font-black tabular-nums"
             style={{ color: 'hsl(42 60% 55%)' }}
           >
             {fmt(totalValue)}
@@ -532,18 +515,18 @@ function Step3Confirm({ reference, address, notes, items, isPending, onBack, onC
         </div>
       </div>
 
-      {/* Actions */}
-      <div className="flex gap-3">
+      <div className="flex gap-2">
         <button
           onClick={onBack}
-          className="h-14 w-14 shrink-0 rounded-xl border border-border bg-card text-muted-foreground hover:text-foreground transition-all flex items-center justify-center"
+          className="h-12 w-12 shrink-0 rounded-lg border text-white/40 hover:text-white transition-colors flex items-center justify-center"
+          style={{ borderColor: 'hsl(240 15% 11%)', backgroundColor: 'hsl(240 22% 7%)' }}
         >
-          ←
+          <ArrowLeft className="w-4 h-4" />
         </button>
         <button
           onClick={onConfirm}
           disabled={isPending}
-          className="flex-1 h-14 rounded-xl font-bold text-sm tracking-wide flex items-center justify-center gap-2 transition-all disabled:opacity-60"
+          className="flex-1 h-12 rounded-lg font-semibold text-sm flex items-center justify-center gap-2 transition-all disabled:opacity-60"
           style={{
             backgroundColor: 'hsl(42 60% 55%)',
             color: 'hsl(240 25% 4%)',
@@ -579,47 +562,42 @@ function SuccessScreen({ onNewOrder, onBackToList }: SuccessProps) {
       className="flex flex-col items-center justify-center gap-8 py-16 text-center"
       style={{ animation: 'slideIn 0.3s ease-out' }}
     >
-      {/* Checkmark */}
       <div
-        className="w-24 h-24 rounded-full flex items-center justify-center"
+        className="w-20 h-20 rounded-full flex items-center justify-center"
         style={{
           backgroundColor: 'hsl(42 60% 55% / 0.1)',
-          border: '2px solid hsl(42 60% 55% / 0.3)',
-          animation: 'popIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)',
+          border: '1px solid hsl(42 60% 55% / 0.25)',
         }}
       >
         <CheckCircle2
-          className="w-12 h-12"
+          className="w-10 h-10"
           style={{ color: 'hsl(42 60% 55%)' }}
         />
       </div>
 
-      <div className="space-y-2">
-        <h2
-          className="text-3xl text-foreground"
-          style={{ fontFamily: '"DM Serif Display", Georgia, serif' }}
-        >
-          Pedido confirmado!
-        </h2>
-        <p className="text-sm text-muted-foreground">
+      <div className="space-y-1.5">
+        <h2 className="text-2xl font-bold text-white">Pedido confirmado</h2>
+        <p className="text-sm text-white/35">
           Estoque atualizado e pedido registrado com sucesso.
         </p>
       </div>
 
-      <div className="w-full space-y-3">
+      <div className="w-full space-y-2.5">
         <button
           onClick={onNewOrder}
-          className="w-full h-14 rounded-xl font-bold text-sm tracking-wide transition-all"
+          className="w-full h-12 rounded-lg font-semibold text-sm flex items-center justify-center gap-2 transition-all"
           style={{
             backgroundColor: 'hsl(42 60% 55%)',
             color: 'hsl(240 25% 4%)',
           }}
         >
-          + Novo Pedido
+          <Plus className="w-4 h-4" />
+          Novo Pedido
         </button>
         <button
           onClick={onBackToList}
-          className="w-full h-12 rounded-xl border border-border text-sm text-muted-foreground hover:text-foreground hover:border-border/80 transition-all"
+          className="w-full h-11 rounded-lg border text-sm text-white/60 hover:text-white transition-colors"
+          style={{ borderColor: 'hsl(240 15% 11%)', backgroundColor: 'hsl(240 22% 7%)' }}
         >
           Voltar para lista
         </button>
@@ -708,21 +686,21 @@ function NewOrderWizard({ prefillItems, onDone, onSuccessNewOrder }: NewOrderWiz
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: 'hsl(240 25% 4%)' }}>
-      <div className="w-full p-4 space-y-6">
+      <div className="w-full p-4 space-y-5">
         {/* Top nav */}
         {step !== 'success' && (
-          <div className="flex items-center justify-between pt-2">
+          <div className="flex items-center justify-between pt-1">
             <button
               onClick={step === 1 ? onDone : () => goToStep((step as number - 1) as WizardStep)}
-              className="text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
+              className="text-sm text-white/40 hover:text-white transition-colors flex items-center gap-1.5"
             >
-              ← {step === 1 ? 'Cancelar' : 'Voltar'}
+              <ArrowLeft className="w-3.5 h-3.5" />
+              {step === 1 ? 'Cancelar' : 'Voltar'}
             </button>
             <StepBar step={currentStepNum} />
           </div>
         )}
 
-        {/* Step content */}
         {step === 1 && (
           <Step1Recipient
             reference={reference}
@@ -763,15 +741,10 @@ function NewOrderWizard({ prefillItems, onDone, onSuccessNewOrder }: NewOrderWiz
         )}
       </div>
 
-      {/* CSS animations */}
       <style>{`
         @keyframes slideIn {
-          from { opacity: 0; transform: translateY(10px); }
+          from { opacity: 0; transform: translateY(8px); }
           to   { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes popIn {
-          from { opacity: 0; transform: scale(0.6); }
-          to   { opacity: 1; transform: scale(1); }
         }
       `}</style>
     </div>
@@ -788,134 +761,140 @@ interface OrderCardProps {
 
 function OrderCard({ order, onMarkDelivered, onReorder }: OrderCardProps) {
   const items = order.items as OrderItem[]
-  const totalItems = items.reduce((s, i) => s + i.quantity, 0)
   const totalValue =
     order.total_value ?? items.reduce((s, i) => s + i.quantity * (i.unit_price ?? 0), 0)
   const operator = (order.profile as { full_name?: string } | undefined)?.full_name ?? '—'
+  const displayName = order.reference || order.id.slice(0, 8).toUpperCase()
 
   return (
     <div
-      className="rounded-2xl border overflow-hidden transition-all duration-200 hover:border-[hsl(42_60%_55%/0.25)]"
+      className="rounded-xl border overflow-hidden transition-colors duration-150"
       style={{
-        backgroundColor: 'hsl(240 25% 7%)',
+        backgroundColor: 'hsl(240 22% 7%)',
         borderColor:
           order.status === 'delivered'
-            ? 'hsl(152 60% 30% / 0.25)'
-            : 'hsl(var(--border))',
+            ? 'hsl(152 60% 25% / 0.3)'
+            : 'hsl(240 15% 11%)',
       }}
     >
       <div className="p-4 space-y-3">
-        {/* Top row: reference + status + time */}
-        <div className="flex items-start justify-between gap-2">
-          <div className="flex-1 min-w-0">
-            <p className="font-mono text-sm text-foreground font-semibold truncate">
-              {order.reference ?? order.id.slice(0, 8)}
-            </p>
-            <p className="text-[11px] text-muted-foreground mt-0.5">
-              {timeAgo(order.created_at)}
-            </p>
+        {/* Header row */}
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="text-sm font-semibold text-white truncate">{displayName}</span>
+            <span className="text-white/35 text-xs shrink-0">{formatDateShort(order.created_at)}</span>
           </div>
           <StatusBadge status={order.status} />
         </div>
 
-        {/* Value row */}
-        <div className="flex items-center justify-between">
+        {/* Address block */}
+        {order.address && (
+          <div className="flex items-start gap-2">
+            <MapPin className="w-3.5 h-3.5 text-[hsl(42_60%_55%/0.7)] shrink-0 mt-0.5" />
+            <span className="text-xs text-white/60 leading-relaxed">{order.address}</span>
+          </div>
+        )}
+
+        {/* Items table */}
+        <div
+          className="rounded-lg border divide-y overflow-hidden"
+          style={{
+            borderColor: 'hsl(240 15% 11%)',
+          }}
+        >
+          {items.map((item, i) => (
+            <div
+              key={i}
+              className="px-3 py-2 grid text-xs"
+              style={{
+                gridTemplateColumns: '1fr auto auto auto',
+                backgroundColor: i % 2 === 0 ? 'transparent' : 'hsl(240 22% 8%)',
+              }}
+            >
+              <span className="text-white/80 pr-2 truncate">{item.product_name}</span>
+              <span className="text-white/35 tabular-nums text-right pr-2.5">×{item.quantity}</span>
+              <span className="text-white/35 tabular-nums text-right pr-2.5">
+                {fmt(item.unit_price ?? 0)}
+              </span>
+              <span className="text-white font-semibold tabular-nums text-right">
+                {fmt(item.quantity * (item.unit_price ?? 0))}
+              </span>
+            </div>
+          ))}
+        </div>
+
+        {/* Divider */}
+        <div className="h-px" style={{ backgroundColor: 'hsl(240 15% 11%)' }} />
+
+        {/* Footer row */}
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-1.5 text-xs text-white/35 min-w-0">
+            <User className="w-3 h-3 shrink-0" />
+            <span className="truncate">{operator}</span>
+            <span className="text-white/20 shrink-0">·</span>
+            <Calendar className="w-3 h-3 shrink-0" />
+            <span className="shrink-0">{formatDate(order.created_at)}</span>
+          </div>
           <span
-            className="text-2xl font-black tabular-nums"
+            className="text-xl font-black tabular-nums shrink-0"
             style={{ color: 'hsl(42 60% 55%)' }}
           >
             {fmt(totalValue)}
           </span>
-          <span className="text-xs bg-secondary text-muted-foreground border border-border rounded-full px-2.5 py-0.5 tabular-nums font-medium">
-            {totalItems} un
-          </span>
         </div>
 
-        {/* Address */}
-        {order.address && (
-          <div className="flex items-start gap-1.5 text-xs text-muted-foreground">
-            <MapPin className="w-3 h-3 mt-0.5 shrink-0 text-[hsl(42_60%_55%/0.6)]" />
-            <span className="truncate leading-relaxed" title={order.address}>
-              {order.address}
-            </span>
-          </div>
-        )}
-
-        {/* Items preview chips */}
-        <div className="flex flex-wrap gap-1.5">
-          {items.map((item, i) => (
-            <span
-              key={i}
-              className="text-[10px] font-medium rounded-full px-2 py-0.5 border"
-              style={{
-                backgroundColor: 'hsl(240 25% 10%)',
-                borderColor: 'hsl(var(--border))',
-                color: 'hsl(var(--muted-foreground))',
-              }}
-            >
-              {item.product_name.split(' ').slice(0, 2).join(' ')} ×{item.quantity}
-            </span>
-          ))}
-        </div>
-
-        {/* Operator row */}
-        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-          <User className="w-3 h-3 shrink-0" />
-          <span>{operator}</span>
-          <span className="text-border">·</span>
-          <Calendar className="w-3 h-3 shrink-0" />
-          <span>{formatDate(order.created_at)}</span>
-        </div>
-
-        {/* Delivered row */}
+        {/* Delivered info */}
         {order.status === 'delivered' && order.delivered_by && (
           <div
-            className="flex items-center gap-1.5 text-xs rounded-lg px-2.5 py-1.5"
+            className="flex items-center gap-1.5 text-xs rounded-md px-2.5 py-1.5"
             style={{
-              backgroundColor: 'hsl(152 60% 10% / 0.5)',
-              color: 'hsl(152 60% 55%)',
+              backgroundColor: 'hsl(152 60% 8% / 0.8)',
+              color: 'hsl(152 60% 50%)',
+              border: '1px solid hsl(152 60% 20% / 0.3)',
             }}
           >
             <Truck className="w-3 h-3 shrink-0" />
-            <span>Entregue por {order.delivered_by}</span>
-            {order.delivered_at && (
-              <>
-                <span style={{ color: 'hsl(152 60% 30%)' }}>·</span>
-                <span>{formatDate(order.delivered_at)}</span>
-              </>
-            )}
+            <span>
+              Entregue por {order.delivered_by}
+              {order.delivered_at && ` em ${formatDate(order.delivered_at)}`}
+            </span>
           </div>
         )}
       </div>
 
-      {/* Action footer */}
+      {/* Action area */}
       {(onMarkDelivered || onReorder) && (
-        <div className="border-t border-border px-4 py-3">
+        <div
+          className="border-t px-4 py-3 space-y-2"
+          style={{ borderColor: 'hsl(240 15% 11%)' }}
+        >
           {onMarkDelivered && (
             <button
               onClick={onMarkDelivered}
-              className="w-full h-10 rounded-xl font-semibold text-xs tracking-wide transition-all"
+              className="w-full h-10 rounded-lg font-semibold text-xs tracking-wide transition-all flex items-center justify-center gap-2"
               style={{
-                backgroundColor: 'hsl(152 60% 40% / 0.12)',
-                color: 'hsl(152 60% 55%)',
-                border: '1px solid hsl(152 60% 40% / 0.25)',
+                backgroundColor: 'hsl(152 60% 35% / 0.1)',
+                color: 'hsl(152 60% 50%)',
+                border: '1px solid hsl(152 60% 35% / 0.25)',
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = 'hsl(152 60% 40% / 0.2)'
+                e.currentTarget.style.backgroundColor = 'hsl(152 60% 35% / 0.18)'
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = 'hsl(152 60% 40% / 0.12)'
+                e.currentTarget.style.backgroundColor = 'hsl(152 60% 35% / 0.1)'
               }}
             >
-              Marcar Entregue
+              <CheckCircle2 className="w-3.5 h-3.5" />
+              Marcar como Entregue
             </button>
           )}
           {onReorder && (
             <button
               onClick={onReorder}
-              className="w-full h-10 rounded-xl font-semibold text-xs tracking-wide border border-border text-muted-foreground hover:text-foreground hover:border-border/80 transition-all flex items-center justify-center gap-2"
+              className="w-full h-9 rounded-lg font-medium text-xs border text-white/40 hover:text-white transition-colors flex items-center justify-center gap-1.5"
+              style={{ borderColor: 'hsl(240 15% 13%)' }}
             >
-              <RotateCcw className="w-3.5 h-3.5" />
+              <RotateCcw className="w-3 h-3" />
               Repetir Pedido
             </button>
           )}
@@ -929,16 +908,40 @@ function OrderCard({ order, onMarkDelivered, onReorder }: OrderCardProps) {
 
 function CardSkeleton() {
   return (
-    <div className="rounded-2xl border border-border bg-card p-4 space-y-3">
-      <div className="flex items-start justify-between">
-        <Skeleton className="h-4 w-32" />
-        <Skeleton className="h-5 w-20 rounded-full" />
+    <div
+      className="rounded-xl border p-4 space-y-3"
+      style={{ backgroundColor: 'hsl(240 22% 7%)', borderColor: 'hsl(240 15% 11%)' }}
+    >
+      <div className="flex items-center justify-between">
+        <Skeleton className="h-4 w-36" />
+        <Skeleton className="h-5 w-20 rounded-md" />
       </div>
-      <Skeleton className="h-7 w-24" />
-      <Skeleton className="h-3 w-full" />
-      <div className="flex gap-1.5">
-        <Skeleton className="h-5 w-20 rounded-full" />
-        <Skeleton className="h-5 w-16 rounded-full" />
+      <Skeleton className="h-3 w-48" />
+      <div className="space-y-1.5">
+        <Skeleton className="h-8 w-full rounded-lg" />
+        <Skeleton className="h-8 w-full rounded-lg" />
+      </div>
+      <div className="flex justify-between items-center">
+        <Skeleton className="h-3 w-28" />
+        <Skeleton className="h-6 w-20" />
+      </div>
+    </div>
+  )
+}
+
+// ─── Empty state ──────────────────────────────────────────────────────────────
+
+function EmptyState({ icon: Icon, title, subtitle }: {
+  icon: React.ElementType
+  title: string
+  subtitle: string
+}) {
+  return (
+    <div className="flex flex-col items-center gap-3 py-16 text-center">
+      <Icon className="w-8 h-8 text-white/20" />
+      <div className="space-y-1">
+        <p className="text-sm font-medium text-white/40">{title}</p>
+        <p className="text-xs text-white/25">{subtitle}</p>
       </div>
     </div>
   )
@@ -965,7 +968,12 @@ export function OrdersPage() {
       .reduce((s, o) => s + (o.total_value ?? 0), 0)
     const confirmed = orders.filter((o) => o.status === 'confirmed' || o.status === 'pending')
     const delivered = orders.filter((o) => o.status === 'delivered')
-    return { todayCount: todayOrders.length, weekRevenue, confirmedCount: confirmed.length, deliveredCount: delivered.length }
+    return {
+      todayCount: todayOrders.length,
+      weekRevenue,
+      confirmedCount: confirmed.length,
+      deliveredCount: delivered.length,
+    }
   }, [orders])
 
   // ── Filtering ─────────────────────────────────────────────────────────────
@@ -989,7 +997,10 @@ export function OrdersPage() {
   )
 
   const confirmedOrders = useMemo(
-    () => filterList(orders?.filter((o) => o.status === 'confirmed' || o.status === 'pending') ?? []),
+    () =>
+      filterList(
+        orders?.filter((o) => o.status === 'confirmed' || o.status === 'pending') ?? []
+      ),
     [filterList, orders]
   )
 
@@ -1051,93 +1062,69 @@ export function OrdersPage() {
 
   // ── List view ─────────────────────────────────────────────────────────────
   return (
-    <div className="space-y-5 p-4 w-full pb-8">
+    <div className="w-full space-y-4 p-4 pb-10">
       {/* Header */}
-      <div className="flex items-start justify-between pt-1">
-        <div>
-          <h1
-            className="text-3xl text-foreground"
-            style={{ fontFamily: '"DM Serif Display", Georgia, serif' }}
-          >
-            Pedidos
-          </h1>
-          <p className="text-xs text-muted-foreground mt-0.5 tracking-wide">
-            Delivery Mr. Lion
-          </p>
-        </div>
+      <div className="flex items-center justify-between pt-1">
+        <h1 className="text-2xl font-bold text-white">Pedidos</h1>
         <button
           onClick={handleNewOrder}
-          className="h-11 px-5 rounded-xl font-bold text-sm tracking-wide transition-all hover:opacity-90 active:scale-[0.97] flex items-center gap-2"
+          className="h-10 px-4 rounded-lg font-semibold text-sm flex items-center gap-2 transition-all hover:opacity-90 active:scale-[0.97]"
           style={{
             backgroundColor: 'hsl(42 60% 55%)',
             color: 'hsl(240 25% 4%)',
           }}
         >
-          <ShoppingBag className="w-4 h-4" />
+          <Plus className="w-4 h-4" />
           Novo Pedido
         </button>
       </div>
 
-      {/* KPI bar */}
+      {/* KPI grid */}
       {isLoading ? (
-        <div className="flex gap-3 overflow-x-auto pb-1 scrollbar-none">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
           {[1, 2, 3, 4].map((i) => (
-            <Skeleton key={i} className="h-14 w-32 shrink-0 rounded-xl" />
+            <Skeleton key={i} className="h-16 rounded-xl" />
           ))}
         </div>
       ) : kpis ? (
-        <div className="flex gap-3 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
-          <KpiPill
-            icon={<ShoppingBag className="w-4 h-4" />}
-            label="Hoje"
-            value={`${kpis.todayCount} pedidos`}
-          />
-          <KpiPill
-            icon={<TrendingUp className="w-4 h-4" />}
-            label="Semana"
-            value={fmt(kpis.weekRevenue)}
-            highlight
-          />
-          <KpiPill
-            icon={<Package className="w-4 h-4" />}
-            label="Confirmados"
-            value={String(kpis.confirmedCount)}
-          />
-          <KpiPill
-            icon={<Truck className="w-4 h-4" />}
-            label="Entregues"
-            value={String(kpis.deliveredCount)}
-          />
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+          <KpiCard label="Hoje" value={`${kpis.todayCount} pedidos`} />
+          <KpiCard label="Semana (R$)" value={fmt(kpis.weekRevenue)} highlight />
+          <KpiCard label="Confirmados" value={String(kpis.confirmedCount)} />
+          <KpiCard label="Entregues" value={String(kpis.deliveredCount)} />
         </div>
       ) : null}
 
       {/* Search */}
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/35 pointer-events-none" />
         <Input
           placeholder="Buscar por referência, endereço ou produto..."
-          className="pl-9 h-11 bg-card border-border text-sm"
+          className="pl-9 h-10 text-sm"
+          style={{
+            backgroundColor: 'hsl(240 22% 7%)',
+            borderColor: 'hsl(240 15% 11%)',
+          }}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
       </div>
 
-      {/* Date chips */}
-      <div className="flex gap-2">
+      {/* Date filter */}
+      <div className="flex gap-4">
         {dateChips.map((chip) => (
           <button
             key={chip.key}
             onClick={() => setDateFilter(chip.key)}
-            className={`h-7 px-3.5 rounded-full text-xs font-semibold border transition-all ${
-              dateFilter === chip.key
-                ? 'text-[hsl(42_60%_55%)] border-[hsl(42_60%_55%/0.35)]'
-                : 'bg-secondary text-muted-foreground border-border hover:border-border/80 hover:text-foreground'
-            }`}
-            style={
-              dateFilter === chip.key
-                ? { backgroundColor: 'hsl(42 60% 55% / 0.1)' }
-                : undefined
-            }
+            className="text-sm font-medium transition-colors pb-0.5"
+            style={{
+              color:
+                dateFilter === chip.key ? 'hsl(42 60% 55%)' : 'hsl(var(--muted-foreground))',
+              borderBottom:
+                dateFilter === chip.key
+                  ? '1px solid hsl(42 60% 55%)'
+                  : '1px solid transparent',
+            }}
           >
             {chip.label}
           </button>
@@ -1146,12 +1133,18 @@ export function OrdersPage() {
 
       {/* Tabs */}
       <Tabs defaultValue="confirmed">
-        <TabsList className="w-full bg-card border border-border">
-          <TabsTrigger value="confirmed" className="flex-1 text-xs tracking-wide gap-2">
+        <TabsList
+          className="w-full"
+          style={{
+            backgroundColor: 'hsl(240 22% 7%)',
+            border: '1px solid hsl(240 15% 11%)',
+          }}
+        >
+          <TabsTrigger value="confirmed" className="flex-1 text-xs gap-1.5">
             Confirmados
             {!isLoading && (
               <span
-                className="inline-flex items-center justify-center w-5 h-5 rounded-full text-[10px] font-black"
+                className="inline-flex items-center justify-center min-w-[18px] h-[18px] rounded px-1 text-[10px] font-bold"
                 style={{
                   backgroundColor: 'hsl(42 60% 55% / 0.12)',
                   color: 'hsl(42 60% 55%)',
@@ -1161,18 +1154,18 @@ export function OrdersPage() {
               </span>
             )}
           </TabsTrigger>
-          <TabsTrigger value="delivered" className="flex-1 text-xs tracking-wide gap-2">
+          <TabsTrigger value="delivered" className="flex-1 text-xs gap-1.5">
             Entregues
             {!isLoading && (
-              <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-emerald-950/60 text-emerald-400 text-[10px] font-black">
+              <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] rounded px-1 bg-emerald-950/60 text-emerald-400 text-[10px] font-bold">
                 {deliveredOrders.length}
               </span>
             )}
           </TabsTrigger>
         </TabsList>
 
-        {/* Confirmed */}
-        <TabsContent value="confirmed" className="space-y-3 mt-4">
+        {/* Confirmed tab */}
+        <TabsContent value="confirmed" className="space-y-2.5 mt-3">
           {isLoading ? (
             <>
               <CardSkeleton />
@@ -1180,53 +1173,37 @@ export function OrdersPage() {
               <CardSkeleton />
             </>
           ) : confirmedOrders.length === 0 ? (
-            <div className="flex flex-col items-center gap-3 py-16 text-muted-foreground">
-              <div
-                className="w-16 h-16 rounded-2xl flex items-center justify-center"
-                style={{ backgroundColor: 'hsl(240 25% 8%)' }}
-              >
-                <Package className="w-7 h-7 opacity-40" />
-              </div>
-              <div className="text-center space-y-1">
-                <p className="text-sm font-medium text-foreground/60">Nenhum pedido confirmado</p>
-                <p className="text-xs">
-                  {search ? 'Tente outro termo de busca' : 'Clique em "+ Novo Pedido" para começar'}
-                </p>
-              </div>
-            </div>
+            <EmptyState
+              icon={FileText}
+              title="Nenhum pedido confirmado"
+              subtitle={search ? 'Tente outro termo de busca' : 'Clique em "Novo Pedido" para começar'}
+            />
           ) : (
             confirmedOrders.map((order) => (
               <OrderCard
                 key={order.id}
                 order={order}
-                onMarkDelivered={() => updateStatus.mutate({ id: order.id, status: 'delivered' })}
+                onMarkDelivered={() =>
+                  updateStatus.mutate({ id: order.id, status: 'delivered' })
+                }
               />
             ))
           )}
         </TabsContent>
 
-        {/* Delivered */}
-        <TabsContent value="delivered" className="space-y-3 mt-4">
+        {/* Delivered tab */}
+        <TabsContent value="delivered" className="space-y-2.5 mt-3">
           {isLoading ? (
             <>
               <CardSkeleton />
               <CardSkeleton />
             </>
           ) : deliveredOrders.length === 0 ? (
-            <div className="flex flex-col items-center gap-3 py-16 text-muted-foreground">
-              <div
-                className="w-16 h-16 rounded-2xl flex items-center justify-center"
-                style={{ backgroundColor: 'hsl(240 25% 8%)' }}
-              >
-                <Truck className="w-7 h-7 opacity-40" />
-              </div>
-              <div className="text-center space-y-1">
-                <p className="text-sm font-medium text-foreground/60">Nenhuma entrega registrada</p>
-                <p className="text-xs">
-                  {search ? 'Tente outro termo de busca' : 'Entregas concluídas aparecerão aqui'}
-                </p>
-              </div>
-            </div>
+            <EmptyState
+              icon={Truck}
+              title="Nenhuma entrega registrada"
+              subtitle={search ? 'Tente outro termo de busca' : 'Entregas concluídas aparecerão aqui'}
+            />
           ) : (
             deliveredOrders.map((order) => (
               <OrderCard

@@ -86,12 +86,22 @@ export function AppLayout({ children }: { children: ReactNode }) {
         {/* Logo area */}
         <div className={`border-b border-border flex items-center ${collapsed ? 'px-0 py-5 justify-center' : 'px-5 py-6'}`}>
           {collapsed ? (
-            <span className="text-2xl leading-none">🦁</span>
+            <div
+              className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-black"
+              style={{ background: 'hsl(42 60% 55%)', color: 'hsl(240 25% 4%)' }}
+            >
+              ML
+            </div>
           ) : (
             <div className="flex items-center gap-2.5">
-              <span className="text-2xl leading-none">🦁</span>
+              <div
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-black flex-shrink-0"
+                style={{ background: 'hsl(42 60% 55%)', color: 'hsl(240 25% 4%)' }}
+              >
+                ML
+              </div>
               <span
-                className="text-xl font-bold tracking-tight"
+                className="text-base font-bold tracking-tight"
                 style={{
                   background: 'linear-gradient(135deg, hsl(42 65% 68%), hsl(42 60% 55%))',
                   WebkitBackgroundClip: 'text',
@@ -224,8 +234,13 @@ export function AppLayout({ children }: { children: ReactNode }) {
           >
             <Menu size={18} />
           </button>
-          <div className="flex items-center gap-2">
-            <span className="text-xl leading-none">🦁</span>
+          <div className="flex items-center gap-2.5">
+            <div
+              className="w-7 h-7 rounded-md flex items-center justify-center text-[11px] font-black flex-shrink-0"
+              style={{ background: 'hsl(42 60% 55%)', color: 'hsl(240 25% 4%)' }}
+            >
+              ML
+            </div>
             <span
               className="text-base font-bold tracking-tight"
               style={{

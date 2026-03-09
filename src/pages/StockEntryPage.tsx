@@ -27,34 +27,31 @@ import type { Product, ProductCategory, StockMovement } from '@/types'
 const GOLD = 'hsl(42 60% 55%)'
 const GOLD_DARK = 'oklch(0.10 0 0)'
 
-const ORIGIN_CHIPS = [
-  { label: 'Lamas Destilaria', emoji: '🏭' },
-  { label: 'Reposição Interna', emoji: '🔄' },
-  { label: 'Fornecedor Externo', emoji: '🚚' },
-  { label: 'Ajuste Inventário', emoji: '📋' },
-  { label: 'Outro', emoji: '✏️' },
+const ORIGIN_LABELS = [
+  'Lamas Destilaria',
+  'Reposição Interna',
+  'Fornecedor Externo',
+  'Ajuste Inventário',
+  'Outro',
 ] as const
 
-type OriginLabel = (typeof ORIGIN_CHIPS)[number]['label']
+type OriginLabel = (typeof ORIGIN_LABELS)[number]
 
 const QUICK_QTY = [1, 5, 10, 24, 48] as const
 
-const CATEGORY_META: Record<
-  ProductCategory,
-  { label: string; emoji: string; tw: string; accent: string }
-> = {
-  honey:      { label: 'Honey',      emoji: '🍯', tw: 'text-amber-400  bg-amber-400/10  border-amber-400/25',  accent: '#fbbf24' },
-  cappuccino: { label: 'Cappuccino', emoji: '☕', tw: 'text-orange-400 bg-orange-400/10 border-orange-400/25', accent: '#fb923c' },
-  blended:    { label: 'Blended',    emoji: '🌀', tw: 'text-purple-400 bg-purple-400/10 border-purple-400/25', accent: '#c084fc' },
-  acessorio:  { label: 'Acessório',  emoji: '🎁', tw: 'text-slate-400  bg-slate-400/10  border-slate-400/25',  accent: '#94a3b8' },
+const CATEGORY_META: Record<ProductCategory, { label: string; tw: string; dot: string }> = {
+  honey:      { label: 'Honey',      tw: 'text-amber-400  bg-amber-400/10  border-amber-400/25',  dot: '#fbbf24' },
+  cappuccino: { label: 'Cappuccino', tw: 'text-orange-400 bg-orange-400/10 border-orange-400/25', dot: '#fb923c' },
+  blended:    { label: 'Blended',    tw: 'text-violet-400 bg-violet-400/10 border-violet-400/25', dot: '#a78bfa' },
+  acessorio:  { label: 'Acessório',  tw: 'text-slate-400  bg-slate-400/10  border-slate-400/25',  dot: '#94a3b8' },
 }
 
-const CATEGORIES: Array<{ key: ProductCategory | 'all'; label: string; emoji: string }> = [
-  { key: 'all',       label: 'Todos',     emoji: '' },
-  { key: 'honey',     label: 'Honey',     emoji: '🍯' },
-  { key: 'cappuccino',label: 'Cappuccino',emoji: '☕' },
-  { key: 'blended',   label: 'Blended',   emoji: '🌀' },
-  { key: 'acessorio', label: 'Acessório', emoji: '🎁' },
+const CATEGORIES: Array<{ key: ProductCategory | 'all'; label: string }> = [
+  { key: 'all',        label: 'Todos'      },
+  { key: 'honey',      label: 'Honey'      },
+  { key: 'cappuccino', label: 'Cappuccino' },
+  { key: 'blended',    label: 'Blended'    },
+  { key: 'acessorio',  label: 'Acessório'  },
 ]
 
 const fmt = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' })
@@ -83,19 +80,16 @@ function StockBar({
 
   return (
     <div className="relative w-full h-1.5 rounded-full bg-white/5 overflow-hidden">
-      {/* projected ghost bar (if present, render first as background) */}
       {projectedPct !== undefined && (
         <div
           className={`absolute inset-y-0 left-0 rounded-full transition-all duration-500 ${projectedOk ? 'bg-emerald-500/25' : 'bg-red-500/25'}`}
           style={{ width: `${projectedPct}%` }}
         />
       )}
-      {/* current bar */}
       <div
         className={`absolute inset-y-0 left-0 rounded-full transition-all duration-300 ${isCritical ? 'bg-red-500' : 'bg-emerald-500'}`}
         style={{ width: `${currentPct}%` }}
       />
-      {/* min threshold marker */}
       {min > 0 && (
         <div
           className="absolute top-0 bottom-0 w-px bg-white/30"
@@ -109,8 +103,14 @@ function StockBar({
 function CategoryBadge({ category }: { category: ProductCategory }) {
   const meta = CATEGORY_META[category]
   return (
-    <span className={`inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded border ${meta.tw}`}>
-      {meta.emoji} {meta.label}
+    <span
+      className={`inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-md border ${meta.tw}`}
+    >
+      <span
+        className="w-1.5 h-1.5 rounded-full flex-shrink-0"
+        style={{ background: meta.dot }}
+      />
+      {meta.label}
     </span>
   )
 }
@@ -129,18 +129,17 @@ function ProductRow({
       type="button"
       onClick={() => onSelect(product)}
       className={`
-        w-full text-left px-4 py-3.5 border transition-all
-        active:scale-[0.98] hover:border-[hsl(42_60%_55%/0.35)] hover:bg-[hsl(42_60%_55%/0.04)]
+        w-full text-left px-4 py-3.5 transition-all
+        border-b border-white/[0.06] last:border-b-0
+        hover:bg-white/[0.03]
         ${isCritical
-          ? 'border-red-800/35 bg-red-950/15 hover:border-red-700/50'
-          : 'border-[hsl(240_15%_12%)] bg-[hsl(240_20%_6%)]'
+          ? 'border-l-2 border-l-red-500/60 pl-[14px] hover:bg-red-950/10'
+          : 'border-l-2 border-l-transparent hover:border-l-[hsl(42_60%_55%/0.4)]'
         }
-        rounded-2xl
       `}
     >
       <div className="flex items-center gap-3">
-        {/* left: name + meta */}
-        <div className="flex-1 min-w-0 space-y-1">
+        <div className="flex-1 min-w-0 space-y-1.5">
           <div className="flex items-center gap-2 flex-wrap">
             <span className="text-sm font-semibold text-white leading-tight truncate">
               {product.name}
@@ -161,7 +160,6 @@ function ProductRow({
           <StockBar current={product.current_stock} min={product.min_stock} />
         </div>
 
-        {/* right: stock count */}
         <div className="flex-shrink-0 text-right">
           <p className={`text-xl font-black leading-none tabular-nums ${isCritical ? 'text-red-400' : 'text-white'}`}>
             {product.current_stock}
@@ -198,7 +196,7 @@ function SkeletonList() {
       <div className="flex gap-2">
         {[1, 2, 3, 4, 5].map(i => <Skeleton key={i} className="h-9 flex-1 rounded-xl bg-white/5" />)}
       </div>
-      {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-20 w-full rounded-2xl bg-white/5" />)}
+      {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-20 w-full rounded-xl bg-white/5" />)}
     </div>
   )
 }
@@ -242,7 +240,6 @@ export function StockEntryPage() {
     return matchSearch && matchCat
   })
 
-  // sort: critical first
   const sortedProducts = [...filteredProducts].sort((a, b) => {
     const aCrit = a.current_stock <= a.min_stock ? 0 : 1
     const bCrit = b.current_stock <= b.min_stock ? 0 : 1
@@ -330,20 +327,21 @@ export function StockEntryPage() {
     const newStock = selectedProduct.current_stock + quantity
     return (
       <div className="w-full px-4 pt-6 space-y-5">
-        {/* Big success badge */}
         <div className="flex flex-col items-center text-center pt-4 pb-2">
-          <div className="w-16 h-16 rounded-full bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center mb-4">
-            <CheckCircle2 size={32} className="text-emerald-400" />
+          <div className="w-16 h-16 rounded-full bg-emerald-500/10 border border-emerald-500/25 flex items-center justify-center mb-4">
+            <CheckCircle2 size={30} className="text-emerald-400" />
           </div>
-          <h2 className="text-xl font-black text-white">Entrada registrada!</h2>
+          <h2 className="text-xl font-bold text-white">Entrada registrada</h2>
           <p className="text-sm text-white/40 mt-1">Estoque atualizado com sucesso</p>
         </div>
 
-        {/* Summary card */}
-        <div className="bg-[hsl(240_20%_6%)] border border-[hsl(42_60%_55%/0.25)] rounded-2xl p-5 space-y-4">
-          <div className="flex items-start justify-between gap-3">
+        <div
+          className="bg-[hsl(240_20%_6%)] border rounded-xl overflow-hidden"
+          style={{ borderColor: 'hsl(42 60% 55% / 0.2)' }}
+        >
+          <div className="px-5 pt-5 pb-4 flex items-start justify-between gap-3">
             <div>
-              <p className="text-xs uppercase tracking-wider text-white/30 mb-1">Produto</p>
+              <p className="text-[10px] uppercase tracking-wider text-white/30 mb-1">Produto</p>
               <p className="text-base font-bold text-white">{selectedProduct.name}</p>
               <p className="text-[11px] font-mono text-white/30 mt-0.5">{selectedProduct.sku}</p>
             </div>
@@ -352,31 +350,32 @@ export function StockEntryPage() {
 
           <div className="border-t border-white/[0.06]" />
 
-          {/* Qty in gold */}
-          <div className="flex items-center justify-between">
+          <div className="px-5 py-4 flex items-center justify-between gap-4">
             <div>
-              <p className="text-xs uppercase tracking-wider text-white/30 mb-2">Adicionado</p>
-              <p className="text-5xl font-black leading-none" style={{ color: GOLD }}>+{quantity}</p>
+              <p className="text-[10px] uppercase tracking-wider text-white/30 mb-2">Adicionado</p>
+              <p className="text-5xl font-black leading-none tabular-nums" style={{ color: GOLD }}>
+                +{quantity}
+              </p>
               <p className="text-xs text-white/30 mt-1">unidades</p>
             </div>
-            <div className="bg-white/[0.04] border border-white/[0.07] rounded-xl px-4 py-3 text-right space-y-1">
+            <div className="bg-white/[0.04] border border-white/[0.07] rounded-xl px-4 py-3 text-right space-y-1.5">
               <div>
                 <p className="text-[10px] text-white/30">Antes</p>
-                <p className="text-sm font-semibold text-white/50">{selectedProduct.current_stock} un</p>
+                <p className="text-sm font-semibold text-white/50 tabular-nums">{selectedProduct.current_stock} un</p>
               </div>
               <div className="text-[10px] text-white/20">→</div>
               <div>
                 <p className="text-[10px] text-white/30">Depois</p>
-                <p className="text-lg font-black text-emerald-400">{newStock} un</p>
+                <p className="text-lg font-black text-emerald-400 tabular-nums">{newStock} un</p>
               </div>
             </div>
           </div>
 
           <div className="border-t border-white/[0.06]" />
 
-          <div className="space-y-2 text-sm">
-            <div className="flex justify-between">
-              <span className="text-white/40">Origem</span>
+          <div className="px-5 py-4 space-y-2.5 text-sm">
+            <div className="flex justify-between items-start gap-3">
+              <span className="text-white/40 flex-shrink-0">Origem</span>
               <span className="font-medium text-white/80 text-right max-w-[60%] truncate">{activeOrigin}</span>
             </div>
             {invoice && (
@@ -387,17 +386,18 @@ export function StockEntryPage() {
             )}
             <div className="flex justify-between">
               <span className="text-white/40">Valor estimado</span>
-              <span className="font-semibold" style={{ color: GOLD }}>{fmt.format(selectedProduct.price_cost * quantity)}</span>
+              <span className="font-semibold" style={{ color: GOLD }}>
+                {fmt.format(selectedProduct.price_cost * quantity)}
+              </span>
             </div>
           </div>
         </div>
 
-        {/* Actions */}
         <div className="space-y-3 pb-8">
           <button
             type="button"
             onClick={handleReset}
-            className="w-full h-14 rounded-xl font-bold text-sm tracking-wide transition-all active:scale-[0.98] flex items-center justify-center gap-2"
+            className="w-full h-14 rounded-lg font-bold text-sm tracking-wide transition-all active:scale-[0.98] flex items-center justify-center gap-2"
             style={{ background: GOLD, color: GOLD_DARK }}
           >
             <Plus size={18} />
@@ -406,7 +406,7 @@ export function StockEntryPage() {
           <button
             type="button"
             onClick={handleReset}
-            className="w-full h-12 rounded-xl border border-white/10 text-sm text-white/50 hover:bg-white/[0.03] transition-all"
+            className="w-full h-12 rounded-lg border border-white/[0.08] text-sm text-white/40 hover:bg-white/[0.03] hover:text-white/60 transition-all"
           >
             Voltar ao início
           </button>
@@ -422,27 +422,27 @@ export function StockEntryPage() {
 
     return (
       <div className="w-full px-4 pt-4 space-y-4">
-        {/* Header */}
         <div className="flex items-center gap-3">
           <button
             type="button"
             onClick={() => goTo('quantity')}
-            className="w-9 h-9 rounded-xl border border-white/[0.08] flex items-center justify-center hover:bg-white/[0.05] transition-all active:scale-95"
+            className="w-9 h-9 rounded-lg border border-white/[0.08] flex items-center justify-center hover:bg-white/[0.05] transition-all active:scale-95"
           >
             <ArrowLeft size={16} className="text-white/50" />
           </button>
           <div>
             <h1 className="text-base font-bold text-white">Confirmar Entrada</h1>
-            <p className="text-xs text-white/35">Verifique antes de confirmar</p>
+            <p className="text-xs text-white/35">Verifique os dados antes de confirmar</p>
           </div>
         </div>
 
-        {/* Main summary card */}
-        <div className="bg-[hsl(240_20%_6%)] border border-[hsl(42_60%_55%/0.3)] rounded-2xl overflow-hidden">
-          {/* Top: product info */}
+        <div
+          className="bg-[hsl(240_20%_6%)] border rounded-xl overflow-hidden"
+          style={{ borderColor: 'hsl(42 60% 55% / 0.25)' }}
+        >
           <div className="px-5 pt-5 pb-4 flex items-start justify-between gap-3">
             <div>
-              <p className="text-xs uppercase tracking-wider text-white/30 mb-1">Produto</p>
+              <p className="text-[10px] uppercase tracking-wider text-white/30 mb-1">Produto</p>
               <p className="text-lg font-bold text-white leading-tight">{selectedProduct.name}</p>
               <p className="text-[11px] font-mono text-white/30 mt-0.5">{selectedProduct.sku}</p>
             </div>
@@ -451,22 +451,23 @@ export function StockEntryPage() {
 
           <div className="border-t border-white/[0.06] mx-5" />
 
-          {/* Qty + before/after */}
           <div className="px-5 py-4 flex items-center justify-between gap-4">
             <div>
-              <p className="text-xs uppercase tracking-wider text-white/30 mb-2">Adicionando</p>
-              <p className="text-5xl font-black leading-none" style={{ color: GOLD }}>+{quantity}</p>
+              <p className="text-[10px] uppercase tracking-wider text-white/30 mb-2">Adicionando</p>
+              <p className="text-5xl font-black leading-none tabular-nums" style={{ color: GOLD }}>
+                +{quantity}
+              </p>
               <p className="text-xs text-white/30 mt-1">unidades</p>
             </div>
             <div className="flex-shrink-0 bg-white/[0.04] border border-white/[0.07] rounded-xl px-4 py-3 space-y-2 text-right">
               <div>
                 <p className="text-[10px] text-white/30">Estoque atual</p>
-                <p className="text-sm font-semibold text-white/50">{selectedProduct.current_stock} un</p>
+                <p className="text-sm font-semibold text-white/50 tabular-nums">{selectedProduct.current_stock} un</p>
               </div>
               <div className="text-[10px] text-white/20">↓</div>
               <div>
                 <p className="text-[10px] text-white/30">Após entrada</p>
-                <p className="text-xl font-black text-emerald-400">{newStock} un</p>
+                <p className="text-xl font-black text-emerald-400 tabular-nums">{newStock} un</p>
               </div>
             </div>
           </div>
@@ -477,7 +478,6 @@ export function StockEntryPage() {
 
           <div className="border-t border-white/[0.06] mx-5 mt-4" />
 
-          {/* Origin + NF + cost */}
           <div className="px-5 py-4 space-y-2.5 text-sm">
             <div className="flex justify-between items-start gap-3">
               <span className="text-white/40 flex-shrink-0">Origem</span>
@@ -498,13 +498,12 @@ export function StockEntryPage() {
           </div>
         </div>
 
-        {/* Actions */}
         <div className="grid grid-cols-2 gap-3 pb-8">
           <button
             type="button"
             onClick={() => goTo('quantity')}
             disabled={registerMovement.isPending}
-            className="h-14 rounded-xl border border-white/[0.08] text-sm text-white/50 hover:bg-white/[0.03] transition-all disabled:opacity-40"
+            className="h-14 rounded-lg border border-white/[0.08] text-sm text-white/50 hover:bg-white/[0.03] hover:text-white/70 transition-all disabled:opacity-40"
           >
             Voltar
           </button>
@@ -512,7 +511,7 @@ export function StockEntryPage() {
             type="button"
             onClick={handleSubmit}
             disabled={registerMovement.isPending}
-            className="h-14 rounded-xl font-bold text-sm tracking-wide transition-all active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2"
+            className="h-14 rounded-lg font-bold text-sm tracking-wide transition-all active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2"
             style={{ background: GOLD, color: GOLD_DARK }}
           >
             <CheckCircle2 size={18} />
@@ -531,12 +530,11 @@ export function StockEntryPage() {
 
     return (
       <div className="w-full px-4 pt-4 space-y-4 pb-8">
-        {/* Header */}
         <div className="flex items-center gap-3">
           <button
             type="button"
             onClick={() => goTo('select')}
-            className="w-9 h-9 rounded-xl border border-white/[0.08] flex items-center justify-center hover:bg-white/[0.05] transition-all active:scale-95"
+            className="w-9 h-9 rounded-lg border border-white/[0.08] flex items-center justify-center hover:bg-white/[0.05] transition-all active:scale-95"
           >
             <ArrowLeft size={16} className="text-white/50" />
           </button>
@@ -549,35 +547,33 @@ export function StockEntryPage() {
         </div>
 
         {/* Quantity card */}
-        <div className="bg-[hsl(240_20%_6%)] border border-white/[0.08] rounded-2xl p-5 space-y-4">
+        <div className="bg-[hsl(240_20%_6%)] border border-white/[0.08] rounded-xl p-5 space-y-4">
           <Label className="text-[10px] uppercase tracking-widest text-white/30 font-semibold">
             Quantidade a adicionar
           </Label>
 
-          {/* Big stepper */}
           <div className="flex items-center gap-3">
             <button
               type="button"
               onClick={() => handleQtyChange(quantity - 1)}
-              className="w-14 h-14 rounded-xl border border-white/[0.08] bg-white/[0.04] flex items-center justify-center hover:border-white/20 hover:bg-white/[0.07] transition-all active:scale-95"
+              className="w-14 h-14 rounded-lg border border-white/[0.08] bg-white/[0.04] flex items-center justify-center hover:border-white/20 hover:bg-white/[0.07] transition-all active:scale-95"
             >
               <Minus size={20} className="text-white/60" />
             </button>
 
-            <div className="flex-1 h-14 bg-white/[0.04] rounded-xl flex items-center justify-center border border-white/[0.06]">
+            <div className="flex-1 h-14 bg-white/[0.04] rounded-lg flex items-center justify-center border border-white/[0.06]">
               <span className="text-3xl font-black tabular-nums" style={{ color: GOLD }}>{quantity}</span>
             </div>
 
             <button
               type="button"
               onClick={() => handleQtyChange(quantity + 1)}
-              className="w-14 h-14 rounded-xl border border-white/[0.08] bg-white/[0.04] flex items-center justify-center hover:border-white/20 hover:bg-white/[0.07] transition-all active:scale-95"
+              className="w-14 h-14 rounded-lg border border-white/[0.08] bg-white/[0.04] flex items-center justify-center hover:border-white/20 hover:bg-white/[0.07] transition-all active:scale-95"
             >
               <Plus size={20} className="text-white/60" />
             </button>
           </div>
 
-          {/* Quick presets */}
           <div className="flex gap-1.5 flex-wrap">
             {QUICK_QTY.map(n => (
               <button
@@ -600,7 +596,7 @@ export function StockEntryPage() {
                 setCustomQtyValue(String(isQuickQty ? '' : quantity))
               }}
               className={`h-9 px-3 rounded-lg text-sm font-semibold border transition-all active:scale-95 ${
-                customQtyMode || (!isQuickQty)
+                customQtyMode || !isQuickQty
                   ? 'border-[hsl(42_60%_55%)] text-[hsl(42_60%_55%)] bg-[hsl(42_60%_55%/0.1)]'
                   : 'border-white/[0.08] text-white/40 bg-white/[0.03] hover:border-white/20 hover:text-white/70'
               }`}
@@ -609,7 +605,6 @@ export function StockEntryPage() {
             </button>
           </div>
 
-          {/* Custom qty input */}
           {customQtyMode && (
             <div className="flex gap-2">
               <Input
@@ -632,7 +627,6 @@ export function StockEntryPage() {
             </div>
           )}
 
-          {/* Stock projection */}
           <div className="bg-white/[0.03] border border-white/[0.06] rounded-xl px-4 py-3 space-y-2">
             <div className="flex items-center justify-between text-sm">
               <span className="text-white/40">Estoque atual</span>
@@ -656,12 +650,12 @@ export function StockEntryPage() {
         </div>
 
         {/* Origin card */}
-        <div className="bg-[hsl(240_20%_6%)] border border-white/[0.08] rounded-2xl p-5 space-y-3">
+        <div className="bg-[hsl(240_20%_6%)] border border-white/[0.08] rounded-xl p-5 space-y-3">
           <Label className="text-[10px] uppercase tracking-widest text-white/30 font-semibold">
             Origem da Entrada
           </Label>
           <div className="grid grid-cols-2 gap-2">
-            {ORIGIN_CHIPS.map(({ label, emoji }) => (
+            {ORIGIN_LABELS.map(label => (
               <button
                 key={label}
                 type="button"
@@ -669,14 +663,13 @@ export function StockEntryPage() {
                   setOrigin(label)
                   if (label !== 'Outro') setCustomOrigin('')
                 }}
-                className={`flex items-center gap-2.5 px-3 py-3 rounded-xl text-sm font-medium border transition-all active:scale-95 text-left ${
+                className={`px-3 py-3 rounded-lg text-sm font-medium border transition-all active:scale-95 text-left ${
                   origin === label
                     ? 'border-[hsl(42_60%_55%)] text-[hsl(42_60%_55%)] bg-[hsl(42_60%_55%/0.08)]'
                     : 'border-white/[0.07] text-white/45 bg-white/[0.03] hover:border-white/15 hover:text-white/70'
                 }`}
               >
-                <span className="text-base leading-none">{emoji}</span>
-                <span className="leading-tight">{label}</span>
+                {label}
               </button>
             ))}
           </div>
@@ -691,8 +684,8 @@ export function StockEntryPage() {
           )}
         </div>
 
-        {/* NF / Lote — collapsible */}
-        <div className="bg-[hsl(240_20%_6%)] border border-white/[0.08] rounded-2xl overflow-hidden">
+        {/* NF / Lote collapsible */}
+        <div className="bg-[hsl(240_20%_6%)] border border-white/[0.08] rounded-xl overflow-hidden">
           <button
             type="button"
             onClick={() => setInvoiceOpen(v => !v)}
@@ -725,13 +718,16 @@ export function StockEntryPage() {
           )}
         </div>
 
-        {/* CTA */}
         <button
           type="button"
           onClick={() => goTo('confirm')}
           disabled={!canProceed}
-          className="w-full h-14 rounded-xl font-bold text-sm tracking-wide transition-all active:scale-[0.98] disabled:opacity-35 flex items-center justify-center gap-2"
-          style={canProceed ? { background: GOLD, color: GOLD_DARK } : { background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.3)', border: '1px solid rgba(255,255,255,0.07)' }}
+          className="w-full h-14 rounded-lg font-bold text-sm tracking-wide transition-all active:scale-[0.98] disabled:opacity-35 flex items-center justify-center gap-2"
+          style={
+            canProceed
+              ? { background: GOLD, color: GOLD_DARK }
+              : { background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.3)', border: '1px solid rgba(255,255,255,0.07)' }
+          }
         >
           Revisar
           <ChevronRight size={18} />
@@ -765,7 +761,7 @@ export function StockEntryPage() {
               <button
                 type="button"
                 onClick={() => { setSearchOpen(false); setSearch('') }}
-                className="w-9 h-9 rounded-xl border border-white/[0.08] flex items-center justify-center hover:bg-white/[0.05] transition-all flex-shrink-0"
+                className="w-9 h-9 rounded-lg border border-white/[0.08] flex items-center justify-center hover:bg-white/[0.05] transition-all flex-shrink-0"
               >
                 <X size={15} className="text-white/50" />
               </button>
@@ -774,17 +770,17 @@ export function StockEntryPage() {
             <>
               <div className="flex items-center gap-2.5">
                 <div
-                  className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0"
-                  style={{ background: 'hsl(42 60% 55% / 0.15)' }}
+                  className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+                  style={{ background: 'hsl(42 60% 55% / 0.12)' }}
                 >
                   <PackagePlus size={16} style={{ color: GOLD }} />
                 </div>
-                <h1 className="text-base font-bold text-white">Entrada</h1>
+                <h1 className="text-base font-bold text-white">Entrada de Estoque</h1>
               </div>
               <button
                 type="button"
                 onClick={() => setSearchOpen(true)}
-                className="w-9 h-9 rounded-xl border border-white/[0.08] flex items-center justify-center hover:bg-white/[0.05] transition-all"
+                className="w-9 h-9 rounded-lg border border-white/[0.08] flex items-center justify-center hover:bg-white/[0.05] transition-all"
               >
                 <Search size={15} className="text-white/50" />
               </button>
@@ -805,7 +801,7 @@ export function StockEntryPage() {
                   : 'border-white/[0.07] text-white/40 bg-white/[0.03] hover:border-white/15 hover:text-white/60'
               }`}
             >
-              {cat.emoji ? `${cat.emoji} ${cat.label}` : cat.label}
+              {cat.label}
             </button>
           ))}
         </div>
@@ -814,11 +810,11 @@ export function StockEntryPage() {
       <div className="px-4 space-y-4 mt-1">
         {/* Critical banner */}
         {criticalProducts.length > 0 && (
-          <div className="bg-red-950/25 border border-red-800/30 rounded-2xl p-4 space-y-3">
+          <div className="bg-red-950/20 border border-red-800/25 rounded-xl p-4 space-y-3">
             <div className="flex items-center gap-2">
-              <AlertTriangle size={14} className="text-red-400 flex-shrink-0" />
+              <AlertTriangle size={13} className="text-red-400 flex-shrink-0" />
               <p className="text-xs font-bold text-red-400 uppercase tracking-wider">
-                {criticalProducts.length} crítico{criticalProducts.length > 1 ? 's' : ''}
+                {criticalProducts.length} produto{criticalProducts.length > 1 ? 's' : ''} em estoque crítico
               </p>
             </div>
             <div className="flex gap-2 overflow-x-auto no-scrollbar pb-0.5">
@@ -827,7 +823,7 @@ export function StockEntryPage() {
                   key={p.id}
                   type="button"
                   onClick={() => handleSelectProduct(p)}
-                  className="flex-shrink-0 flex items-center gap-1.5 pl-2.5 pr-3 py-1.5 rounded-xl bg-red-900/30 border border-red-700/25 hover:bg-red-800/35 transition-all active:scale-95"
+                  className="flex-shrink-0 flex items-center gap-1.5 pl-2.5 pr-3 py-1.5 rounded-lg bg-red-900/25 border border-red-700/20 hover:bg-red-800/30 transition-all active:scale-95"
                 >
                   <span className="text-[11px] font-semibold text-red-300">{p.name}</span>
                   <span className="text-[10px] font-black text-red-500">{p.current_stock}</span>
@@ -846,14 +842,14 @@ export function StockEntryPage() {
               <button
                 type="button"
                 onClick={() => setSearch('')}
-                className="text-xs text-white/40 underline underline-offset-2 mt-1"
+                className="text-xs text-white/40 underline underline-offset-2 mt-1 hover:text-white/60 transition-colors"
               >
                 Limpar busca
               </button>
             )}
           </div>
         ) : (
-          <div className="space-y-2">
+          <div className="bg-[hsl(240_20%_6%)] border border-white/[0.08] rounded-xl overflow-hidden">
             {sortedProducts.map(p => (
               <ProductRow key={p.id} product={p} onSelect={handleSelectProduct} />
             ))}
@@ -880,7 +876,6 @@ export function StockEntryPage() {
           </div>
         )}
 
-        {/* Reset icon shortcut when something was just done */}
         <div className="h-4" />
       </div>
     </div>
