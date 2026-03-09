@@ -3,13 +3,12 @@ import { createClient } from '@supabase/supabase-js'
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string
 
-if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error('Missing VITE_SUPABASE_URL or VITE_SUPABASE_ANON_KEY in environment')
-}
+// In mock/demo mode (no real Supabase), create a no-op client.
+// IS_MOCK check in hooks prevents any real calls from reaching this client.
+const url = supabaseUrl?.startsWith('http') ? supabaseUrl : 'https://placeholder.supabase.co'
+const key = supabaseAnonKey || 'placeholder-key'
 
-// Not using <Database> generic to avoid Supabase type inference conflicts.
-// Types are documented in database.types.ts and enforced at the application layer.
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+export const supabase = createClient(url, key, {
   auth: {
     persistSession: true,
     autoRefreshToken: true,
