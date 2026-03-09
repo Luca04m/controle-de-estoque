@@ -15,6 +15,7 @@ import {
   ChevronRight,
   Menu,
   X,
+  HelpCircle,
 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/authStore'
@@ -204,6 +205,19 @@ export function AppLayout({ children }: { children: ReactNode }) {
             {/* B-03: passa pendingCount para o desktop ConnectionStatus */}
             <ConnectionStatus collapsed={collapsed} pendingCount={pendingCount} />
           </div>
+          <a
+            href={`${import.meta.env.BASE_URL}guia.html`}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Abrir guia de uso"
+            title={collapsed ? 'Guia de uso' : undefined}
+            className={`w-full flex items-center gap-3 rounded-lg text-sm text-muted-foreground hover:bg-secondary hover:text-foreground transition-all ${
+              collapsed ? 'justify-center px-0 py-2.5' : 'px-3 py-2.5'
+            }`}
+          >
+            <HelpCircle size={18} />
+            {!collapsed && 'Guia de uso'}
+          </a>
           <button
             onClick={handleSignOut}
             aria-label="Sair do sistema"
@@ -323,6 +337,15 @@ export function AppLayout({ children }: { children: ReactNode }) {
               {pendingCount}
             </Badge>
           )}
+          <a
+            href={`${import.meta.env.BASE_URL}guia.html`}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Abrir guia de uso"
+            className="flex items-center justify-center w-8 h-8 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary transition-all"
+          >
+            <HelpCircle size={16} />
+          </a>
           {/* A-03: text-xs ao invés de text-[10px] */}
           <span className="text-xs text-muted-foreground max-w-[80px] truncate">
             {profile?.full_name ?? profile?.role ?? '—'}
