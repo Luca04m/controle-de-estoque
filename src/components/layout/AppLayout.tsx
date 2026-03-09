@@ -36,17 +36,33 @@ const NAV_ITEMS: NavItem[] = [
 ]
 
 function ConnectionStatus({ collapsed = false }: { collapsed?: boolean }) {
-  const { connected } = useRealtimeStore()
+  const { connected, lastSyncAt } = useRealtimeStore()
+  const syncLabel = lastSyncAt
+    ? new Intl.DateTimeFormat('pt-BR', { hour: '2-digit', minute: '2-digit' }).format(lastSyncAt)
+    : null
+
   return (
-    <div className="flex items-center gap-1.5">
-      {connected ? (
-        <Wifi size={13} className="text-emerald-400" />
-      ) : (
-        <WifiOff size={13} className="text-red-500" />
+    <div className="flex flex-col gap-0.5">
+      <div className="flex items-center gap-1.5">
+        {connected ? (
+          <Wifi size={13} className="text-emerald-400" />
+        ) : (
+          <WifiOff size={13} className="text-white/30" />
+        )}
+        {!collapsed && (
+          <span className={`text-[10px] font-medium tracking-wide ${connected ? 'text-emerald-400' : 'text-white/30'}`}>
+            {connected ? 'Tempo real' : 'Demo'}
+          </span>
+        )}
+      </div>
+      {!collapsed && syncLabel && (
+        <span className="text-[9px] text-white/20 pl-[18px]">
+          Atualizado {syncLabel}
+        </span>
       )}
-      {!collapsed && (
-        <span className={`text-[10px] font-medium tracking-wide ${connected ? 'text-emerald-400' : 'text-red-500'}`}>
-          {connected ? 'Online' : 'Offline'}
+      {!collapsed && !syncLabel && (
+        <span className="text-[9px] text-white/20 pl-[18px]">
+          Dados de demonstração
         </span>
       )}
     </div>

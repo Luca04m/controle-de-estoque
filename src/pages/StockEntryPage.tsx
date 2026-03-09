@@ -26,7 +26,7 @@ import { getProductImage } from '@/lib/productImages'
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const GOLD = 'hsl(42 60% 55%)'
-const GOLD_DARK = 'oklch(0.10 0 0)'
+const GOLD_DARK = 'hsl(240 25% 6%)'
 
 const ORIGIN_LABELS = [
   'Lamas Destilaria',
@@ -116,7 +116,7 @@ function CategoryBadge({ category }: { category: ProductCategory }) {
   )
 }
 
-function ProductRow({
+function ProductCard({
   product,
   onSelect,
 }: {
@@ -131,61 +131,55 @@ function ProductRow({
     <button
       type="button"
       onClick={() => onSelect(product)}
-      className={`
-        w-full text-left px-4 py-3.5 transition-all
-        border-b border-white/[0.06] last:border-b-0
-        hover:bg-white/[0.03]
-        ${isCritical
-          ? 'border-l-2 border-l-red-500/60 pl-[14px] hover:bg-red-950/10'
-          : 'border-l-2 border-l-transparent hover:border-l-[hsl(42_60%_55%/0.4)]'
-        }
-      `}
+      className="relative flex flex-col rounded-xl border overflow-hidden transition-all active:scale-[0.97] text-left"
+      style={{
+        backgroundColor: 'hsl(240 20% 7%)',
+        borderColor: isCritical ? 'hsl(0 70% 35% / 0.5)' : 'hsl(240 15% 12%)',
+      }}
     >
-      <div className="flex items-center gap-3">
-        <div className="w-12 h-12 rounded-lg flex-shrink-0 overflow-hidden">
-          {img ? (
-            <img
-              src={img}
-              alt={product.name}
-              className="w-full h-full object-contain"
-              style={{ background: 'hsl(240 20% 8%)' }}
-            />
-          ) : (
-            <div
-              className="w-full h-full flex items-center justify-center text-sm font-bold text-white/60"
-              style={{ background: meta.dot + '22' }}
-            >
-              <span style={{ color: meta.dot }}>{product.name.charAt(0).toUpperCase()}</span>
-            </div>
-          )}
-        </div>
-        <div className="flex-1 min-w-0 space-y-1.5">
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-sm font-semibold text-white leading-tight truncate">
-              {product.name}
-            </span>
-            {isCritical && (
-              <span className="flex-shrink-0 text-[9px] font-black uppercase tracking-widest text-red-400 bg-red-950/60 border border-red-800/40 px-1.5 py-0.5 rounded">
-                Crítico
-              </span>
-            )}
+      {/* Image area */}
+      <div
+        className="relative w-full h-36 flex items-center justify-center overflow-hidden"
+        style={{ background: 'hsl(240 18% 8%)' }}
+      >
+        {img ? (
+          <img
+            src={img}
+            alt={product.name}
+            className="h-full w-full object-contain p-2"
+          />
+        ) : (
+          <div
+            className="w-12 h-12 rounded-xl flex items-center justify-center text-xl font-bold"
+            style={{ background: 'hsl(240 15% 12%)', color: meta.dot }}
+          >
+            {product.name.charAt(0).toUpperCase()}
           </div>
-          <div className="flex items-center gap-2">
-            <CategoryBadge category={product.category} />
-            <span className="text-[10px] font-mono text-white/30">{product.sku}</span>
-            {product.supplier && (
-              <span className="text-[10px] text-white/25 truncate hidden sm:inline">{product.supplier}</span>
-            )}
-          </div>
-          <StockBar current={product.current_stock} min={product.min_stock} />
-        </div>
+        )}
 
-        <div className="flex-shrink-0 text-right">
-          <p className={`text-xl font-black leading-none tabular-nums ${isCritical ? 'text-red-400' : 'text-white'}`}>
-            {product.current_stock}
-          </p>
-          <p className="text-[10px] text-white/30 mt-0.5">un</p>
+        {/* Critical badge */}
+        {isCritical && (
+          <div className="absolute top-2 right-2 text-[9px] font-black uppercase tracking-widest bg-red-600 text-white px-1.5 py-0.5 rounded">
+            Crítico
+          </div>
+        )}
+
+        {/* Stock overlay */}
+        <div
+          className="absolute bottom-2 right-2 text-xs font-black tabular-nums"
+          style={{ color: isCritical ? '#f87171' : GOLD }}
+        >
+          {product.current_stock} un
         </div>
+      </div>
+
+      {/* Info area */}
+      <div className="p-2.5 space-y-1.5 flex-1">
+        <p className="text-[12px] font-semibold text-white leading-tight line-clamp-2">
+          {product.name}
+        </p>
+        <CategoryBadge category={product.category} />
+        <StockBar current={product.current_stock} min={product.min_stock} />
       </div>
     </button>
   )
@@ -209,14 +203,16 @@ function RecentMovementStrip({ movement }: { movement: StockMovement }) {
   )
 }
 
-function SkeletonList() {
+function SkeletonGrid() {
   return (
     <div className="w-full px-4 pt-4 space-y-3">
       <Skeleton className="h-11 w-full rounded-xl bg-white/5" />
       <div className="flex gap-2">
         {[1, 2, 3, 4, 5].map(i => <Skeleton key={i} className="h-9 flex-1 rounded-xl bg-white/5" />)}
       </div>
-      {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-20 w-full rounded-xl bg-white/5" />)}
+      <div className="grid grid-cols-2 gap-3">
+        {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-52 w-full rounded-xl bg-white/5" />)}
+      </div>
     </div>
   )
 }
@@ -231,7 +227,6 @@ export function StockEntryPage() {
   // ── State ────────────────────────────────────────────────────────────────
   const [step, setStep] = useState<Step>('select')
   const [search, setSearch] = useState('')
-  const [searchOpen, setSearchOpen] = useState(false)
   const [categoryFilter, setCategoryFilter] = useState<ProductCategory | 'all'>('all')
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
   const [quantity, setQuantity] = useState(1)
@@ -330,8 +325,8 @@ export function StockEntryPage() {
   }
 
   useEffect(() => {
-    if (searchOpen && searchRef.current) searchRef.current.focus()
-  }, [searchOpen])
+    if (searchRef.current) searchRef.current.focus()
+  }, [])
 
   useEffect(() => {
     if (customQtyMode && customQtyRef.current) customQtyRef.current.focus()
@@ -339,7 +334,7 @@ export function StockEntryPage() {
 
   // ── Loading ───────────────────────────────────────────────────────────────
 
-  if (isLoading) return <SkeletonList />
+  if (isLoading) return <SkeletonGrid />
 
   // ── Step: Success ─────────────────────────────────────────────────────────
 
@@ -347,86 +342,95 @@ export function StockEntryPage() {
     const newStock = selectedProduct.current_stock + quantity
     const successImg = getProductImage(selectedProduct.sku)
     const successMeta = CATEGORY_META[selectedProduct.category]
+
     return (
-      <div className="w-full px-4 pt-6 space-y-5">
-        <div className="flex flex-col items-center text-center pt-4 pb-2">
-          <div className="w-16 h-16 rounded-full bg-emerald-500/10 border border-emerald-500/25 flex items-center justify-center mb-4">
-            <CheckCircle2 size={30} className="text-emerald-400" />
+      <div className="w-full px-4 pt-8 pb-10 flex flex-col items-center space-y-6">
+        {/* Checkmark */}
+        <div className="flex flex-col items-center text-center space-y-3">
+          <div
+            className="w-20 h-20 rounded-full flex items-center justify-center"
+            style={{ background: 'hsl(152 60% 35% / 0.12)', border: '1px solid hsl(152 60% 35% / 0.3)' }}
+          >
+            <CheckCircle2 size={38} className="text-emerald-400" />
           </div>
-          <h2 className="text-xl font-bold text-white">Entrada registrada</h2>
-          <p className="text-sm text-white/40 mt-1">Estoque atualizado com sucesso</p>
+          <div>
+            <h2 className="text-xl font-bold text-white">Entrada registrada!</h2>
+            <p className="text-sm mt-1" style={{ color: 'rgba(255,255,255,0.4)' }}>
+              {selectedProduct.name}
+            </p>
+            <p className="text-3xl font-black mt-2 tabular-nums" style={{ color: GOLD }}>
+              +{quantity} unidades
+            </p>
+          </div>
         </div>
 
+        {/* Summary card */}
         <div
-          className="bg-[hsl(240_20%_6%)] border rounded-xl overflow-hidden"
-          style={{ borderColor: 'hsl(42 60% 55% / 0.2)' }}
+          className="w-full rounded-2xl overflow-hidden border"
+          style={{ backgroundColor: 'hsl(240 20% 7%)', borderColor: 'hsl(42 60% 55% / 0.2)' }}
         >
-          <div className="px-5 pt-5 pb-4 flex items-start justify-between gap-3">
-            <div className="flex items-start gap-3">
-              <div className="w-16 h-16 rounded-xl flex-shrink-0 overflow-hidden">
-                {successImg ? (
-                  <img
-                    src={successImg}
-                    alt={selectedProduct.name}
-                    className="w-full h-full object-contain"
-                    style={{ background: 'hsl(240 20% 8%)' }}
-                  />
-                ) : (
-                  <div
-                    className="w-full h-full flex items-center justify-center text-lg font-bold"
-                    style={{ background: successMeta.dot + '22', color: successMeta.dot }}
-                  >
-                    {selectedProduct.name.charAt(0).toUpperCase()}
-                  </div>
-                )}
-              </div>
-              <div>
-                <p className="text-[10px] uppercase tracking-wider text-white/30 mb-1">Produto</p>
-                <p className="text-base font-bold text-white">{selectedProduct.name}</p>
-                <p className="text-[11px] font-mono text-white/30 mt-0.5">{selectedProduct.sku}</p>
+          {/* Product header */}
+          <div className="flex items-center gap-3 p-4 border-b" style={{ borderColor: 'hsl(240 15% 12%)' }}>
+            <div
+              className="w-14 h-14 rounded-xl flex-shrink-0 overflow-hidden flex items-center justify-center"
+              style={{ background: 'hsl(240 18% 8%)' }}
+            >
+              {successImg ? (
+                <img
+                  src={successImg}
+                  alt={selectedProduct.name}
+                  className="w-full h-full object-contain p-1"
+                />
+              ) : (
+                <span className="text-xl font-bold" style={{ color: successMeta.dot }}>
+                  {selectedProduct.name.charAt(0).toUpperCase()}
+                </span>
+              )}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-bold text-white leading-tight truncate">{selectedProduct.name}</p>
+              <p className="text-[10px] font-mono mt-0.5" style={{ color: 'rgba(255,255,255,0.3)' }}>{selectedProduct.sku}</p>
+              <div className="mt-1">
+                <CategoryBadge category={selectedProduct.category} />
               </div>
             </div>
-            <CategoryBadge category={selectedProduct.category} />
           </div>
 
-          <div className="border-t border-white/[0.06]" />
-
-          <div className="px-5 py-4 flex items-center justify-between gap-4">
-            <div>
-              <p className="text-[10px] uppercase tracking-wider text-white/30 mb-2">Adicionado</p>
-              <p className="text-5xl font-black leading-none tabular-nums" style={{ color: GOLD }}>
-                +{quantity}
+          {/* Stats row */}
+          <div className="grid grid-cols-3 divide-x" style={{ borderColor: 'hsl(240 15% 12%)' }}>
+            <div className="p-3 text-center">
+              <p className="text-[10px] uppercase tracking-wider mb-1" style={{ color: 'rgba(255,255,255,0.3)' }}>Antes</p>
+              <p className="text-base font-black tabular-nums" style={{ color: 'rgba(255,255,255,0.45)' }}>
+                {selectedProduct.current_stock}
               </p>
-              <p className="text-xs text-white/30 mt-1">unidades</p>
             </div>
-            <div className="bg-white/[0.04] border border-white/[0.07] rounded-xl px-4 py-3 text-right space-y-1.5">
-              <div>
-                <p className="text-[10px] text-white/30">Antes</p>
-                <p className="text-sm font-semibold text-white/50 tabular-nums">{selectedProduct.current_stock} un</p>
-              </div>
-              <div className="text-[10px] text-white/20">→</div>
-              <div>
-                <p className="text-[10px] text-white/30">Depois</p>
-                <p className="text-lg font-black text-emerald-400 tabular-nums">{newStock} un</p>
-              </div>
+            <div className="p-3 text-center">
+              <p className="text-[10px] uppercase tracking-wider mb-1" style={{ color: 'rgba(255,255,255,0.3)' }}>Adicionado</p>
+              <p className="text-base font-black tabular-nums" style={{ color: GOLD }}>+{quantity}</p>
+            </div>
+            <div className="p-3 text-center">
+              <p className="text-[10px] uppercase tracking-wider mb-1" style={{ color: 'rgba(255,255,255,0.3)' }}>Depois</p>
+              <p className="text-base font-black tabular-nums text-emerald-400">{newStock}</p>
             </div>
           </div>
 
-          <div className="border-t border-white/[0.06]" />
-
-          <div className="px-5 py-4 space-y-2.5 text-sm">
-            <div className="flex justify-between items-start gap-3">
-              <span className="text-white/40 flex-shrink-0">Origem</span>
+          {/* Details */}
+          <div
+            className="px-4 py-3 space-y-2 border-t text-sm"
+            style={{ borderColor: 'hsl(240 15% 12%)' }}
+          >
+            <div className="flex justify-between items-center">
+              <span style={{ color: 'rgba(255,255,255,0.4)' }}>Origem</span>
               <span className="font-medium text-white/80 text-right max-w-[60%] truncate">{activeOrigin}</span>
             </div>
             {invoice && (
-              <div className="flex justify-between">
-                <span className="text-white/40">NF / Lote</span>
+              <div className="flex justify-between items-center">
+                <span style={{ color: 'rgba(255,255,255,0.4)' }}>NF / Lote</span>
                 <span className="font-mono text-white/70">{invoice}</span>
               </div>
             )}
-            <div className="flex justify-between">
-              <span className="text-white/40">Valor estimado</span>
+            <div className="flex justify-between items-center">
+              <span style={{ color: 'rgba(255,255,255,0.4)' }}>Valor estimado</span>
               <span className="font-semibold" style={{ color: GOLD }}>
                 {fmt.format(selectedProduct.price_cost * quantity)}
               </span>
@@ -434,11 +438,12 @@ export function StockEntryPage() {
           </div>
         </div>
 
-        <div className="space-y-3 pb-8">
+        {/* Actions */}
+        <div className="w-full space-y-3">
           <button
             type="button"
             onClick={handleReset}
-            className="w-full h-14 rounded-lg font-bold text-sm tracking-wide transition-all active:scale-[0.98] flex items-center justify-center gap-2"
+            className="w-full h-14 rounded-xl font-bold text-sm tracking-wide transition-all active:scale-[0.98] flex items-center justify-center gap-2"
             style={{ background: GOLD, color: GOLD_DARK }}
           >
             <Plus size={18} />
@@ -447,9 +452,10 @@ export function StockEntryPage() {
           <button
             type="button"
             onClick={handleReset}
-            className="w-full h-12 rounded-lg border border-white/[0.08] text-sm text-white/40 hover:bg-white/[0.03] hover:text-white/60 transition-all"
+            className="w-full h-12 rounded-xl border text-sm transition-all hover:bg-white/[0.03]"
+            style={{ borderColor: 'hsl(240 15% 14%)', color: 'rgba(255,255,255,0.4)' }}
           >
-            Voltar ao início
+            Início
           </button>
         </div>
       </div>
@@ -464,95 +470,103 @@ export function StockEntryPage() {
     const confirmMeta = CATEGORY_META[selectedProduct.category]
 
     return (
-      <div className="w-full px-4 pt-4 space-y-4">
+      <div className="w-full px-4 pt-4 space-y-4 pb-10">
+        {/* Header */}
         <div className="flex items-center gap-3">
           <button
             type="button"
             onClick={() => goTo('quantity')}
-            className="w-9 h-9 rounded-lg border border-white/[0.08] flex items-center justify-center hover:bg-white/[0.05] transition-all active:scale-95"
+            className="w-9 h-9 rounded-lg flex items-center justify-center hover:bg-white/[0.05] transition-all active:scale-95"
+            style={{ border: '1px solid hsl(240 15% 14%)' }}
           >
             <ArrowLeft size={16} className="text-white/50" />
           </button>
           <div>
             <h1 className="text-base font-bold text-white">Confirmar Entrada</h1>
-            <p className="text-xs text-white/35">Verifique os dados antes de confirmar</p>
+            <p className="text-xs" style={{ color: 'rgba(255,255,255,0.35)' }}>Verifique os dados antes de confirmar</p>
           </div>
         </div>
 
+        {/* Summary card */}
         <div
-          className="bg-[hsl(240_20%_6%)] border rounded-xl overflow-hidden"
-          style={{ borderColor: 'hsl(42 60% 55% / 0.25)' }}
+          className="rounded-2xl overflow-hidden border"
+          style={{ backgroundColor: 'hsl(240 20% 7%)', borderColor: 'hsl(42 60% 55% / 0.25)' }}
         >
-          <div className="px-5 pt-5 pb-4 flex items-start justify-between gap-3">
-            <div className="flex items-start gap-3">
-              <div className="w-16 h-16 rounded-xl flex-shrink-0 overflow-hidden">
-                {confirmImg ? (
-                  <img
-                    src={confirmImg}
-                    alt={selectedProduct.name}
-                    className="w-full h-full object-contain"
-                    style={{ background: 'hsl(240 20% 8%)' }}
-                  />
-                ) : (
-                  <div
-                    className="w-full h-full flex items-center justify-center text-lg font-bold"
-                    style={{ background: confirmMeta.dot + '22', color: confirmMeta.dot }}
-                  >
-                    {selectedProduct.name.charAt(0).toUpperCase()}
-                  </div>
-                )}
-              </div>
-              <div>
-                <p className="text-[10px] uppercase tracking-wider text-white/30 mb-1">Produto</p>
-                <p className="text-lg font-bold text-white leading-tight">{selectedProduct.name}</p>
-                <p className="text-[11px] font-mono text-white/30 mt-0.5">{selectedProduct.sku}</p>
+          {/* Product row */}
+          <div className="flex items-center gap-3 p-4 border-b" style={{ borderColor: 'hsl(240 15% 12%)' }}>
+            <div
+              className="w-16 h-16 rounded-xl flex-shrink-0 overflow-hidden flex items-center justify-center"
+              style={{ background: 'hsl(240 18% 8%)' }}
+            >
+              {confirmImg ? (
+                <img
+                  src={confirmImg}
+                  alt={selectedProduct.name}
+                  className="w-full h-full object-contain p-1"
+                />
+              ) : (
+                <span className="text-xl font-bold" style={{ color: confirmMeta.dot }}>
+                  {selectedProduct.name.charAt(0).toUpperCase()}
+                </span>
+              )}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-base font-bold text-white leading-tight">{selectedProduct.name}</p>
+              <p className="text-[11px] font-mono mt-0.5" style={{ color: 'rgba(255,255,255,0.3)' }}>{selectedProduct.sku}</p>
+              <div className="mt-1.5">
+                <CategoryBadge category={selectedProduct.category} />
               </div>
             </div>
-            <CategoryBadge category={selectedProduct.category} />
           </div>
 
-          <div className="border-t border-white/[0.06] mx-5" />
-
-          <div className="px-5 py-4 flex items-center justify-between gap-4">
-            <div>
-              <p className="text-[10px] uppercase tracking-wider text-white/30 mb-2">Adicionando</p>
-              <p className="text-5xl font-black leading-none tabular-nums" style={{ color: GOLD }}>
+          {/* Qty + before/after */}
+          <div className="flex items-stretch border-b" style={{ borderColor: 'hsl(240 15% 12%)' }}>
+            <div className="flex-1 flex flex-col items-center justify-center py-5">
+              <p className="text-[10px] uppercase tracking-wider mb-2" style={{ color: 'rgba(255,255,255,0.3)' }}>
+                Adicionando
+              </p>
+              <p className="text-5xl font-black tabular-nums leading-none" style={{ color: GOLD }}>
                 +{quantity}
               </p>
-              <p className="text-xs text-white/30 mt-1">unidades</p>
+              <p className="text-xs mt-1" style={{ color: 'rgba(255,255,255,0.3)' }}>unidades</p>
             </div>
-            <div className="flex-shrink-0 bg-white/[0.04] border border-white/[0.07] rounded-xl px-4 py-3 space-y-2 text-right">
-              <div>
-                <p className="text-[10px] text-white/30">Estoque atual</p>
-                <p className="text-sm font-semibold text-white/50 tabular-nums">{selectedProduct.current_stock} un</p>
+            <div
+              className="w-px self-stretch"
+              style={{ background: 'hsl(240 15% 12%)' }}
+            />
+            <div className="flex-1 flex flex-col justify-center gap-2 py-5 px-4">
+              <div className="flex items-center justify-between text-sm">
+                <span style={{ color: 'rgba(255,255,255,0.4)' }}>Atual</span>
+                <span className="font-semibold tabular-nums" style={{ color: 'rgba(255,255,255,0.55)' }}>
+                  {selectedProduct.current_stock} un
+                </span>
               </div>
-              <div className="text-[10px] text-white/20">↓</div>
-              <div>
-                <p className="text-[10px] text-white/30">Após entrada</p>
-                <p className="text-xl font-black text-emerald-400 tabular-nums">{newStock} un</p>
+              <div className="flex items-center justify-between text-sm">
+                <span style={{ color: 'rgba(255,255,255,0.4)' }}>Após entrada</span>
+                <span className="font-black text-emerald-400 tabular-nums">{newStock} un</span>
               </div>
+              <StockBar
+                current={selectedProduct.current_stock}
+                min={selectedProduct.min_stock}
+                projected={newStock}
+              />
             </div>
           </div>
 
-          <div className="mx-5">
-            <StockBar current={selectedProduct.current_stock} min={selectedProduct.min_stock} projected={newStock} />
-          </div>
-
-          <div className="border-t border-white/[0.06] mx-5 mt-4" />
-
-          <div className="px-5 py-4 space-y-2.5 text-sm">
+          {/* Details */}
+          <div className="px-4 py-4 space-y-2.5 text-sm">
             <div className="flex justify-between items-start gap-3">
-              <span className="text-white/40 flex-shrink-0">Origem</span>
+              <span style={{ color: 'rgba(255,255,255,0.4)' }}>Origem</span>
               <span className="font-medium text-white/80 text-right">{activeOrigin}</span>
             </div>
             {invoice && (
-              <div className="flex justify-between">
-                <span className="text-white/40">NF / Lote</span>
+              <div className="flex justify-between items-center">
+                <span style={{ color: 'rgba(255,255,255,0.4)' }}>NF / Lote</span>
                 <span className="font-mono text-white/70">{invoice}</span>
               </div>
             )}
-            <div className="flex justify-between">
-              <span className="text-white/40">Custo estimado</span>
+            <div className="flex justify-between items-center">
+              <span style={{ color: 'rgba(255,255,255,0.4)' }}>Custo estimado</span>
               <span className="font-semibold" style={{ color: GOLD }}>
                 {fmt.format(selectedProduct.price_cost * quantity)}
               </span>
@@ -560,12 +574,14 @@ export function StockEntryPage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-3 pb-8">
+        {/* Actions */}
+        <div className="grid grid-cols-2 gap-3">
           <button
             type="button"
             onClick={() => goTo('quantity')}
             disabled={registerMovement.isPending}
-            className="h-14 rounded-lg border border-white/[0.08] text-sm text-white/50 hover:bg-white/[0.03] hover:text-white/70 transition-all disabled:opacity-40"
+            className="h-14 rounded-xl border text-sm transition-all disabled:opacity-40 hover:bg-white/[0.03]"
+            style={{ borderColor: 'hsl(240 15% 14%)', color: 'rgba(255,255,255,0.5)' }}
           >
             Voltar
           </button>
@@ -573,7 +589,7 @@ export function StockEntryPage() {
             type="button"
             onClick={handleSubmit}
             disabled={registerMovement.isPending}
-            className="h-14 rounded-lg font-bold text-sm tracking-wide transition-all active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2"
+            className="h-14 rounded-xl font-bold text-sm tracking-wide transition-all active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2"
             style={{ background: GOLD, color: GOLD_DARK }}
           >
             <CheckCircle2 size={18} />
@@ -589,64 +605,110 @@ export function StockEntryPage() {
   if (step === 'quantity' && selectedProduct) {
     const projectedStock = selectedProduct.current_stock + quantity
     const isQuickQty = (QUICK_QTY as readonly number[]).includes(quantity)
+    const qtyImg = getProductImage(selectedProduct.sku)
+    const qtyMeta = CATEGORY_META[selectedProduct.category]
 
     return (
-      <div className="w-full px-4 pt-4 space-y-4 pb-8">
+      <div className="w-full px-4 pt-4 space-y-4 pb-10">
+        {/* Header */}
         <div className="flex items-center gap-3">
           <button
             type="button"
             onClick={() => goTo('select')}
-            className="w-9 h-9 rounded-lg border border-white/[0.08] flex items-center justify-center hover:bg-white/[0.05] transition-all active:scale-95"
+            className="w-9 h-9 rounded-lg flex items-center justify-center hover:bg-white/[0.05] transition-all active:scale-95"
+            style={{ border: '1px solid hsl(240 15% 14%)' }}
           >
             <ArrowLeft size={16} className="text-white/50" />
           </button>
-          <div className="flex-1 min-w-0">
-            <h1 className="text-base font-bold text-white leading-tight truncate">{selectedProduct.name}</h1>
-            <p className="text-[11px] font-mono text-white/35">
-              {selectedProduct.sku} · {selectedProduct.current_stock} em estoque
-            </p>
+          <h1 className="text-base font-bold text-white">Adicionar Estoque</h1>
+        </div>
+
+        {/* Product showcase */}
+        <div
+          className="flex items-center gap-4 p-4 rounded-2xl border"
+          style={{ backgroundColor: 'hsl(240 20% 7%)', borderColor: 'hsl(240 15% 12%)' }}
+        >
+          <div
+            className="w-[100px] h-[100px] rounded-xl flex-shrink-0 overflow-hidden flex items-center justify-center"
+            style={{ background: 'hsl(240 18% 8%)' }}
+          >
+            {qtyImg ? (
+              <img
+                src={qtyImg}
+                alt={selectedProduct.name}
+                className="w-full h-full object-contain p-2"
+              />
+            ) : (
+              <span className="text-3xl font-bold" style={{ color: qtyMeta.dot }}>
+                {selectedProduct.name.charAt(0).toUpperCase()}
+              </span>
+            )}
+          </div>
+          <div className="flex-1 min-w-0 space-y-2">
+            <p className="text-base font-bold text-white leading-tight">{selectedProduct.name}</p>
+            <CategoryBadge category={selectedProduct.category} />
+            <div className="flex items-center gap-2 text-sm">
+              <span style={{ color: 'rgba(255,255,255,0.4)' }}>Estoque atual:</span>
+              <span
+                className="font-black tabular-nums"
+                style={{ color: selectedProduct.current_stock <= selectedProduct.min_stock ? '#f87171' : GOLD }}
+              >
+                {selectedProduct.current_stock} un
+              </span>
+            </div>
           </div>
         </div>
 
         {/* Quantity card */}
-        <div className="bg-[hsl(240_20%_6%)] border border-white/[0.08] rounded-xl p-5 space-y-4">
-          <Label className="text-[10px] uppercase tracking-widest text-white/30 font-semibold">
+        <div
+          className="rounded-2xl border p-5 space-y-4"
+          style={{ backgroundColor: 'hsl(240 20% 7%)', borderColor: 'hsl(240 15% 12%)' }}
+        >
+          <Label className="text-[10px] uppercase tracking-widest font-semibold" style={{ color: 'rgba(255,255,255,0.3)' }}>
             Quantidade a adicionar
           </Label>
 
+          {/* Big stepper */}
           <div className="flex items-center gap-3">
             <button
               type="button"
               onClick={() => handleQtyChange(quantity - 1)}
-              className="w-14 h-14 rounded-lg border border-white/[0.08] bg-white/[0.04] flex items-center justify-center hover:border-white/20 hover:bg-white/[0.07] transition-all active:scale-95"
+              className="w-16 h-16 rounded-xl flex items-center justify-center transition-all active:scale-95 hover:bg-white/[0.07]"
+              style={{ border: '1px solid hsl(240 15% 14%)', background: 'hsl(240 18% 9%)' }}
             >
-              <Minus size={20} className="text-white/60" />
+              <Minus size={22} className="text-white/60" />
             </button>
 
-            <div className="flex-1 h-14 bg-white/[0.04] rounded-lg flex items-center justify-center border border-white/[0.06]">
-              <span className="text-3xl font-black tabular-nums" style={{ color: GOLD }}>{quantity}</span>
+            <div
+              className="flex-1 h-16 rounded-xl flex items-center justify-center"
+              style={{ border: '1px solid hsl(240 15% 12%)', background: 'hsl(240 18% 9%)' }}
+            >
+              <span className="text-4xl font-black tabular-nums" style={{ color: GOLD }}>{quantity}</span>
             </div>
 
             <button
               type="button"
               onClick={() => handleQtyChange(quantity + 1)}
-              className="w-14 h-14 rounded-lg border border-white/[0.08] bg-white/[0.04] flex items-center justify-center hover:border-white/20 hover:bg-white/[0.07] transition-all active:scale-95"
+              className="w-16 h-16 rounded-xl flex items-center justify-center transition-all active:scale-95 hover:bg-white/[0.07]"
+              style={{ border: '1px solid hsl(240 15% 14%)', background: 'hsl(240 18% 9%)' }}
             >
-              <Plus size={20} className="text-white/60" />
+              <Plus size={22} className="text-white/60" />
             </button>
           </div>
 
+          {/* Quick presets */}
           <div className="flex gap-1.5 flex-wrap">
             {QUICK_QTY.map(n => (
               <button
                 key={n}
                 type="button"
                 onClick={() => handleQuickQty(n)}
-                className={`h-9 px-3 rounded-lg text-sm font-semibold border transition-all active:scale-95 ${
+                className="h-9 px-3 rounded-lg text-sm font-semibold border transition-all active:scale-95"
+                style={
                   quantity === n && !customQtyMode
-                    ? 'border-[hsl(42_60%_55%)] text-[hsl(42_60%_55%)] bg-[hsl(42_60%_55%/0.1)]'
-                    : 'border-white/[0.08] text-white/40 bg-white/[0.03] hover:border-white/20 hover:text-white/70'
-                }`}
+                    ? { borderColor: GOLD, color: GOLD, background: 'hsl(42 60% 55% / 0.1)' }
+                    : { borderColor: 'hsl(240 15% 14%)', color: 'rgba(255,255,255,0.4)', background: 'transparent' }
+                }
               >
                 {n}
               </button>
@@ -657,13 +719,14 @@ export function StockEntryPage() {
                 setCustomQtyMode(true)
                 setCustomQtyValue(String(isQuickQty ? '' : quantity))
               }}
-              className={`h-9 px-3 rounded-lg text-sm font-semibold border transition-all active:scale-95 ${
+              className="h-9 px-3 rounded-lg text-sm font-semibold border transition-all active:scale-95"
+              style={
                 customQtyMode || !isQuickQty
-                  ? 'border-[hsl(42_60%_55%)] text-[hsl(42_60%_55%)] bg-[hsl(42_60%_55%/0.1)]'
-                  : 'border-white/[0.08] text-white/40 bg-white/[0.03] hover:border-white/20 hover:text-white/70'
-              }`}
+                  ? { borderColor: GOLD, color: GOLD, background: 'hsl(42 60% 55% / 0.1)' }
+                  : { borderColor: 'hsl(240 15% 14%)', color: 'rgba(255,255,255,0.4)', background: 'transparent' }
+              }
             >
-              +
+              Outro
             </button>
           </div>
 
@@ -673,7 +736,7 @@ export function StockEntryPage() {
                 ref={customQtyRef}
                 type="number"
                 inputMode="numeric"
-                placeholder="Quantidade..."
+                placeholder="Quantidade personalizada..."
                 value={customQtyValue}
                 onChange={e => setCustomQtyValue(e.target.value)}
                 onKeyDown={e => { if (e.key === 'Enter') handleCustomQtySubmit() }}
@@ -682,20 +745,27 @@ export function StockEntryPage() {
               <button
                 type="button"
                 onClick={handleCustomQtySubmit}
-                className="h-10 px-4 rounded-lg text-sm font-semibold border border-white/10 bg-white/[0.04] text-white/60 hover:text-white hover:border-white/20 transition-all"
+                className="h-10 px-4 rounded-lg text-sm font-semibold transition-all hover:text-white"
+                style={{ border: '1px solid hsl(240 15% 14%)', background: 'hsl(240 18% 9%)', color: 'rgba(255,255,255,0.6)' }}
               >
                 OK
               </button>
             </div>
           )}
 
-          <div className="bg-white/[0.03] border border-white/[0.06] rounded-xl px-4 py-3 space-y-2">
+          {/* Projected stock bar */}
+          <div
+            className="rounded-xl px-4 py-3 space-y-2"
+            style={{ background: 'hsl(240 18% 9%)', border: '1px solid hsl(240 15% 12%)' }}
+          >
             <div className="flex items-center justify-between text-sm">
-              <span className="text-white/40">Estoque atual</span>
-              <span className="font-semibold text-white/60 tabular-nums">{selectedProduct.current_stock} un</span>
+              <span style={{ color: 'rgba(255,255,255,0.4)' }}>Estoque atual</span>
+              <span className="font-semibold tabular-nums" style={{ color: 'rgba(255,255,255,0.6)' }}>
+                {selectedProduct.current_stock} un
+              </span>
             </div>
             <div className="flex items-center justify-between text-sm">
-              <span className="text-white/40">Após entrada</span>
+              <span style={{ color: 'rgba(255,255,255,0.4)' }}>Após entrada</span>
               <span className="font-black text-emerald-400 tabular-nums">{projectedStock} un</span>
             </div>
             <StockBar
@@ -704,7 +774,7 @@ export function StockEntryPage() {
               projected={projectedStock}
             />
             {selectedProduct.min_stock > 0 && (
-              <p className="text-[10px] text-white/25">
+              <p className="text-[10px]" style={{ color: 'rgba(255,255,255,0.25)' }}>
                 Mínimo: {selectedProduct.min_stock} un
               </p>
             )}
@@ -712,8 +782,11 @@ export function StockEntryPage() {
         </div>
 
         {/* Origin card */}
-        <div className="bg-[hsl(240_20%_6%)] border border-white/[0.08] rounded-xl p-5 space-y-3">
-          <Label className="text-[10px] uppercase tracking-widest text-white/30 font-semibold">
+        <div
+          className="rounded-2xl border p-5 space-y-3"
+          style={{ backgroundColor: 'hsl(240 20% 7%)', borderColor: 'hsl(240 15% 12%)' }}
+        >
+          <Label className="text-[10px] uppercase tracking-widest font-semibold" style={{ color: 'rgba(255,255,255,0.3)' }}>
             Origem da Entrada
           </Label>
           <div className="grid grid-cols-2 gap-2">
@@ -725,11 +798,12 @@ export function StockEntryPage() {
                   setOrigin(label)
                   if (label !== 'Outro') setCustomOrigin('')
                 }}
-                className={`px-3 py-3 rounded-lg text-sm font-medium border transition-all active:scale-95 text-left ${
+                className="px-3 py-3 rounded-xl text-sm font-medium border transition-all active:scale-95 text-left"
+                style={
                   origin === label
-                    ? 'border-[hsl(42_60%_55%)] text-[hsl(42_60%_55%)] bg-[hsl(42_60%_55%/0.08)]'
-                    : 'border-white/[0.07] text-white/45 bg-white/[0.03] hover:border-white/15 hover:text-white/70'
-                }`}
+                    ? { borderColor: GOLD, color: GOLD, background: 'hsl(42 60% 55% / 0.08)' }
+                    : { borderColor: 'hsl(240 15% 14%)', color: 'rgba(255,255,255,0.45)', background: 'transparent' }
+                }
               >
                 {label}
               </button>
@@ -747,7 +821,10 @@ export function StockEntryPage() {
         </div>
 
         {/* NF / Lote collapsible */}
-        <div className="bg-[hsl(240_20%_6%)] border border-white/[0.08] rounded-xl overflow-hidden">
+        <div
+          className="rounded-2xl border overflow-hidden"
+          style={{ backgroundColor: 'hsl(240 20% 7%)', borderColor: 'hsl(240 15% 12%)' }}
+        >
           <button
             type="button"
             onClick={() => setInvoiceOpen(v => !v)}
@@ -755,9 +832,11 @@ export function StockEntryPage() {
           >
             <div className="flex items-center gap-2.5">
               <FileText size={14} className="text-white/30" />
-              <span className="text-sm font-medium text-white/50">Nota Fiscal / Lote</span>
+              <span className="text-sm font-medium" style={{ color: 'rgba(255,255,255,0.5)' }}>
+                Nota Fiscal / Lote
+              </span>
               {invoice && (
-                <span className="text-[10px] font-mono text-white/30 bg-white/[0.06] px-2 py-0.5 rounded-md">
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded-md" style={{ color: 'rgba(255,255,255,0.3)', background: 'rgba(255,255,255,0.06)' }}>
                   {invoice}
                 </span>
               )}
@@ -780,11 +859,12 @@ export function StockEntryPage() {
           )}
         </div>
 
+        {/* CTA */}
         <button
           type="button"
           onClick={() => goTo('confirm')}
           disabled={!canProceed}
-          className="w-full h-14 rounded-lg font-bold text-sm tracking-wide transition-all active:scale-[0.98] disabled:opacity-35 flex items-center justify-center gap-2"
+          className="w-full h-14 rounded-xl font-bold text-sm tracking-wide transition-all active:scale-[0.98] disabled:opacity-35 flex items-center justify-center gap-2"
           style={
             canProceed
               ? { background: GOLD, color: GOLD_DARK }
@@ -805,48 +885,37 @@ export function StockEntryPage() {
       {/* Sticky top bar */}
       <div
         className="sticky top-0 z-20 px-4 pt-4 pb-3 space-y-3"
-        style={{ background: 'hsl(240 25% 4% / 0.95)', backdropFilter: 'blur(12px)' }}
+        style={{ background: 'hsl(240 25% 4% / 0.97)', backdropFilter: 'blur(12px)' }}
       >
-        <div className="flex items-center justify-between gap-3">
-          {searchOpen ? (
-            <div className="flex-1 flex items-center gap-2">
-              <div className="relative flex-1">
-                <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/30" />
-                <Input
-                  ref={searchRef}
-                  placeholder="Produto, SKU ou fornecedor..."
-                  className="h-10 pl-9 pr-4 bg-white/[0.05] border-white/10 text-white placeholder:text-white/25 text-sm"
-                  value={search}
-                  onChange={e => setSearch(e.target.value)}
-                />
-              </div>
-              <button
-                type="button"
-                onClick={() => { setSearchOpen(false); setSearch('') }}
-                className="w-9 h-9 rounded-lg border border-white/[0.08] flex items-center justify-center hover:bg-white/[0.05] transition-all flex-shrink-0"
-              >
-                <X size={15} className="text-white/50" />
-              </button>
-            </div>
-          ) : (
-            <>
-              <div className="flex items-center gap-2.5">
-                <div
-                  className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
-                  style={{ background: 'hsl(42 60% 55% / 0.12)' }}
-                >
-                  <PackagePlus size={16} style={{ color: GOLD }} />
-                </div>
-                <h1 className="text-base font-bold text-white">Entrada de Estoque</h1>
-              </div>
-              <button
-                type="button"
-                onClick={() => setSearchOpen(true)}
-                className="w-9 h-9 rounded-lg border border-white/[0.08] flex items-center justify-center hover:bg-white/[0.05] transition-all"
-              >
-                <Search size={15} className="text-white/50" />
-              </button>
-            </>
+        {/* Title + search always visible */}
+        <div className="flex items-center gap-2.5">
+          <div
+            className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+            style={{ background: 'hsl(42 60% 55% / 0.12)' }}
+          >
+            <PackagePlus size={16} style={{ color: GOLD }} />
+          </div>
+          <h1 className="text-base font-bold text-white flex-1">Entrada de Estoque</h1>
+        </div>
+
+        {/* Search bar always visible */}
+        <div className="relative">
+          <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/30" />
+          <Input
+            ref={searchRef}
+            placeholder="Produto, SKU ou fornecedor..."
+            className="h-10 pl-9 pr-9 bg-white/[0.05] border-white/10 text-white placeholder:text-white/25 text-sm"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+          />
+          {search && (
+            <button
+              type="button"
+              onClick={() => setSearch('')}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60 transition-colors"
+            >
+              <X size={14} />
+            </button>
           )}
         </div>
 
@@ -857,11 +926,12 @@ export function StockEntryPage() {
               key={cat.key}
               type="button"
               onClick={() => setCategoryFilter(cat.key)}
-              className={`flex-shrink-0 h-8 px-3 rounded-lg text-xs font-semibold border transition-all ${
+              className="flex-shrink-0 h-8 px-3 rounded-lg text-xs font-semibold border transition-all"
+              style={
                 categoryFilter === cat.key
-                  ? 'border-[hsl(42_60%_55%)] text-[hsl(42_60%_55%)] bg-[hsl(42_60%_55%/0.1)]'
-                  : 'border-white/[0.07] text-white/40 bg-white/[0.03] hover:border-white/15 hover:text-white/60'
-              }`}
+                  ? { borderColor: GOLD, color: GOLD, background: 'hsl(42 60% 55% / 0.1)' }
+                  : { borderColor: 'hsl(240 15% 14%)', color: 'rgba(255,255,255,0.4)', background: 'transparent' }
+              }
             >
               {cat.label}
             </button>
@@ -872,7 +942,10 @@ export function StockEntryPage() {
       <div className="px-4 space-y-4 mt-1">
         {/* Critical banner */}
         {criticalProducts.length > 0 && (
-          <div className="bg-red-950/20 border border-red-800/25 rounded-xl p-4 space-y-3">
+          <div
+            className="rounded-xl p-3 space-y-2.5"
+            style={{ background: 'hsl(0 70% 15% / 0.3)', border: '1px solid hsl(0 70% 35% / 0.25)' }}
+          >
             <div className="flex items-center gap-2">
               <AlertTriangle size={13} className="text-red-400 flex-shrink-0" />
               <p className="text-xs font-bold text-red-400 uppercase tracking-wider">
@@ -885,7 +958,8 @@ export function StockEntryPage() {
                   key={p.id}
                   type="button"
                   onClick={() => handleSelectProduct(p)}
-                  className="flex-shrink-0 flex items-center gap-1.5 pl-2.5 pr-3 py-1.5 rounded-lg bg-red-900/25 border border-red-700/20 hover:bg-red-800/30 transition-all active:scale-95"
+                  className="flex-shrink-0 flex items-center gap-1.5 pl-2.5 pr-3 py-1.5 rounded-lg transition-all active:scale-95"
+                  style={{ background: 'hsl(0 60% 20% / 0.4)', border: '1px solid hsl(0 70% 35% / 0.25)' }}
                 >
                   <span className="text-[11px] font-semibold text-red-300">{p.name}</span>
                   <span className="text-[10px] font-black text-red-500">{p.current_stock}</span>
@@ -895,7 +969,7 @@ export function StockEntryPage() {
           </div>
         )}
 
-        {/* Product list */}
+        {/* Product grid */}
         {sortedProducts.length === 0 ? (
           <div className="flex flex-col items-center py-16 text-center space-y-2">
             <Warehouse size={32} className="text-white/15" />
@@ -911,9 +985,9 @@ export function StockEntryPage() {
             )}
           </div>
         ) : (
-          <div className="bg-[hsl(240_20%_6%)] border border-white/[0.08] rounded-xl overflow-hidden">
+          <div className="grid grid-cols-2 gap-3">
             {sortedProducts.map(p => (
-              <ProductRow key={p.id} product={p} onSelect={handleSelectProduct} />
+              <ProductCard key={p.id} product={p} onSelect={handleSelectProduct} />
             ))}
           </div>
         )}

@@ -41,7 +41,7 @@ export interface StockMovement {
   profile?: Pick<Profile, 'full_name'>
 }
 
-export type OrderStatus = 'pending' | 'confirmed' | 'delivered'
+export type OrderStatus = 'pending' | 'confirmed' | 'delivered' | 'cancelled'
 
 export interface OrderItem {
   product_id: string

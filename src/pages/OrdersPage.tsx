@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from 'react'
+import { useState, useMemo, useCallback, useRef, useEffect } from 'react'
 import { useProducts } from '@/hooks/useProducts'
 import {
   useDeliveryOrders,
@@ -7,7 +7,6 @@ import {
 } from '@/hooks/useDeliveryOrders'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Skeleton } from '@/components/ui/skeleton'
 import {
   Search,
@@ -21,6 +20,8 @@ import {
   Plus,
   ArrowLeft,
   FileText,
+  Download,
+  MoreVertical,
 } from 'lucide-react'
 import type { OrderItem, DeliveryOrder, Product, ProductCategory } from '@/types'
 import type { CreateOrderInput } from '@/hooks/useDeliveryOrders'
@@ -62,9 +63,35 @@ function formatDateShort(dateStr: string): string {
   })
 }
 
+// ─── CSV Export ───────────────────────────────────────────────────────────────
+
+function exportOrdersToCSV(orders: DeliveryOrder[], filename = 'pedidos.csv') {
+  const rows = [
+    ['ID', 'Referência', 'Endereço', 'Status', 'Total (R$)', 'Itens', 'Criado em', 'Entregue por', 'Entregue em'],
+    ...orders.map(o => [
+      o.id.slice(0, 8),
+      o.reference ?? '',
+      o.address ?? '',
+      o.status,
+      (o.total_value ?? 0).toFixed(2).replace('.', ','),
+      (o.items as OrderItem[]).map(i => `${i.product_name} x${i.quantity}`).join(' | '),
+      new Date(o.created_at).toLocaleString('pt-BR'),
+      o.delivered_by ?? '',
+      o.delivered_at ? new Date(o.delivered_at).toLocaleString('pt-BR') : '',
+    ])
+  ]
+  const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n')
+  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url; a.download = filename; a.click()
+  URL.revokeObjectURL(url)
+}
+
 // ─── Date filters ─────────────────────────────────────────────────────────────
 
-type DateFilter = 'today' | 'week' | 'all'
+type DateFilter = 'today' | 'week' | 'month' | 'all'
+type StatusFilter = 'all' | 'confirmed' | 'delivered'
 
 function isToday(dateStr: string) {
   const d = new Date(dateStr)
@@ -83,6 +110,12 @@ function isThisWeek(dateStr: string) {
   startOfWeek.setDate(now.getDate() - now.getDay())
   startOfWeek.setHours(0, 0, 0, 0)
   return d >= startOfWeek
+}
+
+function isThisMonth(dateStr: string) {
+  const d = new Date(dateStr)
+  const now = new Date()
+  return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth()
 }
 
 // ─── Category styles ──────────────────────────────────────────────────────────
@@ -109,6 +142,10 @@ function StatusBadge({ status }: { status: string }) {
     delivered: {
       label: 'Entregue',
       className: 'bg-emerald-950/60 text-emerald-400 border-emerald-800/40',
+    },
+    cancelled: {
+      label: 'Cancelado',
+      className: 'bg-red-950/50 text-red-400 border-red-800/40',
     },
   }
   const cfg = map[status] ?? {
@@ -778,35 +815,201 @@ interface OrderCardProps {
   order: DeliveryOrder
   onMarkDelivered?: () => void
   onReorder?: () => void
+  selectionMode?: boolean
+  selected?: boolean
+  onToggleSelect?: () => void
+  onUpdateNotes?: (id: string, notes: string) => void
+  onCancelOrder?: (id: string) => void
 }
 
-function OrderCard({ order, onMarkDelivered, onReorder }: OrderCardProps) {
+function OrderCard({
+  order,
+  onMarkDelivered,
+  onReorder,
+  selectionMode,
+  selected,
+  onToggleSelect,
+  onUpdateNotes,
+  onCancelOrder,
+}: OrderCardProps) {
   const items = order.items as OrderItem[]
   const totalValue =
     order.total_value ?? items.reduce((s, i) => s + i.quantity * (i.unit_price ?? 0), 0)
   const operator = (order.profile as { full_name?: string } | undefined)?.full_name ?? '—'
   const displayName = order.reference || order.id.slice(0, 8).toUpperCase()
 
+  const [menuOpen, setMenuOpen] = useState(false)
+  const [editingNotes, setEditingNotes] = useState(false)
+  const [notesValue, setNotesValue] = useState(order.notes ?? '')
+  const [cancelConfirm, setCancelConfirm] = useState(false)
+  const menuRef = useRef<HTMLDivElement>(null)
+
+  // Close menu on outside click
+  useEffect(() => {
+    if (!menuOpen) return
+    function handleClick(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [menuOpen])
+
+  function handleSaveNotes() {
+    onUpdateNotes?.(order.id, notesValue)
+    setEditingNotes(false)
+    setMenuOpen(false)
+  }
+
+  function handleConfirmCancel() {
+    onCancelOrder?.(order.id)
+    setCancelConfirm(false)
+    setMenuOpen(false)
+  }
+
   return (
     <div
       className="rounded-xl border overflow-hidden transition-colors duration-150"
       style={{
         backgroundColor: 'hsl(240 22% 7%)',
-        borderColor:
-          order.status === 'delivered'
-            ? 'hsl(152 60% 25% / 0.3)'
-            : 'hsl(240 15% 11%)',
+        borderColor: selected
+          ? 'hsl(42 60% 55% / 0.6)'
+          : order.status === 'delivered'
+          ? 'hsl(152 60% 25% / 0.3)'
+          : 'hsl(240 15% 11%)',
       }}
     >
       <div className="p-4 space-y-3">
         {/* Header row */}
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-2 min-w-0">
+            {/* Checkbox in selection mode */}
+            {selectionMode && (
+              <button
+                type="button"
+                onClick={onToggleSelect}
+                className="w-5 h-5 rounded border-2 flex items-center justify-center shrink-0 transition-colors"
+                style={{
+                  borderColor: selected ? 'hsl(42 60% 55%)' : 'hsl(240 15% 20%)',
+                  backgroundColor: selected ? 'hsl(42 60% 55%)' : 'transparent',
+                }}
+              >
+                {selected && (
+                  <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
+                    <path d="M1 4L3.5 6.5L9 1" stroke="hsl(240 25% 4%)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                )}
+              </button>
+            )}
             <span className="text-sm font-semibold text-white truncate">{displayName}</span>
             <span className="text-white/35 text-xs shrink-0">{formatDateShort(order.created_at)}</span>
           </div>
-          <StatusBadge status={order.status} />
+          <div className="flex items-center gap-2 shrink-0">
+            <StatusBadge status={order.status} />
+            {/* Three-dot menu */}
+            {!selectionMode && (
+              <div className="relative" ref={menuRef}>
+                <button
+                  type="button"
+                  onClick={() => { setMenuOpen((v) => !v); setCancelConfirm(false); setEditingNotes(false) }}
+                  className="w-7 h-7 rounded-md flex items-center justify-center text-white/35 hover:text-white hover:bg-white/5 transition-colors"
+                >
+                  <MoreVertical className="w-4 h-4" />
+                </button>
+                {menuOpen && (
+                  <div
+                    className="absolute right-0 top-8 z-50 rounded-lg border shadow-xl min-w-[160px] overflow-hidden"
+                    style={{
+                      backgroundColor: 'hsl(240 20% 10%)',
+                      borderColor: 'hsl(240 15% 15%)',
+                    }}
+                  >
+                    <button
+                      type="button"
+                      onClick={() => { setEditingNotes(true); setCancelConfirm(false); setMenuOpen(false) }}
+                      className="w-full text-left px-3 py-2.5 text-sm text-white/80 hover:bg-white/5 transition-colors"
+                    >
+                      Editar notas
+                    </button>
+                    {order.status !== 'cancelled' && order.status !== 'delivered' && (
+                      <button
+                        type="button"
+                        onClick={() => { setCancelConfirm(true); setEditingNotes(false); setMenuOpen(false) }}
+                        className="w-full text-left px-3 py-2.5 text-sm text-red-400 hover:bg-red-950/30 transition-colors"
+                      >
+                        Cancelar pedido
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
         </div>
+
+        {/* Inline edit notes */}
+        {editingNotes && (
+          <div className="space-y-2">
+            <textarea
+              rows={2}
+              value={notesValue}
+              onChange={(e) => setNotesValue(e.target.value)}
+              placeholder="Observações do pedido..."
+              className="w-full rounded-lg border px-3 py-2 text-sm text-foreground placeholder:text-white/35 resize-none focus:outline-none transition-all"
+              style={{
+                backgroundColor: 'hsl(240 22% 9%)',
+                borderColor: 'hsl(42 60% 55% / 0.4)',
+              }}
+              autoFocus
+            />
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={handleSaveNotes}
+                className="h-8 px-3 rounded-md text-xs font-semibold transition-colors"
+                style={{ backgroundColor: 'hsl(42 60% 55%)', color: 'hsl(240 25% 4%)' }}
+              >
+                Salvar
+              </button>
+              <button
+                type="button"
+                onClick={() => { setEditingNotes(false); setNotesValue(order.notes ?? '') }}
+                className="h-8 px-3 rounded-md text-xs text-white/40 border hover:text-white transition-colors"
+                style={{ borderColor: 'hsl(240 15% 15%)' }}
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Inline cancel confirmation */}
+        {cancelConfirm && (
+          <div
+            className="rounded-lg border px-3 py-2.5 space-y-2"
+            style={{ borderColor: 'hsl(0 60% 35% / 0.4)', backgroundColor: 'hsl(0 40% 8%)' }}
+          >
+            <p className="text-xs text-red-400 font-medium">Cancelar este pedido?</p>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={handleConfirmCancel}
+                className="h-8 px-3 rounded-md text-xs font-semibold bg-red-600 text-white hover:bg-red-500 transition-colors"
+              >
+                Confirmar
+              </button>
+              <button
+                type="button"
+                onClick={() => setCancelConfirm(false)}
+                className="h-8 px-3 rounded-md text-xs text-white/40 border hover:text-white transition-colors"
+                style={{ borderColor: 'hsl(240 15% 15%)' }}
+              >
+                Voltar
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Address block */}
         {order.address && (
@@ -893,7 +1096,7 @@ function OrderCard({ order, onMarkDelivered, onReorder }: OrderCardProps) {
       </div>
 
       {/* Action area */}
-      {(onMarkDelivered || onReorder) && (
+      {!selectionMode && (onMarkDelivered || onReorder) && (
         <div
           className="border-t px-4 py-3 space-y-2"
           style={{ borderColor: 'hsl(240 15% 11%)' }}
@@ -977,6 +1180,33 @@ function EmptyState({ icon: Icon, title, subtitle }: {
   )
 }
 
+// ─── Pill button helper ───────────────────────────────────────────────────────
+
+function PillButton({
+  active,
+  onClick,
+  children,
+}: {
+  active: boolean
+  onClick: () => void
+  children: React.ReactNode
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="h-8 px-3.5 rounded-full text-xs font-medium transition-all"
+      style={{
+        backgroundColor: active ? 'hsl(42 60% 55%)' : 'hsl(240 22% 9%)',
+        color: active ? 'hsl(240 25% 4%)' : 'hsl(var(--muted-foreground))',
+        border: active ? '1px solid transparent' : '1px solid hsl(240 15% 13%)',
+      }}
+    >
+      {children}
+    </button>
+  )
+}
+
 // ─── Main OrdersPage ──────────────────────────────────────────────────────────
 
 export function OrdersPage() {
@@ -988,6 +1218,37 @@ export function OrdersPage() {
   const [prefillItems, setPrefillItems] = useState<PendingItem[] | undefined>()
   const [search, setSearch] = useState('')
   const [dateFilter, setDateFilter] = useState<DateFilter>('all')
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
+
+  // ── Selection mode state ───────────────────────────────────────────────────
+  const [selectionMode, setSelectionMode] = useState(false)
+  const [selectedOrders, setSelectedOrders] = useState<Set<string>>(new Set())
+
+  function toggleSelect(id: string) {
+    setSelectedOrders((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  function exitSelectionMode() {
+    setSelectionMode(false)
+    setSelectedOrders(new Set())
+  }
+
+  // ── In-memory notes override (for mock mode) ───────────────────────────────
+  const [notesOverrides, setNotesOverrides] = useState<Record<string, string>>({})
+
+  function handleUpdateNotes(id: string, notes: string) {
+    setNotesOverrides((prev) => ({ ...prev, [id]: notes }))
+  }
+
+  // ── Cancel order (mock: uses updateStatus with 'cancelled' cast) ───────────
+  function handleCancelOrder(id: string) {
+    updateStatus.mutate({ id, status: 'cancelled' as 'delivered' })
+  }
 
   // ── KPIs ──────────────────────────────────────────────────────────────────
   const kpis = useMemo(() => {
@@ -1007,37 +1268,52 @@ export function OrdersPage() {
   }, [orders])
 
   // ── Filtering ─────────────────────────────────────────────────────────────
-  const filterList = useCallback(
-    (list: DeliveryOrder[]) => {
-      let result = list
-      if (dateFilter === 'today') result = result.filter((o) => isToday(o.created_at))
-      else if (dateFilter === 'week') result = result.filter((o) => isThisWeek(o.created_at))
-      const q = search.trim().toLowerCase()
-      if (q) {
-        result = result.filter(
-          (o) =>
-            o.reference?.toLowerCase().includes(q) ||
-            o.address?.toLowerCase().includes(q) ||
-            o.items.some((i) => (i as OrderItem).product_name?.toLowerCase().includes(q))
-        )
-      }
-      return result
-    },
-    [dateFilter, search]
-  )
+  const filteredOrders = useMemo(() => {
+    if (!orders) return []
+    let result = orders
+
+    // Date filter
+    if (dateFilter === 'today') result = result.filter((o) => isToday(o.created_at))
+    else if (dateFilter === 'week') result = result.filter((o) => isThisWeek(o.created_at))
+    else if (dateFilter === 'month') result = result.filter((o) => isThisMonth(o.created_at))
+
+    // Status filter
+    if (statusFilter === 'confirmed') {
+      result = result.filter((o) => o.status === 'confirmed' || o.status === 'pending')
+    } else if (statusFilter === 'delivered') {
+      result = result.filter((o) => o.status === 'delivered')
+    }
+
+    // Search
+    const q = search.trim().toLowerCase()
+    if (q) {
+      result = result.filter(
+        (o) =>
+          o.reference?.toLowerCase().includes(q) ||
+          o.address?.toLowerCase().includes(q) ||
+          o.items.some((i) => (i as OrderItem).product_name?.toLowerCase().includes(q))
+      )
+    }
+
+    return result
+  }, [orders, dateFilter, statusFilter, search])
 
   const confirmedOrders = useMemo(
-    () =>
-      filterList(
-        orders?.filter((o) => o.status === 'confirmed' || o.status === 'pending') ?? []
-      ),
-    [filterList, orders]
+    () => filteredOrders.filter((o) => o.status === 'confirmed' || o.status === 'pending'),
+    [filteredOrders]
   )
 
   const deliveredOrders = useMemo(
-    () => filterList(orders?.filter((o) => o.status === 'delivered') ?? []),
-    [filterList, orders]
+    () => filteredOrders.filter((o) => o.status === 'delivered'),
+    [filteredOrders]
   )
+
+  // Orders currently visible (for bulk export)
+  const visibleOrders = statusFilter === 'confirmed'
+    ? confirmedOrders
+    : statusFilter === 'delivered'
+    ? deliveredOrders
+    : filteredOrders
 
   // ── Handlers ──────────────────────────────────────────────────────────────
   function handleReorder(order: DeliveryOrder) {
@@ -1073,6 +1349,20 @@ export function OrdersPage() {
     window.scrollTo(0, 0)
   }
 
+  // ── Bulk actions ──────────────────────────────────────────────────────────
+  function handleBulkExport() {
+    const toExport = visibleOrders.filter((o) => selectedOrders.has(o.id))
+    if (toExport.length === 0) return
+    exportOrdersToCSV(toExport, `pedidos-selecionados-${Date.now()}.csv`)
+  }
+
+  function handleBulkMarkDelivered() {
+    selectedOrders.forEach((id) => {
+      updateStatus.mutate({ id, status: 'delivered' })
+    })
+    exitSelectionMode()
+  }
+
   // ── Wizard view ───────────────────────────────────────────────────────────
   if (showWizard) {
     return (
@@ -1087,26 +1377,69 @@ export function OrdersPage() {
   const dateChips: { key: DateFilter; label: string }[] = [
     { key: 'today', label: 'Hoje' },
     { key: 'week', label: 'Semana' },
+    { key: 'month', label: 'Este Mês' },
     { key: 'all', label: 'Todos' },
+  ]
+
+  const statusChips: { key: StatusFilter; label: string }[] = [
+    { key: 'all', label: 'Todos' },
+    { key: 'confirmed', label: 'Confirmados' },
+    { key: 'delivered', label: 'Entregues' },
   ]
 
   // ── List view ─────────────────────────────────────────────────────────────
   return (
-    <div className="w-full space-y-4 p-4 pb-10">
+    <div className="w-full space-y-4 p-4 pb-24">
       {/* Header */}
-      <div className="flex items-center justify-between pt-1">
+      <div className="flex items-center justify-between gap-2 pt-1">
         <h1 className="text-2xl font-bold text-white">Pedidos</h1>
-        <button
-          onClick={handleNewOrder}
-          className="h-10 px-4 rounded-lg font-semibold text-sm flex items-center gap-2 transition-all hover:opacity-90 active:scale-[0.97]"
-          style={{
-            backgroundColor: 'hsl(42 60% 55%)',
-            color: 'hsl(240 25% 4%)',
-          }}
-        >
-          <Plus className="w-4 h-4" />
-          Novo Pedido
-        </button>
+        <div className="flex items-center gap-2">
+          {/* Select toggle */}
+          <button
+            type="button"
+            onClick={() => {
+              if (selectionMode) exitSelectionMode()
+              else setSelectionMode(true)
+            }}
+            className="h-9 px-3 rounded-lg border text-xs font-medium transition-all"
+            style={{
+              borderColor: selectionMode ? 'hsl(42 60% 55% / 0.5)' : 'hsl(240 15% 13%)',
+              backgroundColor: selectionMode ? 'hsl(42 60% 55% / 0.08)' : 'hsl(240 22% 7%)',
+              color: selectionMode ? 'hsl(42 60% 55%)' : 'hsl(var(--muted-foreground))',
+            }}
+          >
+            {selectionMode ? 'Cancelar' : 'Selecionar'}
+          </button>
+
+          {/* Export all visible */}
+          <button
+            type="button"
+            onClick={() => exportOrdersToCSV(visibleOrders)}
+            disabled={visibleOrders.length === 0}
+            className="h-9 px-3 rounded-lg border text-xs font-medium flex items-center gap-1.5 transition-all disabled:opacity-40"
+            style={{
+              borderColor: 'hsl(240 15% 13%)',
+              backgroundColor: 'hsl(240 22% 7%)',
+              color: 'hsl(var(--muted-foreground))',
+            }}
+          >
+            <Download className="w-3.5 h-3.5" />
+            Exportar
+          </button>
+
+          {/* New order */}
+          <button
+            onClick={handleNewOrder}
+            className="h-9 px-3.5 rounded-lg font-semibold text-sm flex items-center gap-1.5 transition-all hover:opacity-90 active:scale-[0.97]"
+            style={{
+              backgroundColor: 'hsl(42 60% 55%)',
+              color: 'hsl(240 25% 4%)',
+            }}
+          >
+            <Plus className="w-4 h-4" />
+            Novo Pedido
+          </button>
+        </div>
       </div>
 
       {/* KPI grid */}
@@ -1125,126 +1458,190 @@ export function OrdersPage() {
         </div>
       ) : null}
 
-      {/* Search */}
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/35 pointer-events-none" />
-        <Input
-          placeholder="Buscar por referência, endereço ou produto..."
-          className="pl-9 h-10 text-sm"
-          style={{
-            backgroundColor: 'hsl(240 22% 7%)',
-            borderColor: 'hsl(240 15% 11%)',
-          }}
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
-      </div>
-
-      {/* Date filter */}
-      <div className="flex gap-4">
-        {dateChips.map((chip) => (
-          <button
-            key={chip.key}
-            onClick={() => setDateFilter(chip.key)}
-            className="text-sm font-medium transition-colors pb-0.5"
+      {/* Filter bar */}
+      <div className="space-y-2.5">
+        {/* Search */}
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/35 pointer-events-none" />
+          <Input
+            placeholder="Buscar por referência, endereço ou produto..."
+            className="pl-9 h-10 text-sm"
             style={{
-              color:
-                dateFilter === chip.key ? 'hsl(42 60% 55%)' : 'hsl(var(--muted-foreground))',
-              borderBottom:
-                dateFilter === chip.key
-                  ? '1px solid hsl(42 60% 55%)'
-                  : '1px solid transparent',
+              backgroundColor: 'hsl(240 22% 7%)',
+              borderColor: 'hsl(240 15% 11%)',
             }}
-          >
-            {chip.label}
-          </button>
-        ))}
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </div>
+
+        {/* Date chips + Status chips */}
+        <div className="flex flex-wrap gap-2">
+          {dateChips.map((chip) => (
+            <PillButton
+              key={chip.key}
+              active={dateFilter === chip.key}
+              onClick={() => setDateFilter(chip.key)}
+            >
+              {chip.label}
+            </PillButton>
+          ))}
+          <div className="w-px self-stretch" style={{ backgroundColor: 'hsl(240 15% 13%)' }} />
+          {statusChips.map((chip) => (
+            <PillButton
+              key={chip.key}
+              active={statusFilter === chip.key}
+              onClick={() => setStatusFilter(chip.key)}
+            >
+              {chip.label}
+            </PillButton>
+          ))}
+        </div>
       </div>
 
-      {/* Tabs */}
-      <Tabs defaultValue="confirmed">
-        <TabsList
-          className="w-full"
+      {/* Order lists */}
+      {isLoading ? (
+        <div className="space-y-2.5">
+          <CardSkeleton />
+          <CardSkeleton />
+          <CardSkeleton />
+        </div>
+      ) : visibleOrders.length === 0 ? (
+        <EmptyState
+          icon={FileText}
+          title="Nenhum pedido encontrado"
+          subtitle={search ? 'Tente outro termo de busca' : 'Ajuste os filtros ou clique em "Novo Pedido"'}
+        />
+      ) : (
+        <div className="space-y-2.5">
+          {statusFilter === 'all' && confirmedOrders.length > 0 && (
+            <>
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-white/30 px-0.5">
+                Confirmados · {confirmedOrders.length}
+              </p>
+              {confirmedOrders.map((order) => (
+                <OrderCard
+                  key={order.id}
+                  order={{ ...order, notes: notesOverrides[order.id] !== undefined ? notesOverrides[order.id] : order.notes }}
+                  onMarkDelivered={() => updateStatus.mutate({ id: order.id, status: 'delivered' })}
+                  selectionMode={selectionMode}
+                  selected={selectedOrders.has(order.id)}
+                  onToggleSelect={() => toggleSelect(order.id)}
+                  onUpdateNotes={handleUpdateNotes}
+                  onCancelOrder={handleCancelOrder}
+                />
+              ))}
+            </>
+          )}
+
+          {statusFilter === 'confirmed' && confirmedOrders.map((order) => (
+            <OrderCard
+              key={order.id}
+              order={{ ...order, notes: notesOverrides[order.id] !== undefined ? notesOverrides[order.id] : order.notes }}
+              onMarkDelivered={() => updateStatus.mutate({ id: order.id, status: 'delivered' })}
+              selectionMode={selectionMode}
+              selected={selectedOrders.has(order.id)}
+              onToggleSelect={() => toggleSelect(order.id)}
+              onUpdateNotes={handleUpdateNotes}
+              onCancelOrder={handleCancelOrder}
+            />
+          ))}
+
+          {statusFilter === 'all' && deliveredOrders.length > 0 && (
+            <>
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-white/30 px-0.5 mt-4">
+                Entregues · {deliveredOrders.length}
+              </p>
+              {deliveredOrders.map((order) => (
+                <OrderCard
+                  key={order.id}
+                  order={{ ...order, notes: notesOverrides[order.id] !== undefined ? notesOverrides[order.id] : order.notes }}
+                  onReorder={() => handleReorder(order)}
+                  selectionMode={selectionMode}
+                  selected={selectedOrders.has(order.id)}
+                  onToggleSelect={() => toggleSelect(order.id)}
+                  onUpdateNotes={handleUpdateNotes}
+                  onCancelOrder={handleCancelOrder}
+                />
+              ))}
+            </>
+          )}
+
+          {statusFilter === 'delivered' && deliveredOrders.map((order) => (
+            <OrderCard
+              key={order.id}
+              order={{ ...order, notes: notesOverrides[order.id] !== undefined ? notesOverrides[order.id] : order.notes }}
+              onReorder={() => handleReorder(order)}
+              selectionMode={selectionMode}
+              selected={selectedOrders.has(order.id)}
+              onToggleSelect={() => toggleSelect(order.id)}
+              onUpdateNotes={handleUpdateNotes}
+              onCancelOrder={handleCancelOrder}
+            />
+          ))}
+        </div>
+      )}
+
+      {/* Selection bar (bottom) */}
+      {selectionMode && (
+        <div
+          className="fixed bottom-0 left-0 right-0 z-50 px-4 pb-6 pt-3"
           style={{
-            backgroundColor: 'hsl(240 22% 7%)',
-            border: '1px solid hsl(240 15% 11%)',
+            background: 'linear-gradient(to top, hsl(240 25% 4%) 60%, transparent)',
           }}
         >
-          <TabsTrigger value="confirmed" className="flex-1 text-xs gap-1.5">
-            Confirmados
-            {!isLoading && (
-              <span
-                className="inline-flex items-center justify-center min-w-[18px] h-[18px] rounded px-1 text-[10px] font-bold"
+          <div
+            className="rounded-xl border px-4 py-3 flex items-center justify-between gap-3"
+            style={{
+              backgroundColor: 'hsl(240 20% 10%)',
+              borderColor: 'hsl(240 15% 16%)',
+            }}
+          >
+            <span className="text-sm font-medium text-white/60">
+              {selectedOrders.size} selecionado{selectedOrders.size !== 1 ? 's' : ''}
+            </span>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={handleBulkExport}
+                disabled={selectedOrders.size === 0}
+                className="h-8 px-3 rounded-lg border text-xs font-medium flex items-center gap-1.5 transition-all disabled:opacity-40"
                 style={{
-                  backgroundColor: 'hsl(42 60% 55% / 0.12)',
-                  color: 'hsl(42 60% 55%)',
+                  borderColor: 'hsl(240 15% 18%)',
+                  color: 'hsl(var(--muted-foreground))',
                 }}
               >
-                {confirmedOrders.length}
-              </span>
-            )}
-          </TabsTrigger>
-          <TabsTrigger value="delivered" className="flex-1 text-xs gap-1.5">
-            Entregues
-            {!isLoading && (
-              <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] rounded px-1 bg-emerald-950/60 text-emerald-400 text-[10px] font-bold">
-                {deliveredOrders.length}
-              </span>
-            )}
-          </TabsTrigger>
-        </TabsList>
-
-        {/* Confirmed tab */}
-        <TabsContent value="confirmed" className="space-y-2.5 mt-3">
-          {isLoading ? (
-            <>
-              <CardSkeleton />
-              <CardSkeleton />
-              <CardSkeleton />
-            </>
-          ) : confirmedOrders.length === 0 ? (
-            <EmptyState
-              icon={FileText}
-              title="Nenhum pedido confirmado"
-              subtitle={search ? 'Tente outro termo de busca' : 'Clique em "Novo Pedido" para começar'}
-            />
-          ) : (
-            confirmedOrders.map((order) => (
-              <OrderCard
-                key={order.id}
-                order={order}
-                onMarkDelivered={() =>
-                  updateStatus.mutate({ id: order.id, status: 'delivered' })
-                }
-              />
-            ))
-          )}
-        </TabsContent>
-
-        {/* Delivered tab */}
-        <TabsContent value="delivered" className="space-y-2.5 mt-3">
-          {isLoading ? (
-            <>
-              <CardSkeleton />
-              <CardSkeleton />
-            </>
-          ) : deliveredOrders.length === 0 ? (
-            <EmptyState
-              icon={Truck}
-              title="Nenhuma entrega registrada"
-              subtitle={search ? 'Tente outro termo de busca' : 'Entregas concluídas aparecerão aqui'}
-            />
-          ) : (
-            deliveredOrders.map((order) => (
-              <OrderCard
-                key={order.id}
-                order={order}
-                onReorder={() => handleReorder(order)}
-              />
-            ))
-          )}
-        </TabsContent>
-      </Tabs>
+                <Download className="w-3 h-3" />
+                Exportar
+              </button>
+              <button
+                type="button"
+                onClick={handleBulkMarkDelivered}
+                disabled={selectedOrders.size === 0}
+                className="h-8 px-3 rounded-lg text-xs font-semibold transition-all disabled:opacity-40"
+                style={{
+                  backgroundColor: 'hsl(152 60% 35% / 0.15)',
+                  color: 'hsl(152 60% 50%)',
+                  border: '1px solid hsl(152 60% 35% / 0.3)',
+                }}
+              >
+                Marcar entregues
+              </button>
+              <button
+                type="button"
+                onClick={exitSelectionMode}
+                className="h-8 px-3 rounded-lg border text-xs font-medium transition-all"
+                style={{
+                  borderColor: 'hsl(240 15% 18%)',
+                  color: 'hsl(var(--muted-foreground))',
+                }}
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
