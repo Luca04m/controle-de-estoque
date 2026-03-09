@@ -1,0 +1,219 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+/* ─── Mr. Lion Brand — Dark Navy/Gold Theme (always dark) ─── */
+:root {
+  --background: 240 25% 4%;
+  --foreground: 240 20% 92%;
+  --card: 240 20% 7%;
+  --card-foreground: 240 20% 92%;
+  --popover: 240 20% 9%;
+  --popover-foreground: 240 20% 92%;
+  --primary: 42 60% 55%;
+  --primary-foreground: 240 25% 4%;
+  --secondary: 240 18% 12%;
+  --secondary-foreground: 240 20% 92%;
+  --muted: 240 10% 14%;
+  --muted-foreground: 240 8% 55%;
+  --accent: 42 40% 18%;
+  --accent-foreground: 240 20% 92%;
+  --destructive: 4 70% 46%;
+  --destructive-foreground: 0 0% 97%;
+  --border: 240 18% 14%;
+  --input: 240 18% 12%;
+  --ring: 42 60% 55%;
+  --radius: 0.5rem;
+  --sidebar: 240 22% 5%;
+  --sidebar-foreground: 240 20% 92%;
+  --sidebar-primary: 42 60% 55%;
+  --sidebar-primary-foreground: 240 25% 4%;
+  --sidebar-accent: 42 40% 18%;
+  --sidebar-accent-foreground: 240 20% 92%;
+  --sidebar-border: 240 18% 10%;
+  --sidebar-ring: 42 60% 55%;
+  --chart-1: 42 60% 55%;
+  --chart-2: 4 70% 46%;
+  --chart-3: 142 65% 40%;
+  --chart-4: 210 70% 50%;
+  --chart-5: 270 60% 55%;
+  /* Gold tokens */
+  --gold: 42 60% 55%;
+  --gold-dim: 42 50% 42%;
+  --gold-light: 42 65% 68%;
+}
+
+/* Dark mirror (same values — always dark) */
+.dark {
+  --background: 240 25% 4%;
+  --foreground: 240 20% 92%;
+  --card: 240 20% 7%;
+  --card-foreground: 240 20% 92%;
+  --popover: 240 20% 9%;
+  --popover-foreground: 240 20% 92%;
+  --primary: 42 60% 55%;
+  --primary-foreground: 240 25% 4%;
+  --secondary: 240 18% 12%;
+  --secondary-foreground: 240 20% 92%;
+  --muted: 240 10% 14%;
+  --muted-foreground: 240 8% 55%;
+  --accent: 42 40% 18%;
+  --accent-foreground: 240 20% 92%;
+  --destructive: 4 70% 46%;
+  --destructive-foreground: 0 0% 97%;
+  --border: 240 18% 14%;
+  --input: 240 18% 12%;
+  --ring: 42 60% 55%;
+  --sidebar: 240 22% 5%;
+  --sidebar-foreground: 240 20% 92%;
+  --sidebar-primary: 42 60% 55%;
+  --sidebar-primary-foreground: 240 25% 4%;
+  --sidebar-accent: 42 40% 18%;
+  --sidebar-accent-foreground: 240 20% 92%;
+  --sidebar-border: 240 18% 10%;
+  --sidebar-ring: 42 60% 55%;
+  --chart-1: 42 60% 55%;
+  --chart-2: 4 70% 46%;
+  --chart-3: 142 65% 40%;
+  --chart-4: 210 70% 50%;
+  --chart-5: 270 60% 55%;
+  --gold: 42 60% 55%;
+  --gold-dim: 42 50% 42%;
+  --gold-light: 42 65% 68%;
+}
+
+@theme inline {
+  /* Fonts */
+  --font-sans: 'Space Grotesk', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+
+  /* Gold custom tokens */
+  --color-gold: hsl(42 60% 55%);
+  --color-gold-dim: hsl(42 50% 42%);
+  --color-gold-light: hsl(42 65% 68%);
+  --color-gold-muted: hsl(42 60% 55% / 0.2);
+
+  /* Shadcn color tokens */
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+  --color-card: hsl(var(--card));
+  --color-card-foreground: hsl(var(--card-foreground));
+  --color-popover: hsl(var(--popover));
+  --color-popover-foreground: hsl(var(--popover-foreground));
+  --color-primary: hsl(var(--primary));
+  --color-primary-foreground: hsl(var(--primary-foreground));
+  --color-secondary: hsl(var(--secondary));
+  --color-secondary-foreground: hsl(var(--secondary-foreground));
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+  --color-accent: hsl(var(--accent));
+  --color-accent-foreground: hsl(var(--accent-foreground));
+  --color-destructive: hsl(var(--destructive));
+  --color-destructive-foreground: hsl(var(--destructive-foreground));
+  --color-border: hsl(var(--border));
+  --color-input: hsl(var(--input));
+  --color-ring: hsl(var(--ring));
+  --color-chart-1: hsl(var(--chart-1));
+  --color-chart-2: hsl(var(--chart-2));
+  --color-chart-3: hsl(var(--chart-3));
+  --color-chart-4: hsl(var(--chart-4));
+  --color-chart-5: hsl(var(--chart-5));
+  --color-sidebar: hsl(var(--sidebar));
+  --color-sidebar-foreground: hsl(var(--sidebar-foreground));
+  --color-sidebar-primary: hsl(var(--sidebar-primary));
+  --color-sidebar-primary-foreground: hsl(var(--sidebar-primary-foreground));
+  --color-sidebar-accent: hsl(var(--sidebar-accent));
+  --color-sidebar-accent-foreground: hsl(var(--sidebar-accent-foreground));
+  --color-sidebar-border: hsl(var(--sidebar-border));
+  --color-sidebar-ring: hsl(var(--sidebar-ring));
+
+  /* Radius scale */
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'Space Grotesk', system-ui, sans-serif;
+    margin: 0;
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  .font-mono {
+    font-family: 'JetBrains Mono', monospace;
+  }
+}
+
+/* ─── Mr. Lion Utilities ─── */
+@layer utilities {
+  .grid-pattern {
+    background-image:
+      linear-gradient(hsl(42 60% 55% / 0.04) 1px, transparent 1px),
+      linear-gradient(90deg, hsl(42 60% 55% / 0.04) 1px, transparent 1px);
+    background-size: 60px 60px;
+  }
+  .gold-glow {
+    box-shadow: 0 0 20px hsl(42 60% 55% / 0.12), 0 0 60px hsl(42 60% 55% / 0.04);
+  }
+  .glow-pulse {
+    animation: glow-pulse 2s ease-in-out infinite;
+  }
+  .gradient-gold {
+    background: linear-gradient(135deg, hsl(42 60% 55%), hsl(38 70% 42%));
+  }
+  .gradient-card {
+    background: linear-gradient(145deg, hsl(240 20% 9%), hsl(240 20% 6%));
+  }
+  .text-gold {
+    color: hsl(42 60% 55%);
+  }
+  .text-gold-light {
+    color: hsl(42 65% 68%);
+  }
+  .bg-gold {
+    background-color: hsl(42 60% 55%);
+  }
+  .border-gold {
+    border-color: hsl(42 60% 55%);
+  }
+  .ring-gold {
+    --tw-ring-color: hsl(42 60% 55%);
+  }
+}
+
+/* ─── Keyframes ─── */
+@keyframes glow-pulse {
+  0%, 100% {
+    box-shadow: 0 0 20px hsl(42 60% 55% / 0.2), 0 0 60px hsl(42 60% 55% / 0.05);
+  }
+  50% {
+    box-shadow: 0 0 30px hsl(42 60% 55% / 0.35), 0 0 80px hsl(42 60% 55% / 0.12);
+  }
+}
+
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-slide-up {
+  animation: slide-up 0.3s ease-out;
+}
