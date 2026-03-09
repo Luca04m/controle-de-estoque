@@ -1,22 +1,64 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useProducts } from '@/hooks/useProducts'
 import { useDeliveryOrders, useCreateOrder, useUpdateOrderStatus } from '@/hooks/useDeliveryOrders'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import type { OrderItem } from '@/types'
+import { Search, Package, MapPin, User, RotateCcw } from 'lucide-react'
+import type { OrderItem, DeliveryOrder } from '@/types'
 
-interface PendingItem extends OrderItem { tempId: string }
+const fmt = (v: number) =>
+  new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v)
 
-function NewOrderForm({ onDone }: { onDone: () => void }) {
+interface PendingItem extends OrderItem {
+  tempId: string
+}
+
+// ─── Date filter helpers ────────────────────────────────────────────────────
+
+type DateFilter = 'today' | 'week' | 'all'
+
+function isToday(dateStr: string) {
+  const d = new Date(dateStr)
+  const now = new Date()
+  return (
+    d.getFullYear() === now.getFullYear() &&
+    d.getMonth() === now.getMonth() &&
+    d.getDate() === now.getDate()
+  )
+}
+
+function isThisWeek(dateStr: string) {
+  const d = new Date(dateStr)
+  const now = new Date()
+  const startOfWeek = new Date(now)
+  startOfWeek.setDate(now.getDate() - now.getDay())
+  startOfWeek.setHours(0, 0, 0, 0)
+  return d >= startOfWeek
+}
+
+// ─── NewOrderForm ────────────────────────────────────────────────────────────
+
+interface NewOrderFormProps {
+  onDone: () => void
+  prefillItems?: PendingItem[]
+}
+
+function NewOrderForm({ onDone, prefillItems }: NewOrderFormProps) {
   const { data: products } = useProducts()
   const createOrder = useCreateOrder()
-  const [items, setItems] = useState<PendingItem[]>([])
+  const [items, setItems] = useState<PendingItem[]>(prefillItems ?? [])
   const [selectedProductId, setSelectedProductId] = useState('')
   const [qty, setQty] = useState(1)
   const [reference, setReference] = useState('')
+  const [address, setAddress] = useState('')
   const [step, setStep] = useState<'form' | 'confirm'>('form')
+
+  const totalValue = useMemo(
+    () => items.reduce((sum, i) => sum + i.quantity * (i.unit_price ?? 0), 0),
+    [items]
+  )
 
   function addItem() {
     const product = products?.find((p) => p.id === selectedProductId)
@@ -32,6 +74,7 @@ function NewOrderForm({ onDone }: { onDone: () => void }) {
         product_id: product.id,
         product_name: product.name,
         quantity: qty,
+        unit_price: product.price_sale ?? 0,
       }])
     }
     setSelectedProductId('')
@@ -57,12 +100,18 @@ function NewOrderForm({ onDone }: { onDone: () => void }) {
       items: items.map(({ tempId: _t, ...item }) => item),
       reference: reference || null,
       notes: null,
-    })
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      address: address || null as any,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      total_value: totalValue || null as any,
+    } as any)
     onDone()
   }
 
   const stockError = validateStock()
+  const totalItems = items.reduce((s, i) => s + i.quantity, 0)
 
+  // ── Confirm step ──────────────────────────────────────────────────────────
   if (step === 'confirm') {
     return (
       <div className="space-y-5">
@@ -75,14 +124,34 @@ function NewOrderForm({ onDone }: { onDone: () => void }) {
 
         <div className="bg-card border border-gold/30 rounded-xl p-5 space-y-3 gold-glow">
           {items.map((item) => (
-            <div key={item.tempId} className="flex justify-between items-center py-1.5 border-b border-border last:border-0">
+            <div
+              key={item.tempId}
+              className="flex justify-between items-center py-1.5 border-b border-border last:border-0"
+            >
               <span className="font-medium text-foreground">{item.product_name}</span>
-              <span className="font-bold tabular-nums text-gold">{item.quantity} un</span>
+              <div className="flex items-center gap-3 text-right">
+                <span className="text-xs text-muted-foreground">{item.quantity} un</span>
+                <span className="font-bold tabular-nums text-gold text-sm">
+                  {fmt(item.quantity * (item.unit_price ?? 0))}
+                </span>
+              </div>
             </div>
           ))}
+
+          <div className="flex justify-between items-center pt-2 border-t border-gold/20">
+            <span className="text-sm font-semibold text-foreground">Total</span>
+            <span className="text-lg font-black tabular-nums text-gold">{fmt(totalValue)}</span>
+          </div>
+
           {reference && (
-            <p className="text-xs text-muted-foreground pt-1">
+            <p className="text-xs text-muted-foreground">
               Ref: {reference}
+            </p>
+          )}
+          {address && (
+            <p className="text-xs text-muted-foreground flex items-center gap-1">
+              <MapPin className="w-3 h-3 shrink-0" />
+              {address}
             </p>
           )}
         </div>
@@ -112,6 +181,7 @@ function NewOrderForm({ onDone }: { onDone: () => void }) {
     )
   }
 
+  // ── Form step ─────────────────────────────────────────────────────────────
   return (
     <div className="space-y-5">
       {/* Reference */}
@@ -127,6 +197,20 @@ function NewOrderForm({ onDone }: { onDone: () => void }) {
         />
       </div>
 
+      {/* Address */}
+      <div className="space-y-1.5">
+        <Label className="text-xs tracking-wider uppercase text-muted-foreground">
+          Endereço / Destinatário <span className="text-red-400">*</span>
+        </Label>
+        <Input
+          placeholder="Ex: Rua das Flores 123, São Paulo — João Silva"
+          className="h-12 bg-card border-border"
+          value={address}
+          onChange={(e) => setAddress(e.target.value)}
+          required
+        />
+      </div>
+
       <div className="h-px bg-border" />
 
       {/* Add product */}
@@ -134,7 +218,10 @@ function NewOrderForm({ onDone }: { onDone: () => void }) {
         <Label className="text-xs tracking-wider uppercase text-muted-foreground">
           Adicionar Produto
         </Label>
-        <Select value={selectedProductId} onValueChange={(v) => { if (v) setSelectedProductId(v) }}>
+        <Select
+          value={selectedProductId}
+          onValueChange={(v) => { if (v) setSelectedProductId(v) }}
+        >
           <SelectTrigger className="h-12 bg-card border-border">
             <SelectValue placeholder="Selecione..." />
           </SelectTrigger>
@@ -142,7 +229,9 @@ function NewOrderForm({ onDone }: { onDone: () => void }) {
             {products?.map((p) => (
               <SelectItem key={p.id} value={p.id}>
                 <span>{p.name}</span>
-                <span className="text-xs text-muted-foreground ml-2">({p.current_stock} un)</span>
+                <span className="text-xs text-muted-foreground ml-2">
+                  ({p.current_stock} un · {fmt(p.price_sale)})
+                </span>
               </SelectItem>
             ))}
           </SelectContent>
@@ -194,7 +283,12 @@ function NewOrderForm({ onDone }: { onDone: () => void }) {
             >
               <div>
                 <p className="font-medium text-foreground text-sm">{item.product_name}</p>
-                <p className="text-xs text-muted-foreground">{item.quantity} unidades</p>
+                <p className="text-xs text-muted-foreground">
+                  {item.quantity} un · {fmt(item.unit_price ?? 0)} cada ={' '}
+                  <span className="text-gold font-semibold">
+                    {fmt(item.quantity * (item.unit_price ?? 0))}
+                  </span>
+                </p>
               </div>
               <button
                 type="button"
@@ -205,20 +299,37 @@ function NewOrderForm({ onDone }: { onDone: () => void }) {
               </button>
             </div>
           ))}
+
+          {/* Running total */}
+          <div className="flex justify-between items-center px-3 py-2 bg-gold/5 border border-gold/20 rounded-lg">
+            <span className="text-xs text-muted-foreground">
+              {totalItems} {totalItems === 1 ? 'unidade' : 'unidades'} · {items.length}{' '}
+              {items.length === 1 ? 'produto' : 'produtos'}
+            </span>
+            <span className="font-black text-gold tabular-nums">{fmt(totalValue)}</span>
+          </div>
         </div>
       )}
 
       <button
         type="button"
-        disabled={items.length === 0}
+        disabled={items.length === 0 || !address.trim()}
         onClick={() => setStep('confirm')}
         className="w-full h-14 rounded-xl bg-gold text-[oklch(0.07_0_0)] font-bold text-sm tracking-wider uppercase hover:opacity-90 active:scale-[0.98] transition-all disabled:opacity-40"
       >
         Revisar Pedido ({items.length} {items.length === 1 ? 'item' : 'itens'}) →
       </button>
+
+      {!address.trim() && items.length > 0 && (
+        <p className="text-xs text-amber-400 text-center -mt-2">
+          Preencha o endereço para continuar
+        </p>
+      )}
     </div>
   )
 }
+
+// ─── OrderStatusBadge ────────────────────────────────────────────────────────
 
 function OrderStatusBadge({ status }: { status: string }) {
   const map: Record<string, { label: string; className: string }> = {
@@ -235,7 +346,10 @@ function OrderStatusBadge({ status }: { status: string }) {
       className: 'bg-emerald-950/40 text-emerald-400 border-emerald-800/30',
     },
   }
-  const config = map[status] ?? { label: status, className: 'bg-secondary text-muted-foreground border-border' }
+  const config = map[status] ?? {
+    label: status,
+    className: 'bg-secondary text-muted-foreground border-border',
+  }
   return (
     <span className={`text-xs border rounded-md px-2 py-0.5 font-medium ${config.className}`}>
       {config.label}
@@ -243,17 +357,145 @@ function OrderStatusBadge({ status }: { status: string }) {
   )
 }
 
+// ─── OrderCard ───────────────────────────────────────────────────────────────
+
+interface OrderCardProps {
+  order: DeliveryOrder
+  onMarkDelivered?: () => void
+  onReorder?: () => void
+}
+
+function OrderCard({ order, onMarkDelivered, onReorder }: OrderCardProps) {
+  const items = order.items as OrderItem[]
+  const totalItems = items.reduce((s, i) => s + i.quantity, 0)
+  const totalValue =
+    order.total_value ??
+    items.reduce((s, i) => s + i.quantity * (i.unit_price ?? 0), 0)
+  const operator =
+    (order.profile as { full_name?: string } | undefined)?.full_name ?? '—'
+
+  return (
+    <div className="bg-card border border-border rounded-xl p-4 space-y-3 hover:border-gold/20 transition-colors">
+      {/* Header */}
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-sm font-mono text-foreground truncate flex-1">
+          {order.reference ?? order.id.slice(0, 8)}
+        </p>
+        <div className="flex items-center gap-2 shrink-0">
+          <span className="text-xs bg-secondary text-muted-foreground border border-border rounded-md px-2 py-0.5 tabular-nums">
+            {totalItems} un
+          </span>
+          <OrderStatusBadge status={order.status} />
+        </div>
+      </div>
+
+      {/* Value + meta row */}
+      <div className="flex items-center justify-between">
+        <span className="font-black tabular-nums text-gold text-lg">{fmt(totalValue)}</span>
+        <span className="text-xs text-muted-foreground">
+          {new Date(order.created_at).toLocaleString('pt-BR', {
+            day: '2-digit',
+            month: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+          })}
+        </span>
+      </div>
+
+      {/* Address */}
+      {order.address && (
+        <div className="flex items-start gap-1.5 text-xs text-muted-foreground">
+          <MapPin className="w-3 h-3 mt-0.5 shrink-0 text-gold/60" />
+          <span className="truncate" title={order.address}>
+            {order.address}
+          </span>
+        </div>
+      )}
+
+      {/* Operator */}
+      <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+        <User className="w-3 h-3 shrink-0" />
+        <span>{operator}</span>
+      </div>
+
+      {/* Items */}
+      <div className="space-y-1 border-t border-border pt-3">
+        {items.map((item, i) => (
+          <div key={i} className="flex justify-between text-sm">
+            <span className="text-muted-foreground">{item.product_name}</span>
+            <span className="font-semibold tabular-nums text-foreground">{item.quantity} un</span>
+          </div>
+        ))}
+      </div>
+
+      {/* Actions */}
+      <div className="flex gap-2 pt-1">
+        {onMarkDelivered && (
+          <button
+            className="flex-1 h-9 rounded-lg border border-border text-xs text-muted-foreground hover:text-foreground hover:border-gold/40 transition-all"
+            onClick={onMarkDelivered}
+          >
+            Marcar como Entregue
+          </button>
+        )}
+        {onReorder && (
+          <button
+            className="flex items-center gap-1.5 h-9 px-3 rounded-lg border border-gold/30 text-xs text-gold hover:bg-gold/10 transition-all"
+            onClick={onReorder}
+          >
+            <RotateCcw className="w-3 h-3" />
+            Repetir Pedido
+          </button>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// ─── OrdersPage ──────────────────────────────────────────────────────────────
+
 export function OrdersPage() {
   const { data: orders, isLoading } = useDeliveryOrders()
+  const { data: products } = useProducts()
   const updateStatus = useUpdateOrderStatus()
+
   const [showNew, setShowNew] = useState(false)
+  const [prefillItems, setPrefillItems] = useState<PendingItem[] | undefined>()
+  const [search, setSearch] = useState('')
+  const [dateFilter, setDateFilter] = useState<DateFilter>('all')
+
+  function handleReorder(order: DeliveryOrder) {
+    // Map delivered order items back into PendingItems, refreshing unit_price from current catalogue
+    const pending: PendingItem[] = (order.items as OrderItem[]).map((item) => {
+      const product = products?.find((p) => p.id === item.product_id)
+      return {
+        tempId: crypto.randomUUID(),
+        product_id: item.product_id,
+        product_name: item.product_name,
+        quantity: item.quantity,
+        unit_price: product?.price_sale ?? item.unit_price ?? 0,
+      }
+    })
+    setPrefillItems(pending)
+    setShowNew(true)
+  }
+
+  function handleNewOrder() {
+    setPrefillItems(undefined)
+    setShowNew(true)
+  }
+
+  function handleDone() {
+    setShowNew(false)
+    setPrefillItems(undefined)
+  }
 
   if (showNew) {
     return (
       <div className="max-w-md mx-auto p-4 space-y-5">
         <div className="flex items-center gap-3">
           <button
-            onClick={() => setShowNew(false)}
+            onClick={handleDone}
             className="text-sm text-muted-foreground hover:text-foreground transition-colors"
           >
             ← Voltar
@@ -262,16 +504,50 @@ export function OrdersPage() {
             className="text-xl text-foreground"
             style={{ fontFamily: '"DM Serif Display", Georgia, serif' }}
           >
-            Novo Pedido
+            {prefillItems ? 'Repetir Pedido' : 'Novo Pedido'}
           </h1>
         </div>
-        <NewOrderForm onDone={() => setShowNew(false)} />
+        <NewOrderForm onDone={handleDone} prefillItems={prefillItems} />
       </div>
     )
   }
 
+  // Filter helpers
+  function applyDateFilter(list: DeliveryOrder[]) {
+    if (dateFilter === 'today') return list.filter((o) => isToday(o.created_at))
+    if (dateFilter === 'week') return list.filter((o) => isThisWeek(o.created_at))
+    return list
+  }
+
+  function applySearch(list: DeliveryOrder[]) {
+    const q = search.trim().toLowerCase()
+    if (!q) return list
+    return list.filter(
+      (o) =>
+        o.reference?.toLowerCase().includes(q) ||
+        o.address?.toLowerCase().includes(q)
+    )
+  }
+
+  const confirmedOrders = applySearch(
+    applyDateFilter(
+      orders?.filter((o) => o.status === 'confirmed' || o.status === 'pending') ?? []
+    )
+  )
+
+  const deliveredOrders = applySearch(
+    applyDateFilter(orders?.filter((o) => o.status === 'delivered') ?? [])
+  )
+
+  const dateChips: { key: DateFilter; label: string }[] = [
+    { key: 'today', label: 'Hoje' },
+    { key: 'week', label: 'Esta semana' },
+    { key: 'all', label: 'Todos' },
+  ]
+
   return (
     <div className="space-y-5 p-4 max-w-2xl mx-auto">
+      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1
@@ -283,72 +559,103 @@ export function OrdersPage() {
           <p className="text-xs text-muted-foreground mt-1">Delivery Mr. Lion</p>
         </div>
         <button
-          onClick={() => setShowNew(true)}
+          onClick={handleNewOrder}
           className="h-11 px-5 rounded-xl bg-gold text-[oklch(0.07_0_0)] font-bold text-sm hover:opacity-90 transition-all"
         >
           + Novo Pedido
         </button>
       </div>
 
+      {/* Search */}
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+        <Input
+          placeholder="Buscar por referência ou endereço..."
+          className="pl-9 h-10 bg-card border-border text-sm"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+      </div>
+
+      {/* Date filter chips */}
+      <div className="flex gap-2">
+        {dateChips.map((chip) => (
+          <button
+            key={chip.key}
+            onClick={() => setDateFilter(chip.key)}
+            className={`h-7 px-3 rounded-full text-xs font-medium border transition-all ${
+              dateFilter === chip.key
+                ? 'bg-gold/10 text-gold border-gold/30'
+                : 'bg-secondary text-muted-foreground border-border hover:border-gold/20 hover:text-foreground'
+            }`}
+          >
+            {chip.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Tabs */}
       <Tabs defaultValue="confirmed">
         <TabsList className="w-full bg-card border border-border">
-          <TabsTrigger value="confirmed" className="flex-1 text-xs tracking-wide">Em andamento</TabsTrigger>
-          <TabsTrigger value="delivered" className="flex-1 text-xs tracking-wide">Entregues</TabsTrigger>
+          <TabsTrigger value="confirmed" className="flex-1 text-xs tracking-wide gap-1.5">
+            Confirmados
+            {!isLoading && (
+              <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-gold/10 text-gold text-[10px] font-bold">
+                {confirmedOrders.length}
+              </span>
+            )}
+          </TabsTrigger>
+          <TabsTrigger value="delivered" className="flex-1 text-xs tracking-wide gap-1.5">
+            Entregues
+            {!isLoading && (
+              <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-emerald-950/60 text-emerald-400 text-[10px] font-bold">
+                {deliveredOrders.length}
+              </span>
+            )}
+          </TabsTrigger>
         </TabsList>
 
-        {(['confirmed', 'delivered'] as const).map((tab) => (
-          <TabsContent key={tab} value={tab} className="space-y-3 mt-4">
-            {isLoading ? (
-              <p className="text-center text-muted-foreground py-8 text-sm">Carregando...</p>
-            ) : (
-              orders
-                ?.filter((o) => o.status === tab || (tab === 'confirmed' && o.status === 'pending'))
-                .map((order) => (
-                  <div
-                    key={order.id}
-                    className="bg-card border border-border rounded-xl p-4 space-y-3"
-                  >
-                    <div className="flex items-center justify-between">
-                      <p className="text-sm font-mono text-foreground">
-                        {order.reference ?? order.id.slice(0, 8)}
-                      </p>
-                      <OrderStatusBadge status={order.status} />
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      {new Date(order.created_at).toLocaleString('pt-BR')}
-                    </p>
+        {/* Confirmed tab */}
+        <TabsContent value="confirmed" className="space-y-3 mt-4">
+          {isLoading ? (
+            <p className="text-center text-muted-foreground py-8 text-sm">Carregando...</p>
+          ) : confirmedOrders.length === 0 ? (
+            <div className="flex flex-col items-center gap-2 py-12 text-muted-foreground">
+              <Package className="w-8 h-8 opacity-30" />
+              <p className="text-sm">Nenhum pedido confirmado</p>
+            </div>
+          ) : (
+            confirmedOrders.map((order) => (
+              <OrderCard
+                key={order.id}
+                order={order}
+                onMarkDelivered={() =>
+                  updateStatus.mutate({ id: order.id, status: 'delivered' })
+                }
+              />
+            ))
+          )}
+        </TabsContent>
 
-                    <div className="space-y-1.5 border-t border-border pt-3">
-                      {(order.items as OrderItem[]).map((item, i) => (
-                        <div key={i} className="flex justify-between text-sm">
-                          <span className="text-muted-foreground">{item.product_name}</span>
-                          <span className="font-semibold tabular-nums text-foreground">
-                            {item.quantity} un
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-
-                    {order.status === 'confirmed' && (
-                      <button
-                        className="w-full h-9 rounded-lg border border-border text-xs text-muted-foreground hover:text-foreground hover:border-gold/40 transition-all"
-                        onClick={() => updateStatus.mutate({ id: order.id, status: 'delivered' })}
-                      >
-                        Marcar como Entregue
-                      </button>
-                    )}
-                  </div>
-                ))
-            )}
-            {!isLoading && !orders?.filter((o) =>
-              o.status === tab || (tab === 'confirmed' && o.status === 'pending')
-            ).length && (
-              <p className="text-center text-muted-foreground py-8 text-sm">
-                Nenhum pedido
-              </p>
-            )}
-          </TabsContent>
-        ))}
+        {/* Delivered tab */}
+        <TabsContent value="delivered" className="space-y-3 mt-4">
+          {isLoading ? (
+            <p className="text-center text-muted-foreground py-8 text-sm">Carregando...</p>
+          ) : deliveredOrders.length === 0 ? (
+            <div className="flex flex-col items-center gap-2 py-12 text-muted-foreground">
+              <Package className="w-8 h-8 opacity-30" />
+              <p className="text-sm">Nenhum pedido entregue</p>
+            </div>
+          ) : (
+            deliveredOrders.map((order) => (
+              <OrderCard
+                key={order.id}
+                order={order}
+                onReorder={() => handleReorder(order)}
+              />
+            ))
+          )}
+        </TabsContent>
       </Tabs>
     </div>
   )

@@ -1,5 +1,6 @@
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts'
-import { TrendingUp, TrendingDown, Package, ShoppingBag, AlertTriangle, PackagePlus, Activity } from 'lucide-react'
+import { TrendingUp, TrendingDown, ShoppingBag, AlertTriangle, PackagePlus, Activity, DollarSign } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 import { useProducts } from '@/hooks/useProducts'
 import { useStockMovements } from '@/hooks/useStockMovements'
 import { useDeliveryOrders } from '@/hooks/useDeliveryOrders'
@@ -36,6 +37,9 @@ const CATEGORY_LABELS: Record<string, string> = {
 }
 
 const GOLD_COLOR = 'hsl(42, 60%, 55%)'
+
+const formatCurrency = (value: number) =>
+  new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value)
 
 // ─── RealtimeIndicator ───────────────────────────────────────────────────────
 
@@ -121,7 +125,7 @@ function ChartTooltip({ active, payload, label }: {
   return (
     <div className="bg-popover border border-border rounded-lg px-3 py-2 text-xs shadow-lg">
       <p className="text-muted-foreground mb-0.5">{label}</p>
-      <p className="font-bold text-gold">{payload[0].value} produtos</p>
+      <p className="font-bold text-gold">{payload[0].value} un</p>
     </div>
   )
 }
@@ -129,6 +133,7 @@ function ChartTooltip({ active, payload, label }: {
 // ─── DashboardPage ───────────────────────────────────────────────────────────
 
 export function DashboardPage() {
+  const navigate = useNavigate()
   const { data: products, isLoading: loadingProducts } = useProducts()
   const { data: movements, isLoading: loadingMovements } = useStockMovements({ limit: 20 })
   const { data: orders, isLoading: loadingOrders } = useDeliveryOrders()
@@ -138,13 +143,33 @@ export function DashboardPage() {
   const today = new Date().toISOString().slice(0, 10)
   const todayMovements = movements?.filter((m) => m.created_at.startsWith(today)) ?? []
   const todayIns = todayMovements.filter((m) => m.action === 'in').length
-  const todayOrders = orders?.filter((o) => o.created_at.startsWith(today)) ?? []
 
-  // Category distribution for bar chart
+  // "Pedidos Hoje" = orders delivered today (status='delivered')
+  const todayDeliveredOrders = orders?.filter(
+    (o) => o.status === 'delivered' && o.delivered_at && o.delivered_at.startsWith(today)
+  ) ?? []
+
+  // "Valor do Estoque" = sum(current_stock * price_sale)
+  const stockValue = products?.reduce(
+    (acc, p) => acc + (p.current_stock * (p.price_sale ?? 0)),
+    0
+  ) ?? 0
+
+  // Category chart: SUM of current_stock per category (active products only)
   const categoryData = Object.entries(CATEGORY_LABELS).map(([key, label]) => ({
     name: label,
-    value: products?.filter((p) => p.category === key && p.active).length ?? 0,
+    value: products
+      ?.filter((p) => p.category === key && p.active)
+      .reduce((acc, p) => acc + p.current_stock, 0) ?? 0,
   }))
+
+  // All products sorted: critical first (current_stock <= min_stock), then by stock ascending
+  const sortedProducts = [...(products ?? [])].sort((a, b) => {
+    const aCrit = a.current_stock <= a.min_stock ? 0 : 1
+    const bCrit = b.current_stock <= b.min_stock ? 0 : 1
+    if (aCrit !== bCrit) return aCrit - bCrit
+    return a.current_stock - b.current_stock
+  })
 
   const loading = loadingProducts || loadingMovements || loadingOrders
 
@@ -163,6 +188,7 @@ export function DashboardPage() {
             <Skeleton key={i} className="h-28 bg-secondary rounded-xl" />
           ))}
         </div>
+        <Skeleton className="h-12 w-full bg-secondary rounded-xl" />
         <Skeleton className="h-48 w-full bg-secondary rounded-xl" />
         <div className="grid md:grid-cols-2 gap-5">
           <Skeleton className="h-64 bg-secondary rounded-xl" />
@@ -232,8 +258,8 @@ export function DashboardPage() {
         />
         <StatCard
           title="Pedidos Hoje"
-          value={todayOrders.length}
-          sub="delivery"
+          value={todayDeliveredOrders.length}
+          sub="entregues hoje"
           accent="gold"
           icon={ShoppingBag}
         />
@@ -245,18 +271,36 @@ export function DashboardPage() {
           icon={PackagePlus}
         />
         <StatCard
-          title="Total Produtos"
-          value={products?.length ?? 0}
-          sub="no catálogo"
-          accent="none"
-          icon={Package}
+          title="Valor do Estoque"
+          value={formatCurrency(stockValue)}
+          sub="preço de venda"
+          accent="gold"
+          icon={DollarSign}
         />
+      </div>
+
+      {/* ── Quick Actions ── */}
+      <div className="animate-slide-up flex gap-3 flex-wrap">
+        <button
+          onClick={() => navigate('/entrada')}
+          className="flex items-center gap-2 h-11 px-5 rounded-xl bg-gold text-[oklch(0.07_0_0)] font-bold text-sm tracking-wide hover:opacity-90 active:scale-[0.98] transition-all"
+        >
+          <PackagePlus size={15} />
+          Registrar Entrada
+        </button>
+        <button
+          onClick={() => navigate('/pedidos')}
+          className="flex items-center gap-2 h-11 px-5 rounded-xl border border-gold/30 bg-gold/10 text-gold font-semibold text-sm hover:bg-gold/20 active:scale-[0.98] transition-all"
+        >
+          <ShoppingBag size={15} />
+          Novo Pedido
+        </button>
       </div>
 
       {/* ── Category Distribution Chart ── */}
       <div className="animate-slide-up bg-card border border-border rounded-xl p-5">
         <p className="text-xs tracking-wider uppercase text-muted-foreground mb-4">
-          Distribuição por Categoria
+          Estoque por Categoria (unidades)
         </p>
         <ResponsiveContainer width="100%" height={180}>
           <BarChart data={categoryData} barCategoryGap="30%">
@@ -285,11 +329,11 @@ export function DashboardPage() {
       {/* ── Content Grid ── */}
       <div className="grid md:grid-cols-2 gap-5">
 
-        {/* Stock overview */}
+        {/* Stock overview — ALL products, critical first then ascending stock */}
         <div className="animate-slide-up bg-card border border-border rounded-xl p-5">
           <p className="text-xs tracking-wider uppercase text-muted-foreground mb-4">Estoque Atual</p>
           <div className="space-y-4">
-            {products?.slice(0, 8).map((p) => {
+            {sortedProducts.map((p) => {
               const pct = p.min_stock > 0
                 ? Math.min(100, (p.current_stock / (p.min_stock * 3)) * 100)
                 : 100
@@ -330,7 +374,7 @@ export function DashboardPage() {
           </div>
         </div>
 
-        {/* Recent movements */}
+        {/* Recent movements — last 10 */}
         <div className="animate-slide-up bg-card border border-border rounded-xl p-5">
           <p className="text-xs tracking-wider uppercase text-muted-foreground mb-4">
             Movimentações Recentes

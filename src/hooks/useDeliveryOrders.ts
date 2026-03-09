@@ -12,6 +12,8 @@ export interface CreateOrderInput {
   items: OrderItem[]
   reference: string | null
   notes: string | null
+  address: string | null
+  total_value: number | null
 }
 
 export function useDeliveryOrders(status?: string) {
@@ -51,6 +53,10 @@ export function useCreateOrder() {
           user_id: user.id,
           reference: input.reference,
           notes: input.notes,
+          address: input.address,
+          total_value: input.total_value,
+          delivered_by: null,
+          delivered_at: null,
           created_at: new Date().toISOString(),
           profile: { full_name: 'Você' },
         }
@@ -126,7 +132,9 @@ export function useUpdateOrderStatus() {
   return useMutation({
     mutationFn: async ({ id, status }: { id: string; status: 'delivered' }) => {
       if (IS_MOCK) {
-        _mockOrders = _mockOrders.map((o) => o.id === id ? { ...o, status } : o)
+        _mockOrders = _mockOrders.map((o) =>
+          o.id === id ? { ...o, status, delivered_at: new Date().toISOString(), delivered_by: 'Você' } : o
+        )
         return
       }
       const { error } = await supabase.from('delivery_orders').update({ status }).eq('id', id)

@@ -10,14 +10,31 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Skeleton } from '@/components/ui/skeleton'
 import type { Product } from '@/types'
 
+// ─── Origin chips ─────────────────────────────────────────────────────────────
+
+const ORIGIN_CHIPS = [
+  'Lamas Destilaria',
+  'Reposição Interna',
+  'Fornecedor Externo',
+  'Ajuste Inventário',
+  'Outro',
+] as const
+
+type OriginChip = (typeof ORIGIN_CHIPS)[number]
+
+// ─── Schema ───────────────────────────────────────────────────────────────────
+
 const entrySchema = z.object({
   product_id: z.string().min(1, 'Selecione um produto'),
   quantity: z.number().min(1, 'Quantidade mínima: 1').max(9999),
-  notes: z.string().min(1, 'Informe a origem (ex: Entrega fornecedor, Transferência depósito)'),
+  notes: z.string().min(1, 'Selecione a origem'),
+  invoice: z.string().optional(),
 })
 
 type EntryForm = z.infer<typeof entrySchema>
 type Step = 'form' | 'confirm'
+
+// ─── StockEntryPage ───────────────────────────────────────────────────────────
 
 export function StockEntryPage() {
   const { data: products, isLoading } = useProducts()
@@ -26,12 +43,32 @@ export function StockEntryPage() {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
   const [formData, setFormData] = useState<EntryForm | null>(null)
 
+  // Origin chip state (separate from react-hook-form for UI control)
+  const [selectedChip, setSelectedChip] = useState<OriginChip | null>(null)
+  const [customOrigin, setCustomOrigin] = useState('')
+
   const { register, handleSubmit, setValue, watch, reset, formState: { errors } } = useForm<EntryForm>({
     resolver: zodResolver(entrySchema),
-    defaultValues: { quantity: 1, notes: '' },
+    defaultValues: { quantity: 1, notes: '', invoice: '' },
   })
 
   const quantity = watch('quantity') ?? 1
+
+  function handleChipSelect(chip: OriginChip) {
+    setSelectedChip(chip)
+    if (chip !== 'Outro') {
+      setValue('notes', chip, { shouldValidate: true })
+      setCustomOrigin('')
+    } else {
+      // Wait for custom text input — clear notes so validation fires if empty
+      setValue('notes', '', { shouldValidate: false })
+    }
+  }
+
+  function handleCustomOriginChange(value: string) {
+    setCustomOrigin(value)
+    setValue('notes', value, { shouldValidate: true })
+  }
 
   function onFormSubmit(data: EntryForm) {
     const product = products?.find((p) => p.id === data.product_id) ?? null
@@ -46,6 +83,8 @@ export function StockEntryPage() {
     reset()
     setSelectedProduct(null)
     setFormData(null)
+    setSelectedChip(null)
+    setCustomOrigin('')
     setStep('form')
   }
 
@@ -58,6 +97,8 @@ export function StockEntryPage() {
       </div>
     )
   }
+
+  // ── Confirm Step ──────────────────────────────────────────────────────────
 
   if (step === 'confirm' && selectedProduct && formData) {
     return (
@@ -94,9 +135,17 @@ export function StockEntryPage() {
             </div>
           </div>
 
-          <div className="border-t border-border pt-4">
-            <p className="text-xs tracking-wider uppercase text-muted-foreground mb-1">Origem</p>
-            <p className="text-sm font-medium text-foreground">{formData.notes}</p>
+          <div className="border-t border-border pt-4 space-y-3">
+            <div>
+              <p className="text-xs tracking-wider uppercase text-muted-foreground mb-1">Origem</p>
+              <p className="text-sm font-medium text-foreground">{formData.notes}</p>
+            </div>
+            {formData.invoice && (
+              <div>
+                <p className="text-xs tracking-wider uppercase text-muted-foreground mb-1">Nota Fiscal / Lote</p>
+                <p className="text-sm font-mono text-foreground">{formData.invoice}</p>
+              </div>
+            )}
           </div>
         </div>
 
@@ -120,6 +169,8 @@ export function StockEntryPage() {
     )
   }
 
+  // ── Form Step ─────────────────────────────────────────────────────────────
+
   return (
     <div className="max-w-md mx-auto space-y-6 p-4">
       <div>
@@ -133,6 +184,7 @@ export function StockEntryPage() {
       </div>
 
       <form onSubmit={handleSubmit(onFormSubmit)} className="space-y-6">
+
         {/* Product select */}
         <div className="space-y-2">
           <Label className="text-xs tracking-wider uppercase text-muted-foreground">Produto</Label>
@@ -185,17 +237,56 @@ export function StockEntryPage() {
           )}
         </div>
 
-        {/* Notes */}
-        <div className="space-y-2">
+        {/* Origin — quick-select chips */}
+        <div className="space-y-3">
           <Label className="text-xs tracking-wider uppercase text-muted-foreground">Origem</Label>
-          <Input
-            placeholder="Ex: Entrega fornecedor, Transferência depósito"
-            className="h-12 bg-card border-border"
-            {...register('notes')}
-          />
+          <div className="flex flex-wrap gap-2">
+            {ORIGIN_CHIPS.map((chip) => {
+              const isSelected = selectedChip === chip
+              return (
+                <button
+                  key={chip}
+                  type="button"
+                  onClick={() => handleChipSelect(chip)}
+                  className={`px-3 py-2 rounded-lg text-sm font-medium border transition-all active:scale-95 ${
+                    isSelected
+                      ? 'border-gold text-gold bg-gold/10'
+                      : 'border-border text-muted-foreground bg-card hover:border-gold/40 hover:text-foreground'
+                  }`}
+                >
+                  {chip}
+                </button>
+              )
+            })}
+          </div>
+
+          {/* Custom origin text input — shown when "Outro" is selected */}
+          {selectedChip === 'Outro' && (
+            <Input
+              placeholder="Descreva a origem..."
+              className="h-12 bg-card border-border"
+              value={customOrigin}
+              onChange={(e) => handleCustomOriginChange(e.target.value)}
+              autoFocus
+            />
+          )}
+
           {errors.notes && (
             <p className="text-xs text-destructive">{errors.notes.message}</p>
           )}
+        </div>
+
+        {/* Nota Fiscal / Lote — optional */}
+        <div className="space-y-2">
+          <Label className="text-xs tracking-wider uppercase text-muted-foreground">
+            Nota Fiscal / Lote
+            <span className="ml-1 normal-case text-muted-foreground/60">(opcional)</span>
+          </Label>
+          <Input
+            placeholder="NF-2024-xxx ou Lote ABC"
+            className="h-12 bg-card border-border font-mono"
+            {...register('invoice')}
+          />
         </div>
 
         <button

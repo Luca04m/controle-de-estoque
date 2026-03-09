@@ -17,6 +17,10 @@ export interface Product {
   category: ProductCategory
   current_stock: number
   min_stock: number
+  price_cost: number
+  price_sale: number
+  supplier: string
+  location: string
   active: boolean
   created_at: string
   updated_at: string
@@ -43,6 +47,7 @@ export interface OrderItem {
   product_id: string
   product_name: string
   quantity: number
+  unit_price: number
 }
 
 export interface DeliveryOrder {
@@ -52,6 +57,10 @@ export interface DeliveryOrder {
   user_id: string
   notes: string | null
   reference: string | null
+  address: string | null
+  total_value: number | null
+  delivered_by: string | null
+  delivered_at: string | null
   created_at: string
   profile?: Pick<Profile, 'full_name'>
 }
