@@ -7,6 +7,7 @@ import {
   ShoppingBag,
   Package,
   BarChart3,
+  ClipboardCheck,
   LogOut,
   Wifi,
   WifiOff,
@@ -28,11 +29,12 @@ interface NavItem {
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { to: '/dashboard', label: 'Dashboard', icon: <LayoutDashboard size={18} /> },
-  { to: '/entrada',   label: 'Movimentação', icon: <PackagePlus size={18} /> },
-  { to: '/pedidos',   label: 'Pedidos',    icon: <ShoppingBag size={18} /> },
-  { to: '/produtos',  label: 'Produtos',   icon: <Package size={18} /> },
-  { to: '/relatorios',label: 'Relatórios', icon: <BarChart3 size={18} /> },
+  { to: '/dashboard',  label: 'Dashboard',    icon: <LayoutDashboard size={18} /> },
+  { to: '/entrada',    label: 'Movimentação', icon: <PackagePlus size={18} /> },
+  { to: '/pedidos',    label: 'Pedidos',      icon: <ShoppingBag size={18} /> },
+  { to: '/produtos',   label: 'Produtos',     icon: <Package size={18} /> },
+  { to: '/inventario', label: 'Inventário',   icon: <ClipboardCheck size={18} /> },
+  { to: '/relatorios', label: 'Relatórios',   icon: <BarChart3 size={18} /> },
 ]
 
 // ── A-03 / A-04: Contraste e tamanho de texto corrigidos

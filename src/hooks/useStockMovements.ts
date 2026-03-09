@@ -8,7 +8,18 @@ import { MOCK_MOVEMENTS } from '@/lib/mockData'
 import type { StockMovement, MovementAction } from '@/types'
 import { toast } from 'sonner'
 
+export interface TrendDataPoint {
+  date: string   // 'dd/MM'
+  in: number
+  out: number
+}
+
 let _mockMovements = [...MOCK_MOVEMENTS]
+
+/** Add restock movements to the mock store (used by useCancelOrder) */
+export function addMockRestockMovements(movements: StockMovement[]): void {
+  _mockMovements = [...movements, ..._mockMovements]
+}
 
 export interface MovementInput {
   product_id: string
@@ -37,6 +48,34 @@ export function useStockMovements(filters?: { product_id?: string; limit?: numbe
       const { data, error } = await q
       if (error) throw error
       return data as StockMovement[]
+    },
+  })
+}
+
+export function useProductMovements(productId: string | null, limit = 50, offset = 0) {
+  return useQuery({
+    queryKey: ['product_movements', productId, limit, offset],
+    enabled: productId !== null,
+    queryFn: async () => {
+      if (!productId) return { data: [], count: 0 }
+
+      if (IS_MOCK) {
+        const all = _mockMovements.filter((m) => m.product_id === productId)
+        return {
+          data: all.slice(offset, offset + limit),
+          count: all.length,
+        }
+      }
+
+      const { data, error, count } = await supabase
+        .from('stock_movements')
+        .select('*, profiles(full_name)', { count: 'exact' })
+        .eq('product_id', productId)
+        .order('created_at', { ascending: false })
+        .range(offset, offset + limit - 1)
+
+      if (error) throw error
+      return { data: data as StockMovement[], count: count ?? 0 }
     },
   })
 }
@@ -164,5 +203,146 @@ export function useAllMovements(filters?: {
       if (error) throw error
       return { data: data as StockMovement[], count: count ?? 0 }
     },
+  })
+}
+
+// ─── Movement Trend (last N days) ─────────────────────────────────────────────
+
+export function useMovementTrend(days = 30) {
+  return useQuery({
+    queryKey: ['movement_trend', days],
+    queryFn: async (): Promise<TrendDataPoint[]> => {
+      const now = Date.now()
+      const msPerDay = 24 * 60 * 60 * 1000
+
+      let movements: StockMovement[]
+
+      if (IS_MOCK) {
+        movements = [..._mockMovements].filter(m => {
+          const age = (now - new Date(m.created_at).getTime()) / msPerDay
+          return age <= days
+        })
+      } else {
+        const from = new Date(now - days * msPerDay).toISOString()
+        const { data, error } = await supabase
+          .from('stock_movements')
+          .select('action, quantity, created_at')
+          .gte('created_at', from)
+          .order('created_at', { ascending: true })
+        if (error) throw error
+        movements = data as StockMovement[]
+      }
+
+      // Build a map: dateKey → { in, out }
+      const map = new Map<string, { in: number; out: number }>()
+
+      // Pre-fill all days with zeros (so chart has continuous x-axis)
+      for (let i = days - 1; i >= 0; i--) {
+        const d = new Date(now - i * msPerDay)
+        const key = d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })
+        if (!map.has(key)) map.set(key, { in: 0, out: 0 })
+      }
+
+      for (const m of movements) {
+        const d = new Date(m.created_at)
+        const key = d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })
+        const entry = map.get(key) ?? { in: 0, out: 0 }
+        if (m.action === 'in') entry.in += m.quantity
+        else if (m.action === 'out' || m.action === 'loss') entry.out += Math.abs(m.quantity)
+        map.set(key, entry)
+      }
+
+      return Array.from(map.entries()).map(([date, vals]) => ({
+        date,
+        in: vals.in,
+        out: vals.out,
+      }))
+    },
+  })
+}
+
+// ─── Batch Movements ──────────────────────────────────────────────────────────
+
+export interface BatchMovementInput {
+  id: string
+  product_id: string
+  quantity: number
+  notes: string
+}
+
+export function useRegisterBatchMovements() {
+  const qc = useQueryClient()
+  const { user } = useAuthStore()
+  const { connected } = useRealtimeStore()
+
+  return useMutation({
+    mutationFn: async (items: BatchMovementInput[]) => {
+      if (!user) throw new Error('Usuário não autenticado')
+
+      if (IS_MOCK) {
+        const newMovements: StockMovement[] = items.map(item => ({
+          id: `mock-mv-${crypto.randomUUID()}`,
+          product_id: item.product_id,
+          action: 'in' as MovementAction,
+          quantity: item.quantity,
+          notes: item.notes,
+          order_id: null,
+          user_id: user.id,
+          created_at: new Date().toISOString(),
+          profile: { full_name: 'Você' },
+        }))
+        _mockMovements = [...newMovements, ..._mockMovements]
+        return { succeeded: items.length, failed: 0 }
+      }
+
+      const results = await Promise.allSettled(
+        items.map(async (item) => {
+          const movement = {
+            product_id: item.product_id,
+            action: 'in' as MovementAction,
+            quantity: item.quantity,
+            notes: item.notes,
+            order_id: null,
+            user_id: user.id,
+            created_at: new Date().toISOString(),
+          }
+
+          if (!connected) {
+            const localId = `local-${crypto.randomUUID()}`
+            await saveLocalMovement({ ...movement, id: localId, synced: false })
+            return null
+          }
+
+          const { data, error } = await supabase
+            .from('stock_movements')
+            .insert([movement])
+            .select()
+            .single()
+          if (error) throw error
+
+          await supabase.rpc('update_stock', {
+            p_product_id: item.product_id,
+            p_delta: item.quantity,
+          })
+
+          return data
+        })
+      )
+
+      const succeeded = results.filter(r => r.status === 'fulfilled').length
+      const failed = results.filter(r => r.status === 'rejected').length
+      if (failed > 0 && succeeded === 0) throw new Error(`Todas as ${failed} entradas falharam`)
+      return { succeeded, failed }
+    },
+    onSuccess: ({ succeeded, failed }) => {
+      qc.invalidateQueries({ queryKey: ['stock_movements'] })
+      qc.invalidateQueries({ queryKey: ['products'] })
+      if (failed > 0) {
+        toast.warning(`${succeeded} entradas registradas. ${failed} falharam.`)
+      } else {
+        toast.success(`${succeeded} entradas registradas com sucesso!`)
+      }
+    },
+    onError: (err: Error) => toast.error(err.message),
   })
 }

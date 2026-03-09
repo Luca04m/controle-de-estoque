@@ -4,7 +4,9 @@ import {
   useDeliveryOrders,
   useCreateOrder,
   useUpdateOrderStatus,
+  useCancelOrder,
 } from '@/hooks/useDeliveryOrders'
+import { CancelOrderDialog } from '@/components/CancelOrderDialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -91,7 +93,7 @@ function exportOrdersToCSV(orders: DeliveryOrder[], filename = 'pedidos.csv') {
 // ─── Date filters ─────────────────────────────────────────────────────────────
 
 type DateFilter = 'today' | 'week' | 'month' | 'all'
-type StatusFilter = 'all' | 'confirmed' | 'delivered'
+type StatusFilter = 'all' | 'confirmed' | 'delivered' | 'cancelled'
 
 function isToday(dateStr: string) {
   const d = new Date(dateStr)
@@ -1213,12 +1215,14 @@ export function OrdersPage() {
   const { data: orders, isLoading } = useDeliveryOrders()
   const { data: products } = useProducts()
   const updateStatus = useUpdateOrderStatus()
+  const cancelOrder = useCancelOrder()
 
   const [showWizard, setShowWizard] = useState(false)
   const [prefillItems, setPrefillItems] = useState<PendingItem[] | undefined>()
   const [search, setSearch] = useState('')
   const [dateFilter, setDateFilter] = useState<DateFilter>('all')
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
+  const [orderToCancel, setOrderToCancel] = useState<DeliveryOrder | null>(null)
 
   // ── Selection mode state ───────────────────────────────────────────────────
   const [selectionMode, setSelectionMode] = useState(false)
@@ -1245,9 +1249,18 @@ export function OrdersPage() {
     setNotesOverrides((prev) => ({ ...prev, [id]: notes }))
   }
 
-  // ── Cancel order (mock: uses updateStatus with 'cancelled' cast) ───────────
+  // ── Cancel order — opens dialog ────────────────────────────────────────────
   function handleCancelOrder(id: string) {
-    updateStatus.mutate({ id, status: 'cancelled' as 'delivered' })
+    const order = orders?.find(o => o.id === id)
+    if (order) setOrderToCancel(order)
+  }
+
+  function handleConfirmCancel() {
+    if (!orderToCancel) return
+    cancelOrder.mutate(
+      { orderId: orderToCancel.id, order: orderToCancel },
+      { onSettled: () => setOrderToCancel(null) }
+    )
   }
 
   // ── KPIs ──────────────────────────────────────────────────────────────────
@@ -1282,6 +1295,11 @@ export function OrdersPage() {
       result = result.filter((o) => o.status === 'confirmed' || o.status === 'pending')
     } else if (statusFilter === 'delivered') {
       result = result.filter((o) => o.status === 'delivered')
+    } else if (statusFilter === 'cancelled') {
+      result = result.filter((o) => o.status === 'cancelled')
+    } else {
+      // 'all' — exclude cancelled from default view (they're in the separate tab)
+      result = result.filter((o) => o.status !== 'cancelled')
     }
 
     // Search
@@ -1308,11 +1326,18 @@ export function OrdersPage() {
     [filteredOrders]
   )
 
+  const cancelledOrders = useMemo(
+    () => (orders ?? []).filter((o) => o.status === 'cancelled'),
+    [orders]
+  )
+
   // Orders currently visible (for bulk export)
   const visibleOrders = statusFilter === 'confirmed'
     ? confirmedOrders
     : statusFilter === 'delivered'
     ? deliveredOrders
+    : statusFilter === 'cancelled'
+    ? cancelledOrders
     : filteredOrders
 
   // ── Handlers ──────────────────────────────────────────────────────────────
@@ -1385,11 +1410,19 @@ export function OrdersPage() {
     { key: 'all', label: 'Todos' },
     { key: 'confirmed', label: 'Confirmados' },
     { key: 'delivered', label: 'Entregues' },
+    { key: 'cancelled', label: `Cancelados${cancelledOrders.length > 0 ? ` · ${cancelledOrders.length}` : ''}` },
   ]
 
   // ── List view ─────────────────────────────────────────────────────────────
   return (
     <div className="w-full space-y-4 p-4 pb-24">
+      {/* Cancel dialog */}
+      <CancelOrderDialog
+        order={orderToCancel}
+        onConfirm={handleConfirmCancel}
+        onClose={() => setOrderToCancel(null)}
+        isPending={cancelOrder.isPending}
+      />
       {/* Header */}
       <div className="flex items-center justify-between gap-2 pt-1">
         <h1 className="text-2xl font-bold text-white">Pedidos</h1>
@@ -1578,6 +1611,45 @@ export function OrdersPage() {
               onUpdateNotes={handleUpdateNotes}
               onCancelOrder={handleCancelOrder}
             />
+          ))}
+
+          {/* Cancelled orders tab */}
+          {statusFilter === 'cancelled' && cancelledOrders.map((order) => (
+            <div
+              key={order.id}
+              className="rounded-xl border p-4 space-y-3 opacity-60"
+              style={{
+                backgroundColor: 'hsl(240 22% 7%)',
+                borderColor: 'hsl(0 60% 25% / 0.4)',
+              }}
+            >
+              <div className="flex items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="font-semibold text-sm text-foreground truncate">
+                    {order.reference || order.id.slice(0, 8).toUpperCase()}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {new Date(order.created_at).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' })}
+                  </p>
+                </div>
+                <span className="text-[10px] border border-red-800/40 bg-red-950/50 text-red-400 rounded-md px-2 py-0.5 font-semibold uppercase tracking-wide shrink-0">
+                  Cancelado
+                </span>
+              </div>
+              <div className="space-y-1">
+                {(order.items as OrderItem[]).map((item, i) => (
+                  <div key={i} className="flex justify-between text-xs">
+                    <span className="text-muted-foreground truncate flex-1">{item.product_name}</span>
+                    <span className="text-muted-foreground/60 tabular-nums ml-3">× {item.quantity}</span>
+                  </div>
+                ))}
+              </div>
+              {order.total_value && (
+                <p className="text-xs text-muted-foreground/60 text-right tabular-nums">
+                  {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(order.total_value)}
+                </p>
+              )}
+            </div>
           ))}
         </div>
       )}

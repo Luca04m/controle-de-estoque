@@ -16,6 +16,7 @@ import {
   Legend,
 } from 'recharts'
 import { TrendingUp, TrendingDown, AlertTriangle, Activity } from 'lucide-react'
+import { MovementCard } from '@/components/MovementCard'
 import type { MovementAction } from '@/types'
 
 // ─── Constants & helpers ─────────────────────────────────────────────────────
@@ -328,15 +329,35 @@ export function ReportsPage() {
         </div>
       </div>
 
-      {/* Table */}
+      {/* Mobile cards (sm:hidden) */}
       {isLoading ? (
-        <div className="space-y-2">
+        <div className="sm:hidden space-y-2">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <Skeleton key={i} className="h-24 w-full bg-secondary rounded-xl" />
+          ))}
+        </div>
+      ) : (
+        <div className="sm:hidden space-y-2">
+          {data?.data?.length === 0 ? (
+            <div className="flex flex-col items-center gap-2 py-12 text-muted-foreground">
+              <Activity size={28} className="opacity-20" />
+              <span className="text-sm">Nenhuma movimentação no período</span>
+            </div>
+          ) : (
+            data?.data?.map((m) => <MovementCard key={m.id} movement={m} />)
+          )}
+        </div>
+      )}
+
+      {/* Desktop Table (hidden sm:block) */}
+      {isLoading ? (
+        <div className="hidden sm:block space-y-2">
           {Array.from({ length: 10 }).map((_, i) => (
             <Skeleton key={i} className="h-12 w-full bg-secondary rounded-lg" />
           ))}
         </div>
       ) : (
-        <div className="rounded-xl border border-border overflow-auto">
+        <div className="hidden sm:block rounded-xl border border-border overflow-auto">
           <Table>
             <TableHeader>
               <TableRow className="border-border hover:bg-transparent">
