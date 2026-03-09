@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Guia de Uso — Mr. Lion Gestão de Estoque</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:       #090b12;
+      --bg-card:  #0f1118;
+      --bg-card2: #13161f;
+      --border:   #1e2235;
+      --gold:     #c9973a;
+      --gold-lt:  #e0b864;
+      --text:     #e8eaf0;
+      --muted:    #6b7280;
+      --red:      #f87171;
+      --green:    #34d399;
+      --orange:   #fb923c;
+      --violet:   #a78bfa;
+      --radius:   10px;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Space Grotesk', system-ui, sans-serif;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── Layout ── */
+    .wrapper { max-width: 860px; margin: 0 auto; padding: 40px 20px 80px; }
+
+    /* ── Header ── */
+    .header {
+      display: flex; align-items: center; gap: 16px;
+      padding: 32px 0 28px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 40px;
+    }
+    .header-logo {
+      width: 52px; height: 52px; border-radius: 12px;
+      background: var(--bg-card2); border: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 28px;
+    }
+    .header-logo img { width: 40px; height: 40px; object-fit: contain; }
+    .header-title { font-size: 22px; font-weight: 700; color: var(--gold-lt); }
+    .header-sub { font-size: 13px; color: var(--muted); margin-top: 2px; }
+    .header-badge {
+      margin-left: auto;
+      font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase;
+      padding: 4px 10px; border-radius: 20px;
+      background: hsl(42 60% 55% / .12); color: var(--gold); border: 1px solid hsl(42 60% 55% / .25);
+    }
+
+    /* ── TOC ── */
+    .toc {
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 20px 24px; margin-bottom: 48px;
+    }
+    .toc-title { font-size: 11px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); margin-bottom: 12px; }
+    .toc-list { list-style: none; display: flex; flex-direction: column; gap: 6px; }
+    .toc-list a { color: var(--gold); text-decoration: none; font-size: 14px; font-weight: 500; }
+    .toc-list a:hover { color: var(--gold-lt); }
+    .toc-list span { color: var(--muted); font-size: 13px; margin-left: 6px; }
+
+    /* ── Sections ── */
+    .section { margin-bottom: 56px; }
+    .section-header {
+      display: flex; align-items: center; gap: 12px;
+      margin-bottom: 24px; padding-bottom: 12px;
+      border-bottom: 1px solid var(--border);
+    }
+    .section-num {
+      width: 28px; height: 28px; border-radius: 8px; flex-shrink: 0;
+      background: hsl(42 60% 55% / .15); border: 1px solid hsl(42 60% 55% / .3);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px; font-weight: 700; color: var(--gold);
+    }
+    .section-title { font-size: 18px; font-weight: 700; color: var(--text); }
+    .section-desc { font-size: 14px; color: var(--muted); margin-top: 2px; }
+
+    /* ── Cards ── */
+    .card {
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 20px; margin-bottom: 16px;
+    }
+    .card-title { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 10px; }
+
+    /* ── Steps ── */
+    .steps { display: flex; flex-direction: column; gap: 12px; }
+    .step { display: flex; gap: 14px; align-items: flex-start; }
+    .step-dot {
+      width: 24px; height: 24px; border-radius: 50%; flex-shrink: 0; margin-top: 1px;
+      background: hsl(42 60% 55% / .15); border: 1px solid hsl(42 60% 55% / .35);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px; font-weight: 700; color: var(--gold);
+    }
+    .step-text { font-size: 14px; color: var(--text); padding-top: 3px; }
+    .step-text strong { color: var(--gold-lt); }
+
+    /* ── Badges ── */
+    .badge {
+      display: inline-flex; align-items: center; gap: 5px;
+      font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase;
+      padding: 3px 8px; border-radius: 6px; border: 1px solid;
+    }
+    .badge-gold  { color: var(--gold);   background: hsl(42 60% 55% / .12);  border-color: hsl(42 60% 55% / .3); }
+    .badge-red   { color: var(--red);    background: hsl(0 70% 55% / .12);   border-color: hsl(0 70% 55% / .3); }
+    .badge-green { color: var(--green);  background: hsl(142 65% 40% / .12); border-color: hsl(142 65% 40% / .3); }
+    .badge-orange{ color: var(--orange); background: hsl(25 90% 50% / .12);  border-color: hsl(25 90% 50% / .3); }
+    .badge-violet{ color: var(--violet); background: hsl(270 60% 55% / .12); border-color: hsl(270 60% 55% / .3); }
+    .badge-muted { color: var(--muted);  background: hsl(240 10% 14% / .8);  border-color: var(--border); }
+
+    /* ── Tables ── */
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th { text-align: left; font-size: 10px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); padding: 8px 12px; border-bottom: 1px solid var(--border); }
+    td { padding: 10px 12px; border-bottom: 1px solid hsl(240 18% 14% / .5); color: var(--text); vertical-align: top; }
+    tr:last-child td { border-bottom: none; }
+    td:first-child { font-weight: 500; color: var(--gold-lt); }
+
+    /* ── Tips ── */
+    .tip {
+      display: flex; gap: 12px; align-items: flex-start;
+      padding: 14px 16px; border-radius: 8px; margin-top: 14px;
+      background: hsl(42 60% 55% / .06); border: 1px solid hsl(42 60% 55% / .18);
+    }
+    .tip-icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+    .tip-text { font-size: 13px; color: hsl(42 65% 75%); }
+
+    .warn {
+      display: flex; gap: 12px; align-items: flex-start;
+      padding: 14px 16px; border-radius: 8px; margin-top: 14px;
+      background: hsl(0 70% 55% / .06); border: 1px solid hsl(0 70% 55% / .2);
+    }
+    .warn-icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+    .warn-text { font-size: 13px; color: hsl(0 70% 75%); }
+
+    /* ── Code ── */
+    code {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px; padding: 2px 6px; border-radius: 4px;
+      background: hsl(240 18% 12%); color: var(--gold-lt); border: 1px solid var(--border);
+    }
+
+    /* ── Movement types grid ── */
+    .mv-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    @media (max-width: 540px) { .mv-grid { grid-template-columns: 1fr; } }
+    .mv-card {
+      padding: 14px 16px; border-radius: 8px; border: 1px solid;
+    }
+    .mv-card-in     { background: hsl(42 60% 55% / .07);  border-color: hsl(42 60% 55% / .25); }
+    .mv-card-out    { background: hsl(0 80% 65% / .07);   border-color: hsl(0 80% 65% / .25); }
+    .mv-card-adj    { background: hsl(45 90% 60% / .07);  border-color: hsl(45 90% 60% / .25); }
+    .mv-card-loss   { background: hsl(25 90% 60% / .07);  border-color: hsl(25 90% 60% / .25); }
+    .mv-sign { font-size: 22px; font-weight: 900; margin-bottom: 4px; font-family: 'JetBrains Mono', monospace; }
+    .mv-sign-in   { color: var(--gold); }
+    .mv-sign-out  { color: var(--red); }
+    .mv-sign-adj  { color: #fbbf24; }
+    .mv-sign-loss { color: var(--orange); }
+    .mv-label { font-size: 13px; font-weight: 700; margin-bottom: 2px; }
+    .mv-sub   { font-size: 12px; color: var(--muted); }
+    .mv-origins { margin-top: 8px; display: flex; flex-wrap: wrap; gap: 4px; }
+    .mv-origin { font-size: 10px; padding: 2px 6px; border-radius: 4px; background: hsl(240 18% 14%); color: var(--muted); border: 1px solid var(--border); }
+
+    /* ── Roles ── */
+    .roles-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    @media (max-width: 540px) { .roles-grid { grid-template-columns: 1fr; } }
+
+    /* ── Status flow ── */
+    .status-flow { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+    .status-arrow { color: var(--muted); font-size: 14px; }
+
+    /* ── Footer ── */
+    .footer {
+      margin-top: 64px; padding-top: 24px; border-top: 1px solid var(--border);
+      text-align: center; font-size: 12px; color: var(--muted);
+    }
+    .footer a { color: var(--gold); text-decoration: none; }
+
+    /* ── Divider ── */
+    hr { border: none; border-top: 1px solid var(--border); margin: 28px 0; }
+
+    ul.list { padding-left: 18px; display: flex; flex-direction: column; gap: 6px; }
+    ul.list li { font-size: 14px; color: var(--text); }
+    ul.list li::marker { color: var(--gold); }
+  </style>
+</head>
+<body>
+<div class="wrapper">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="header-logo">
+      <img src="novalogo.png" alt="Mr. Lion" onerror="this.parentElement.textContent='🦁'" />
+    </div>
+    <div>
+      <div class="header-title">Mr. Lion — Gestão de Estoque</div>
+      <div class="header-sub">Guia completo de uso da plataforma</div>
+    </div>
+    <div class="header-badge">v1.0</div>
+  </div>
+
+  <!-- TOC -->
+  <div class="toc">
+    <div class="toc-title">Índice</div>
+    <ul class="toc-list">
+      <li><a href="#acesso">1. Acesso ao sistema</a> <span>Login, perfis e modo demo</span></li>
+      <li><a href="#navegacao">2. Navegação</a> <span>Estrutura das telas</span></li>
+      <li><a href="#dashboard">3. Dashboard</a> <span>Visão geral e KPIs</span></li>
+      <li><a href="#movimentacao">4. Movimentação</a> <span>Entradas, saídas, ajustes e perdas</span></li>
+      <li><a href="#pedidos">5. Pedidos</a> <span>Criar, confirmar, entregar e cancelar</span></li>
+      <li><a href="#produtos">6. Produtos</a> <span>Cadastro, edição e histórico</span></li>
+      <li><a href="#relatorios">7. Relatórios</a> <span>Filtros, tendências e exportação</span></li>
+      <li><a href="#offline">8. Modo offline</a> <span>Uso sem conexão</span></li>
+    </ul>
+  </div>
+
+  <!-- 1. Acesso -->
+  <div class="section" id="acesso">
+    <div class="section-header">
+      <div class="section-num">1</div>
+      <div>
+        <div class="section-title">Acesso ao sistema</div>
+        <div class="section-desc">Login, perfis de usuário e modo de demonstração</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Como entrar</div>
+      <div class="steps">
+        <div class="step"><div class="step-dot">1</div><div class="step-text">Acesse o endereço da plataforma no browser</div></div>
+        <div class="step"><div class="step-dot">2</div><div class="step-text">Digite seu <strong>e-mail</strong> e <strong>senha</strong> fornecidos pelo administrador</div></div>
+        <div class="step"><div class="step-dot">3</div><div class="step-text">Clique em <strong>Entrar</strong> — você será direcionado ao Dashboard</div></div>
+      </div>
+      <div class="tip">
+        <div class="tip-icon">💡</div>
+        <div class="tip-text"><strong>Modo Demo:</strong> Para testar sem dados reais, use <code>angelo@mrlion.com</code> ou <code>joao@mrlion.com</code> com senha <code>1234</code>. Todos os dados são fictícios e não são salvos.</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Perfis de acesso</div>
+      <div class="roles-grid">
+        <div style="padding:14px;background:hsl(42 60% 55% / .06);border:1px solid hsl(42 60% 55% / .2);border-radius:8px;">
+          <div style="font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);margin-bottom:8px;">Gestor</div>
+          <ul class="list">
+            <li>Acesso total ao sistema</li>
+            <li>Cadastro e edição de produtos</li>
+            <li>Visualização de relatórios completos</li>
+            <li>Cancelamento de pedidos</li>
+            <li>Ajuste de estoque</li>
+          </ul>
+        </div>
+        <div style="padding:14px;background:hsl(240 18% 12% / .6);border:1px solid var(--border);border-radius:8px;">
+          <div style="font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;">Operador</div>
+          <ul class="list">
+            <li>Registro de movimentações</li>
+            <li>Criação e confirmação de pedidos</li>
+            <li>Visualização do dashboard</li>
+            <li>Consulta de produtos</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. Navegação -->
+  <div class="section" id="navegacao">
+    <div class="section-header">
+      <div class="section-num">2</div>
+      <div>
+        <div class="section-title">Navegação</div>
+        <div class="section-desc">Como se mover pelo sistema</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <table>
+        <thead><tr><th>Seção</th><th>O que você faz aqui</th></tr></thead>
+        <tbody>
+          <tr><td>🏠 Dashboard</td><td>Visão geral: KPIs, movimentações recentes, pedidos pendentes e estoque crítico</td></tr>
+          <tr><td>📦 Movimentação</td><td>Registrar entradas, saídas, ajustes e perdas de estoque</td></tr>
+          <tr><td>🛍 Pedidos</td><td>Gerenciar pedidos de delivery — criar, confirmar, entregar e cancelar</td></tr>
+          <tr><td>📋 Produtos</td><td>Cadastrar e editar produtos, ver histórico de movimentações por item</td></tr>
+          <tr><td>📊 Relatórios</td><td>Filtrar movimentações por período, produto ou tipo e exportar CSV</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Desktop vs. Mobile</div>
+      <ul class="list">
+        <li><strong>Desktop:</strong> menu lateral fixo à esquerda. Clique na seta <code>&lt;</code> para recolher e ganhar espaço.</li>
+        <li><strong>Mobile:</strong> barra de abas na parte inferior. Toque no ícone <code>☰</code> no topo para abrir o menu completo com seu nome e perfil.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- 3. Dashboard -->
+  <div class="section" id="dashboard">
+    <div class="section-header">
+      <div class="section-num">3</div>
+      <div>
+        <div class="section-title">Dashboard</div>
+        <div class="section-desc">Pulso do negócio em tempo real</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Indicadores operacionais</div>
+      <table>
+        <thead><tr><th>Card</th><th>O que mostra</th></tr></thead>
+        <tbody>
+          <tr><td>Movimentações Hoje</td><td>Total de entradas e saídas registradas no dia atual</td></tr>
+          <tr><td>Pedidos Pendentes</td><td>Pedidos criados mas ainda não entregues</td></tr>
+          <tr><td>Estoque Crítico</td><td>Produtos com estoque igual ou abaixo do mínimo configurado</td></tr>
+          <tr><td>Total em Estoque</td><td>Soma de todas as unidades ativas no inventário</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Gráfico de tendência</div>
+      <p style="font-size:14px;color:var(--text);">O gráfico de linha mostra <strong style="color:var(--gold)">Entradas</strong> vs <strong style="color:var(--red)">Saídas</strong> nos últimos 30 dias. Use para identificar picos de venda, reposições em atraso ou perdas fora do normal.</p>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Produtos com estoque baixo</div>
+      <p style="font-size:14px;color:var(--text);">Lista os itens ordenados por criticidade. Produtos com estoque <strong style="color:var(--red)">abaixo do mínimo</strong> aparecem primeiro com destaque em vermelho. Clique no produto para ver o histórico completo.</p>
+    </div>
+
+    <div class="tip">
+      <div class="tip-icon">💡</div>
+      <div class="tip-text">O indicador <strong>Tempo real</strong> no rodapé do menu confirma que os dados estão sincronizados. Se aparecer <strong>Offline</strong> ou <strong>Demo</strong>, os dados podem estar desatualizados.</div>
+    </div>
+  </div>
+
+  <!-- 4. Movimentação -->
+  <div class="section" id="movimentacao">
+    <div class="section-header">
+      <div class="section-num">4</div>
+      <div>
+        <div class="section-title">Movimentação</div>
+        <div class="section-desc">Registrar qualquer alteração no estoque</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">4 tipos de movimentação</div>
+      <div class="mv-grid">
+        <div class="mv-card mv-card-in">
+          <div class="mv-sign mv-sign-in">+</div>
+          <div class="mv-label" style="color:var(--gold)">Entrada</div>
+          <div class="mv-sub">Recebimento de mercadoria</div>
+          <div class="mv-origins">
+            <span class="mv-origin">Lamas Destilaria</span>
+            <span class="mv-origin">Reposição Interna</span>
+            <span class="mv-origin">Fornecedor Externo</span>
+            <span class="mv-origin">Ajuste Inventário</span>
+          </div>
+        </div>
+        <div class="mv-card mv-card-out">
+          <div class="mv-sign mv-sign-out">−</div>
+          <div class="mv-label" style="color:var(--red)">Saída</div>
+          <div class="mv-sub">Venda ou transferência</div>
+          <div class="mv-origins">
+            <span class="mv-origin">Venda Delivery</span>
+            <span class="mv-origin">Venda B2B</span>
+            <span class="mv-origin">Transferência</span>
+            <span class="mv-origin">Amostras / Brinde</span>
+          </div>
+        </div>
+        <div class="mv-card mv-card-adj">
+          <div class="mv-sign mv-sign-adj">±</div>
+          <div class="mv-label" style="color:#fbbf24">Ajuste</div>
+          <div class="mv-sub">Correção de inventário</div>
+          <div class="mv-origins">
+            <span class="mv-origin">Contagem Física</span>
+            <span class="mv-origin">Correção Sistema</span>
+            <span class="mv-origin">Devolução</span>
+          </div>
+        </div>
+        <div class="mv-card mv-card-loss">
+          <div class="mv-sign mv-sign-loss">−</div>
+          <div class="mv-label" style="color:var(--orange)">Perda</div>
+          <div class="mv-sub">Dano, extravio ou vencimento</div>
+          <div class="mv-origins">
+            <span class="mv-origin">Dano no Transporte</span>
+            <span class="mv-origin">Dano no Armazenamento</span>
+            <span class="mv-origin">Extravio</span>
+            <span class="mv-origin">Vencimento</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Como registrar uma movimentação</div>
+      <div class="steps">
+        <div class="step"><div class="step-dot">1</div><div class="step-text">Acesse <strong>Movimentação</strong> no menu</div></div>
+        <div class="step"><div class="step-dot">2</div><div class="step-text">Busque o produto pelo nome, SKU ou categoria. Use os filtros de categoria para refinar.</div></div>
+        <div class="step"><div class="step-dot">3</div><div class="step-text">Toque no produto para ir para o <strong>Passo 2</strong></div></div>
+        <div class="step"><div class="step-dot">4</div><div class="step-text">Selecione o <strong>tipo</strong> (Entrada / Saída / Ajuste / Perda)</div></div>
+        <div class="step"><div class="step-dot">5</div><div class="step-text">Defina a <strong>quantidade</strong> usando os botões rápidos (1, 5, 10, 24, 48) ou digitando manualmente</div></div>
+        <div class="step"><div class="step-dot">6</div><div class="step-text">Escolha a <strong>origem / motivo</strong> e adicione uma observação se necessário</div></div>
+        <div class="step"><div class="step-dot">7</div><div class="step-text">Clique em <strong>Confirmar</strong> — o estoque é atualizado imediatamente</div></div>
+      </div>
+
+      <div class="tip">
+        <div class="tip-icon">💡</div>
+        <div class="tip-text">O <strong>estoque projetado</strong> é exibido em tempo real enquanto você digita a quantidade, mostrando como ficará após o registro.</div>
+      </div>
+
+      <div class="warn">
+        <div class="warn-icon">⚠️</div>
+        <div class="warn-text">Saídas e Perdas são bloqueadas se a quantidade for maior que o estoque disponível. O sistema exibirá o estoque atual disponível no erro.</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Ajuste de inventário — atenção ao sinal</div>
+      <p style="font-size:14px;color:var(--text);margin-bottom:12px;">Ao usar o tipo <strong style="color:#fbbf24">Ajuste</strong>, escolha o sentido da correção:</p>
+      <ul class="list">
+        <li><strong style="color:var(--green)">+ Aumentar</strong> — estoque real é maior que o sistema indica (ex: contagem física revelou 5 unidades a mais)</li>
+        <li><strong style="color:var(--red)">− Reduzir</strong> — estoque real é menor que o sistema indica (ex: contagem revelou 3 unidades a menos)</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- 5. Pedidos -->
+  <div class="section" id="pedidos">
+    <div class="section-header">
+      <div class="section-num">5</div>
+      <div>
+        <div class="section-title">Pedidos</div>
+        <div class="section-desc">Gestão completa de pedidos de delivery</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Fluxo de status</div>
+      <div class="status-flow">
+        <span class="badge badge-muted">Pendente</span>
+        <span class="status-arrow">→</span>
+        <span class="badge badge-gold">Confirmado</span>
+        <span class="status-arrow">→</span>
+        <span class="badge badge-green">Entregue</span>
+      </div>
+      <div class="status-flow" style="margin-top:10px;">
+        <span class="badge badge-muted">Pendente ou Confirmado</span>
+        <span class="status-arrow">→</span>
+        <span class="badge badge-red">Cancelado</span>
+        <span style="font-size:13px;color:var(--muted);margin-left:4px;">(estoque reposto automaticamente)</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Criar um pedido</div>
+      <div class="steps">
+        <div class="step"><div class="step-dot">1</div><div class="step-text">Clique em <strong>Novo Pedido</strong></div></div>
+        <div class="step"><div class="step-dot">2</div><div class="step-text">Adicione produtos ao pedido — o estoque disponível é validado em tempo real</div></div>
+        <div class="step"><div class="step-dot">3</div><div class="step-text">Preencha o <strong>endereço de entrega</strong> e uma referência (nome do cliente ou código)</div></div>
+        <div class="step"><div class="step-dot">4</div><div class="step-text">Salve. O pedido fica com status <span class="badge badge-muted" style="font-size:10px">Pendente</span></div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Confirmar entrega</div>
+      <div class="steps">
+        <div class="step"><div class="step-dot">1</div><div class="step-text">Localize o pedido na lista</div></div>
+        <div class="step"><div class="step-dot">2</div><div class="step-text">Clique em <strong>Confirmar</strong> para avançar para <span class="badge badge-gold" style="font-size:10px">Confirmado</span></div></div>
+        <div class="step"><div class="step-dot">3</div><div class="step-text">Após a entrega física, clique em <strong>Marcar Entregue</strong> — o status vai para <span class="badge badge-green" style="font-size:10px">Entregue</span> e o estoque é baixado</div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Cancelar um pedido</div>
+      <div class="steps">
+        <div class="step"><div class="step-dot">1</div><div class="step-text">Abra o pedido que deseja cancelar</div></div>
+        <div class="step"><div class="step-dot">2</div><div class="step-text">Clique em <strong>Cancelar Pedido</strong> e confirme na janela de confirmação</div></div>
+        <div class="step"><div class="step-dot">3</div><div class="step-text">O sistema <strong>restitui automaticamente</strong> o estoque de todos os itens do pedido</div></div>
+      </div>
+      <div class="warn">
+        <div class="warn-icon">⚠️</div>
+        <div class="warn-text">Pedidos com status <span class="badge badge-green" style="font-size:10px">Entregue</span> não podem ser cancelados. Para corrigir, use uma movimentação de <strong>Entrada</strong> manual.</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Filtros e exportação</div>
+      <ul class="list">
+        <li>Filtre por status (Pendente / Confirmado / Entregue / Cancelado) usando as abas no topo</li>
+        <li>Use a busca por referência ou endereço</li>
+        <li>Clique em <strong>Exportar CSV</strong> para baixar a lista filtrada</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- 6. Produtos -->
+  <div class="section" id="produtos">
+    <div class="section-header">
+      <div class="section-num">6</div>
+      <div>
+        <div class="section-title">Produtos</div>
+        <div class="section-desc">Cadastro, edição e histórico de movimentações</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Categorias disponíveis</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <span class="badge badge-gold">Honey</span>
+        <span class="badge badge-orange">Cappuccino</span>
+        <span class="badge badge-violet">Blended</span>
+        <span class="badge badge-muted">Acessório</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Cadastrar um novo produto</div>
+      <div class="steps">
+        <div class="step"><div class="step-dot">1</div><div class="step-text">Clique em <strong>Novo Produto</strong></div></div>
+        <div class="step"><div class="step-dot">2</div><div class="step-text">Preencha: <strong>Nome</strong>, <strong>SKU</strong> (código único), <strong>Categoria</strong>, <strong>Estoque mínimo</strong>, preço de custo e venda</div></div>
+        <div class="step"><div class="step-dot">3</div><div class="step-text">Informe o <strong>fornecedor</strong> e a <strong>localização</strong> no galpão (ex: Galpão A - Prateleira 1)</div></div>
+        <div class="step"><div class="step-dot">4</div><div class="step-text">Salve. O produto aparece na lista com estoque <code>0</code> — registre uma <strong>Entrada</strong> para inicializar o estoque</div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Estoque mínimo — o que é e por que importa</div>
+      <p style="font-size:14px;color:var(--text);">O <strong style="color:var(--gold-lt)">estoque mínimo</strong> é o ponto de alerta. Quando o estoque atual cai abaixo desse valor, o produto aparece com destaque <strong style="color:var(--red)">crítico</strong> no Dashboard e na lista de produtos. Use esse campo para definir o momento certo de repor cada SKU.</p>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Histórico de movimentações por produto</div>
+      <div class="steps">
+        <div class="step"><div class="step-dot">1</div><div class="step-text">Na lista de produtos, clique no ícone <strong>📋</strong> ao lado do produto</div></div>
+        <div class="step"><div class="step-dot">2</div><div class="step-text">Um painel lateral abre com o gráfico de evolução do estoque e lista de todas as movimentações</div></div>
+        <div class="step"><div class="step-dot">3</div><div class="step-text">Clique em <strong>Carregar mais</strong> para ver movimentações mais antigas</div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Ativar / Desativar produto</div>
+      <p style="font-size:14px;color:var(--text);">Use o toggle na linha do produto para desativar itens descontinuados sem excluí-los. Produtos inativos não aparecem nas telas de movimentação mas mantêm o histórico completo.</p>
+    </div>
+  </div>
+
+  <!-- 7. Relatórios -->
+  <div class="section" id="relatorios">
+    <div class="section-header">
+      <div class="section-num">7</div>
+      <div>
+        <div class="section-title">Relatórios</div>
+        <div class="section-desc">Análise histórica e exportação de dados</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Filtros disponíveis</div>
+      <table>
+        <thead><tr><th>Filtro</th><th>O que faz</th></tr></thead>
+        <tbody>
+          <tr><td>Período</td><td>Filtra movimentações entre duas datas</td></tr>
+          <tr><td>Produto</td><td>Exibe apenas movimentações de um SKU específico</td></tr>
+          <tr><td>Tipo</td><td>Filtra por Entrada / Saída / Ajuste / Perda</td></tr>
+          <tr><td>Operador</td><td>Mostra movimentações de um usuário específico</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Gráfico de tendência</div>
+      <p style="font-size:14px;color:var(--text);">Mostra o volume de <strong style="color:var(--gold)">entradas</strong> e <strong style="color:var(--red)">saídas</strong> por dia no período selecionado. Útil para identificar sazonalidade e planejar reposições.</p>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Exportar para CSV</div>
+      <div class="steps">
+        <div class="step"><div class="step-dot">1</div><div class="step-text">Aplique os filtros desejados</div></div>
+        <div class="step"><div class="step-dot">2</div><div class="step-text">Clique em <strong>Exportar CSV</strong> no topo da lista</div></div>
+        <div class="step"><div class="step-dot">3</div><div class="step-text">O arquivo baixa com todas as movimentações filtradas — colunas: Data, Produto, SKU, Tipo, Quantidade, Operador, Observação</div></div>
+      </div>
+      <div class="tip">
+        <div class="tip-icon">💡</div>
+        <div class="tip-text">Abra o CSV no Excel ou Google Sheets para criar tabelas dinâmicas, calcular totais por produto ou gerar gráficos personalizados.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 8. Offline -->
+  <div class="section" id="offline">
+    <div class="section-header">
+      <div class="section-num">8</div>
+      <div>
+        <div class="section-title">Modo Offline</div>
+        <div class="section-desc">O sistema funciona mesmo sem internet</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Como funciona</div>
+      <ul class="list">
+        <li>Quando a conexão cai, o indicador no menu muda para <strong style="color:var(--muted)">Offline</strong></li>
+        <li>Movimentações continuam sendo registradas — salvas localmente no dispositivo</li>
+        <li>Um contador mostra quantas operações estão <strong>pendentes de sincronização</strong></li>
+        <li>Ao reconectar, os dados são enviados automaticamente ao servidor</li>
+      </ul>
+      <div class="warn">
+        <div class="warn-icon">⚠️</div>
+        <div class="warn-text">No modo offline, o estoque exibido reflete o último estado sincronizado. Não feche o app antes de reconectar para garantir que os dados sejam enviados.</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Instalar como app (PWA)</div>
+      <p style="font-size:14px;color:var(--text);margin-bottom:12px;">A plataforma pode ser instalada como app no celular ou computador, sem precisar da loja de aplicativos:</p>
+      <ul class="list">
+        <li><strong>iPhone/iPad:</strong> Safari → compartilhar <code>⎙</code> → "Adicionar à Tela de Início"</li>
+        <li><strong>Android:</strong> Chrome → menu <code>⋮</code> → "Adicionar à tela inicial"</li>
+        <li><strong>Desktop:</strong> Chrome/Edge → ícone de instalação na barra de endereço</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div class="footer">
+    Mr. Lion Gestão de Estoque &nbsp;·&nbsp; Versão 1.0 &nbsp;·&nbsp; Março 2026<br />
+    <span style="margin-top:6px;display:block;">Em caso de dúvidas, fale com o administrador do sistema.</span>
+  </div>
+
+</div>
+</body>
+</html>
