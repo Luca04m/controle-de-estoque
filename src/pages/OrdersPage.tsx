@@ -24,6 +24,21 @@ import {
 } from 'lucide-react'
 import type { OrderItem, DeliveryOrder, Product, ProductCategory } from '@/types'
 import type { CreateOrderInput } from '@/hooks/useDeliveryOrders'
+import { getProductImage } from '@/lib/productImages'
+
+// ─── Map product_id (mock IDs) to SKU for image lookup ───────────────────────
+
+const ID_TO_SKU: Record<string, string> = {
+  'honey-sg':  'ML-HONEY-SG',
+  'honey-cmp': 'ML-HONEY-CMP',
+  'honey-png': 'ML-HONEY-PNG',
+  'capu-sg':   'ML-CAPU-SG',
+  'capu-cmp':  'ML-CAPU-CMP',
+  'capu-png':  'ML-CAPU-PNG',
+  'blend-sg':  'ML-BLEND-SG',
+  'blend-cmp': 'ML-BLEND-CMP',
+  'blend-png': 'ML-BLEND-PNG',
+}
 
 // ─── Formatters ───────────────────────────────────────────────────────────────
 
@@ -286,6 +301,7 @@ function Step2Products({ products, items, onUpdateQty, onNext, onBack }: Step2Pr
           const selected = qty > 0
           const outOfStock = product.current_stock === 0
           const catStyle = categoryStyles[product.category] ?? categoryStyles.acessorio
+          const img = getProductImage(product.sku)
 
           return (
             <div
@@ -317,6 +333,11 @@ function Step2Products({ products, items, onUpdateQty, onNext, onBack }: Step2Pr
               )}
 
               <div className="space-y-2">
+                {img && (
+                  <div className="w-full h-20 rounded-lg overflow-hidden mb-2" style={{ background: 'hsl(240 20% 8%)' }}>
+                    <img src={img} alt={product.name} className="w-full h-full object-contain" />
+                  </div>
+                )}
                 <span
                   className={`text-[9px] font-semibold tracking-wider uppercase border rounded px-1.5 py-0.5 ${catStyle.className}`}
                 >
@@ -802,25 +823,34 @@ function OrderCard({ order, onMarkDelivered, onReorder }: OrderCardProps) {
             borderColor: 'hsl(240 15% 11%)',
           }}
         >
-          {items.map((item, i) => (
-            <div
-              key={i}
-              className="px-3 py-2 grid text-xs"
-              style={{
-                gridTemplateColumns: '1fr auto auto auto',
-                backgroundColor: i % 2 === 0 ? 'transparent' : 'hsl(240 22% 8%)',
-              }}
-            >
-              <span className="text-white/80 pr-2 truncate">{item.product_name}</span>
-              <span className="text-white/35 tabular-nums text-right pr-2.5">×{item.quantity}</span>
-              <span className="text-white/35 tabular-nums text-right pr-2.5">
-                {fmt(item.unit_price ?? 0)}
-              </span>
-              <span className="text-white font-semibold tabular-nums text-right">
-                {fmt(item.quantity * (item.unit_price ?? 0))}
-              </span>
-            </div>
-          ))}
+          {items.map((item, i) => {
+            const itemSku = ID_TO_SKU[item.product_id]
+            const itemImg = itemSku ? getProductImage(itemSku) : undefined
+            return (
+              <div
+                key={i}
+                className="px-3 py-2 grid text-xs items-center gap-2"
+                style={{
+                  gridTemplateColumns: 'auto 1fr auto auto auto',
+                  backgroundColor: i % 2 === 0 ? 'transparent' : 'hsl(240 22% 8%)',
+                }}
+              >
+                <div className="w-8 h-8 rounded overflow-hidden flex-shrink-0" style={{ background: 'hsl(240 20% 8%)' }}>
+                  {itemImg && (
+                    <img src={itemImg} alt={item.product_name} className="w-full h-full object-contain" />
+                  )}
+                </div>
+                <span className="text-white/80 pr-2 truncate">{item.product_name}</span>
+                <span className="text-white/35 tabular-nums text-right pr-2.5">×{item.quantity}</span>
+                <span className="text-white/35 tabular-nums text-right pr-2.5">
+                  {fmt(item.unit_price ?? 0)}
+                </span>
+                <span className="text-white font-semibold tabular-nums text-right">
+                  {fmt(item.quantity * (item.unit_price ?? 0))}
+                </span>
+              </div>
+            )
+          })}
         </div>
 
         {/* Divider */}

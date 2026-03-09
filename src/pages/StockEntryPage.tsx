@@ -21,6 +21,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Skeleton } from '@/components/ui/skeleton'
 import type { Product, ProductCategory, StockMovement } from '@/types'
+import { getProductImage } from '@/lib/productImages'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -123,6 +124,8 @@ function ProductRow({
   onSelect: (p: Product) => void
 }) {
   const isCritical = product.current_stock <= product.min_stock
+  const img = getProductImage(product.sku)
+  const meta = CATEGORY_META[product.category]
 
   return (
     <button
@@ -139,6 +142,23 @@ function ProductRow({
       `}
     >
       <div className="flex items-center gap-3">
+        <div className="w-12 h-12 rounded-lg flex-shrink-0 overflow-hidden">
+          {img ? (
+            <img
+              src={img}
+              alt={product.name}
+              className="w-full h-full object-contain"
+              style={{ background: 'hsl(240 20% 8%)' }}
+            />
+          ) : (
+            <div
+              className="w-full h-full flex items-center justify-center text-sm font-bold text-white/60"
+              style={{ background: meta.dot + '22' }}
+            >
+              <span style={{ color: meta.dot }}>{product.name.charAt(0).toUpperCase()}</span>
+            </div>
+          )}
+        </div>
         <div className="flex-1 min-w-0 space-y-1.5">
           <div className="flex items-center gap-2 flex-wrap">
             <span className="text-sm font-semibold text-white leading-tight truncate">
@@ -325,6 +345,8 @@ export function StockEntryPage() {
 
   if (step === 'success' && selectedProduct) {
     const newStock = selectedProduct.current_stock + quantity
+    const successImg = getProductImage(selectedProduct.sku)
+    const successMeta = CATEGORY_META[selectedProduct.category]
     return (
       <div className="w-full px-4 pt-6 space-y-5">
         <div className="flex flex-col items-center text-center pt-4 pb-2">
@@ -340,10 +362,29 @@ export function StockEntryPage() {
           style={{ borderColor: 'hsl(42 60% 55% / 0.2)' }}
         >
           <div className="px-5 pt-5 pb-4 flex items-start justify-between gap-3">
-            <div>
-              <p className="text-[10px] uppercase tracking-wider text-white/30 mb-1">Produto</p>
-              <p className="text-base font-bold text-white">{selectedProduct.name}</p>
-              <p className="text-[11px] font-mono text-white/30 mt-0.5">{selectedProduct.sku}</p>
+            <div className="flex items-start gap-3">
+              <div className="w-16 h-16 rounded-xl flex-shrink-0 overflow-hidden">
+                {successImg ? (
+                  <img
+                    src={successImg}
+                    alt={selectedProduct.name}
+                    className="w-full h-full object-contain"
+                    style={{ background: 'hsl(240 20% 8%)' }}
+                  />
+                ) : (
+                  <div
+                    className="w-full h-full flex items-center justify-center text-lg font-bold"
+                    style={{ background: successMeta.dot + '22', color: successMeta.dot }}
+                  >
+                    {selectedProduct.name.charAt(0).toUpperCase()}
+                  </div>
+                )}
+              </div>
+              <div>
+                <p className="text-[10px] uppercase tracking-wider text-white/30 mb-1">Produto</p>
+                <p className="text-base font-bold text-white">{selectedProduct.name}</p>
+                <p className="text-[11px] font-mono text-white/30 mt-0.5">{selectedProduct.sku}</p>
+              </div>
             </div>
             <CategoryBadge category={selectedProduct.category} />
           </div>
@@ -419,6 +460,8 @@ export function StockEntryPage() {
 
   if (step === 'confirm' && selectedProduct) {
     const newStock = selectedProduct.current_stock + quantity
+    const confirmImg = getProductImage(selectedProduct.sku)
+    const confirmMeta = CATEGORY_META[selectedProduct.category]
 
     return (
       <div className="w-full px-4 pt-4 space-y-4">
@@ -441,10 +484,29 @@ export function StockEntryPage() {
           style={{ borderColor: 'hsl(42 60% 55% / 0.25)' }}
         >
           <div className="px-5 pt-5 pb-4 flex items-start justify-between gap-3">
-            <div>
-              <p className="text-[10px] uppercase tracking-wider text-white/30 mb-1">Produto</p>
-              <p className="text-lg font-bold text-white leading-tight">{selectedProduct.name}</p>
-              <p className="text-[11px] font-mono text-white/30 mt-0.5">{selectedProduct.sku}</p>
+            <div className="flex items-start gap-3">
+              <div className="w-16 h-16 rounded-xl flex-shrink-0 overflow-hidden">
+                {confirmImg ? (
+                  <img
+                    src={confirmImg}
+                    alt={selectedProduct.name}
+                    className="w-full h-full object-contain"
+                    style={{ background: 'hsl(240 20% 8%)' }}
+                  />
+                ) : (
+                  <div
+                    className="w-full h-full flex items-center justify-center text-lg font-bold"
+                    style={{ background: confirmMeta.dot + '22', color: confirmMeta.dot }}
+                  >
+                    {selectedProduct.name.charAt(0).toUpperCase()}
+                  </div>
+                )}
+              </div>
+              <div>
+                <p className="text-[10px] uppercase tracking-wider text-white/30 mb-1">Produto</p>
+                <p className="text-lg font-bold text-white leading-tight">{selectedProduct.name}</p>
+                <p className="text-[11px] font-mono text-white/30 mt-0.5">{selectedProduct.sku}</p>
+              </div>
             </div>
             <CategoryBadge category={selectedProduct.category} />
           </div>
