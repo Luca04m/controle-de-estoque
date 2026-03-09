@@ -26,16 +26,19 @@ export default defineConfig({
         ],
       },
       workbox: {
+        skipWaiting: true,
+        clientsClaim: true,
+        cleanupOutdatedCaches: true,
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/.*\.supabase\.co\/rest\/v1\/products/,
-            handler: 'CacheFirst',
-            options: { cacheName: 'products-cache', expiration: { maxEntries: 500, maxAgeSeconds: 604800 } },
+            handler: 'NetworkFirst',
+            options: { cacheName: 'products-cache', expiration: { maxEntries: 500, maxAgeSeconds: 3600 } },
           },
           {
             urlPattern: /^https:\/\/.*\.supabase\.co\/rest\/v1\/stock_movements/,
             handler: 'NetworkFirst',
-            options: { cacheName: 'movements-cache', expiration: { maxEntries: 2000, maxAgeSeconds: 86400 } },
+            options: { cacheName: 'movements-cache', expiration: { maxEntries: 2000, maxAgeSeconds: 3600 } },
           },
         ],
       },
