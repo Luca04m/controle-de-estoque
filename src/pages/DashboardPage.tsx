@@ -216,45 +216,6 @@ export function DashboardPage() {
         <RealtimeIndicator />
       </div>
 
-      {/* ── Critical alert banner ── */}
-      {criticalProducts.length > 0 && (
-        <div
-          className="w-full rounded-xl p-4"
-          style={{ background: 'hsl(0 60% 10% / 0.7)', border: '1px solid hsl(0 70% 28% / 0.5)' }}
-        >
-          <div className="flex items-start gap-3">
-            <AlertTriangle size={16} className="text-red-400 shrink-0 mt-0.5" />
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-bold text-red-400 mb-1">
-                {criticalProducts.length} produto{criticalProducts.length > 1 ? 's' : ''} em estoque crítico
-              </p>
-              <div className="flex flex-wrap gap-1.5 mb-3">
-                {criticalProducts.slice(0, 5).map(p => (
-                  <span
-                    key={p.id}
-                    className="text-[10px] font-semibold px-2 py-0.5 rounded-md"
-                    style={{ background: 'hsl(0 60% 20% / 0.6)', color: 'hsl(0 70% 70%)' }}
-                  >
-                    {p.name} · {p.sku}
-                  </span>
-                ))}
-                {criticalProducts.length > 5 && (
-                  <span className="text-[10px] text-red-400/60">
-                    +{criticalProducts.length - 5} mais
-                  </span>
-                )}
-              </div>
-              <button
-                onClick={() => navigate('/produtos', { state: { criticalOnly: true } })}
-                className="flex items-center gap-1.5 text-xs font-semibold text-red-400 hover:text-red-300 transition-colors"
-              >
-                Ver Produtos Críticos <ArrowRight size={12} />
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* ── KPI Row 1: Operacional ── */}
       <div>
         <p className="text-[10px] uppercase tracking-widest text-muted-foreground mb-2.5 font-medium">Operacional — Hoje</p>
