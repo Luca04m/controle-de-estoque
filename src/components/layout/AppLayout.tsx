@@ -1,3 +1,4 @@
+import novalogo from '@/assets/novalogo.png'
 import { useState, useRef, useCallback } from 'react'
 import type { ReactNode } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
@@ -142,10 +143,10 @@ export function AppLayout({ children }: { children: ReactNode }) {
         {/* Logo area */}
         <div className={`border-b border-border flex items-center ${collapsed ? 'px-0 py-5 justify-center' : 'px-5 py-6'}`}>
           {collapsed ? (
-            <span className="text-2xl leading-none">🦁</span>
+            <img src={novalogo} alt="Mr. Lion" className="w-8 h-8 rounded-lg object-contain" />
           ) : (
             <div className="flex items-center gap-2.5">
-              <span className="text-2xl leading-none flex-shrink-0">🦁</span>
+              <img src={novalogo} alt="Mr. Lion" className="w-8 h-8 rounded-lg object-contain flex-shrink-0" />
               <span
                 className="text-base font-bold tracking-tight"
                 style={{
@@ -294,7 +295,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
             <Menu size={18} />
           </button>
           <div className="flex items-center gap-2.5">
-            <span className="text-xl leading-none flex-shrink-0">🦁</span>
+            <img src={novalogo} alt="Mr. Lion" className="w-7 h-7 rounded-md object-contain flex-shrink-0" />
             <span
               className="text-base font-bold tracking-tight"
               style={{
