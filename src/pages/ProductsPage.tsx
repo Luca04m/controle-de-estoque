@@ -4,12 +4,13 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import {
   Search, Plus, Package, Edit2, ToggleLeft, ToggleRight,
-  Wine, ShoppingBag, Gift, Wrench, AlertTriangle, MapPin,
+  AlertTriangle, MapPin,
   Truck, ChevronRight, ArrowDownLeft, ArrowUpRight, SlidersHorizontal, Minus,
 } from 'lucide-react'
 import { useAllProducts, useCreateProduct, useUpdateProduct, useToggleProduct } from '@/hooks/useProducts'
 import { useStockMovements } from '@/hooks/useStockMovements'
 import { useAuthStore } from '@/stores/authStore'
+import { getProductImage } from '@/lib/productImages'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
@@ -31,12 +32,12 @@ const CATEGORY_CONFIG: Record<CategoryKey, {
   label: string
   color: string
   bg: string
-  icon: React.ElementType
+  dot: string
 }> = {
-  honey:      { label: 'Honey',       color: '#D4A843', bg: 'hsl(42 60% 55% / 0.12)',   icon: Wine        },
-  cappuccino: { label: 'Cappuccino',  color: '#A0522D', bg: 'hsl(25 55% 40% / 0.15)',   icon: ShoppingBag },
-  blended:    { label: 'Blended',     color: '#22C55E', bg: 'hsl(142 65% 40% / 0.12)',  icon: Gift        },
-  acessorio:  { label: 'Acessório',   color: '#8B5CF6', bg: 'hsl(270 60% 55% / 0.12)', icon: Wrench      },
+  honey:      { label: 'Honey',      color: '#D4A843', bg: 'hsl(42 60% 55% / 0.12)',   dot: '#fbbf24' },
+  cappuccino: { label: 'Cappuccino', color: '#fb923c', bg: 'hsl(25 90% 55% / 0.12)',   dot: '#fb923c' },
+  blended:    { label: 'Blended',    color: '#a78bfa', bg: 'hsl(270 60% 55% / 0.12)',  dot: '#a78bfa' },
+  acessorio:  { label: 'Acessório',  color: '#94a3b8', bg: 'hsl(220 15% 55% / 0.12)', dot: '#94a3b8' },
 }
 
 const ALL_CATEGORIES = Object.entries(CATEGORY_CONFIG) as [CategoryKey, typeof CATEGORY_CONFIG[CategoryKey]][]
@@ -68,17 +69,12 @@ function CategoryBadge({ category }: { category: string }) {
       </span>
     )
   }
-  const Icon = config.icon
   return (
     <span
-      style={{
-        color: config.color,
-        backgroundColor: config.bg,
-        borderColor: `${config.color}40`,
-      }}
-      className="text-xs border rounded-md px-2 py-0.5 font-medium flex items-center gap-1 w-fit"
+      style={{ color: config.color, backgroundColor: config.bg, borderColor: `${config.color}40` }}
+      className="text-[10px] font-bold uppercase tracking-wider border rounded-md px-1.5 py-0.5 flex items-center gap-1 w-fit"
     >
-      <Icon size={10} aria-hidden />
+      <span className="w-1.5 h-1.5 rounded-full" style={{ background: config.dot }} />
       {config.label}
     </span>
   )
@@ -335,16 +331,15 @@ function ProductFormDialog({
   }
 
   const dialogCategoryConfig = CATEGORY_CONFIG[categoryValue as CategoryKey]
-  const DialogIcon = dialogCategoryConfig?.icon ?? Package
 
   return (
     <Dialog open={open} onOpenChange={(_, open) => { if (!open) onClose() }}>
       <DialogContent className="bg-card border-border max-w-lg">
         <DialogHeader>
           <DialogTitle className="text-foreground flex items-center gap-2">
-            <DialogIcon
-              size={18}
-              style={{ color: dialogCategoryConfig?.color ?? 'currentColor' }}
+            <span
+              className="w-3 h-3 rounded-full"
+              style={{ background: dialogCategoryConfig?.dot ?? 'hsl(42 60% 55%)' }}
             />
             <span style={{ fontFamily: '"DM Serif Display", Georgia, serif' }}>
               {product ? 'Editar Produto' : 'Novo Produto'}
@@ -385,17 +380,14 @@ function ProductFormDialog({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className="bg-card border-border">
-                  {ALL_CATEGORIES.map(([value, cfg]) => {
-                    const CatIcon = cfg.icon
-                    return (
-                      <SelectItem key={value} value={value}>
-                        <span className="flex items-center gap-2">
-                          <CatIcon size={12} style={{ color: cfg.color }} />
-                          {cfg.label}
-                        </span>
-                      </SelectItem>
-                    )
-                  })}
+                  {ALL_CATEGORIES.map(([value, cfg]) => (
+                    <SelectItem key={value} value={value}>
+                      <span className="flex items-center gap-2">
+                        <span className="w-2.5 h-2.5 rounded-full" style={{ background: cfg.dot }} />
+                        {cfg.label}
+                      </span>
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -502,44 +494,66 @@ function ProductCard({
   onDrillDown: (p: Product) => void
 }) {
   const isCritical = product.current_stock <= product.min_stock
+  const img = getProductImage(product.sku)
+  const catCfg = CATEGORY_CONFIG[product.category as CategoryKey]
 
   return (
     <div
-      className={`rounded-xl border border-border bg-card p-4 space-y-3 transition-all ${
+      className={`rounded-xl border border-border bg-card overflow-hidden transition-all ${
         !product.active ? 'opacity-40' : ''
       }`}
+      style={{ borderColor: isCritical ? 'hsl(0 70% 30% / 0.5)' : undefined }}
     >
-      {/* Top row: name + action button */}
-      <div className="flex items-start justify-between gap-2">
+      {/* Image + stock badge */}
+      <div
+        className="relative h-28 flex items-center justify-center"
+        style={{ background: 'hsl(240 18% 6%)' }}
+      >
+        {img ? (
+          <img src={img} alt={product.name} className="h-full w-full object-contain p-3" />
+        ) : (
+          <span className="text-3xl font-bold" style={{ color: catCfg?.dot }}>
+            {product.name.charAt(0).toUpperCase()}
+          </span>
+        )}
+        {isCritical && (
+          <div className="absolute top-2 right-2 text-[9px] font-black uppercase tracking-widest bg-red-600 text-white px-1.5 py-0.5 rounded">
+            Crítico
+          </div>
+        )}
+        <div
+          className="absolute bottom-2 right-2 text-xs font-black tabular-nums"
+          style={{ color: isCritical ? '#f87171' : 'hsl(42 60% 55%)' }}
+        >
+          {product.current_stock} un
+        </div>
+      </div>
+
+      <div className="p-3 space-y-2.5">
+        {/* Name + drill-down */}
         <button
           onClick={() => onDrillDown(product)}
-          className="text-left group flex items-start gap-1"
+          className="text-left group flex items-center gap-1 w-full"
         >
-          <span className="font-medium text-foreground group-hover:text-gold transition-colors leading-snug">
+          <span className="font-semibold text-sm text-foreground group-hover:text-gold transition-colors leading-snug line-clamp-2 flex-1">
             {product.name}
           </span>
-          <ChevronRight size={14} className="text-muted-foreground group-hover:text-gold transition-colors mt-0.5 shrink-0" />
-          {isCritical && (
-            <AlertTriangle size={12} className="text-red-400 mt-0.5 shrink-0" />
-          )}
+          <ChevronRight size={13} className="text-muted-foreground group-hover:text-gold transition-colors shrink-0" />
         </button>
-      </div>
 
-      {/* Badges row */}
-      <div className="flex flex-wrap gap-1.5">
-        <CategoryBadge category={product.category} />
-        <span className="font-mono text-xs text-muted-foreground border border-border rounded-md px-2 py-0.5">
-          {product.sku}
-        </span>
-        <StatusBadge isCritical={isCritical} active={product.active} />
-      </div>
+        {/* Badges */}
+        <div className="flex flex-wrap gap-1.5">
+          <CategoryBadge category={product.category} />
+          <span className="font-mono text-[10px] text-muted-foreground border border-border rounded px-1.5 py-0.5">
+            {product.sku}
+          </span>
+        </div>
 
-      {/* Stock bar */}
-      <div className="flex items-center gap-3">
-        <div className="flex-1">
-          <div className="flex justify-between text-xs text-muted-foreground mb-1">
+        {/* Stock bar */}
+        <div>
+          <div className="flex justify-between text-[10px] text-muted-foreground mb-1">
             <span>Estoque</span>
-            <span className={isCritical ? 'text-red-400 font-bold' : 'text-foreground font-medium'}>
+            <span className={isCritical ? 'text-red-400 font-bold' : ''}>
               {product.current_stock} / mín {product.min_stock}
             </span>
           </div>
@@ -553,40 +567,40 @@ function ProductCard({
             />
           </div>
         </div>
-      </div>
 
-      {/* Price + supplier */}
-      <div className="flex items-center justify-between text-sm">
-        <span className="text-gold font-semibold">{fmt(product.price_sale)}</span>
-        <span className="text-xs text-muted-foreground flex items-center gap-1">
-          <Truck size={11} />
-          {product.supplier}
-        </span>
-      </div>
-
-      {/* Action buttons */}
-      {isManager && (
-        <div className="flex gap-2 pt-1 border-t border-border">
-          <button
-            onClick={() => onEdit(product)}
-            className="flex-1 flex items-center justify-center gap-1.5 h-8 rounded-md text-xs text-muted-foreground hover:text-gold hover:bg-gold/10 border border-transparent hover:border-gold/20 transition-all"
-          >
-            <Edit2 size={12} />
-            Editar
-          </button>
-          <button
-            onClick={() => onToggle(product.id, !product.active)}
-            className={`flex-1 flex items-center justify-center gap-1.5 h-8 rounded-md text-xs border border-transparent transition-all ${
-              product.active
-                ? 'text-muted-foreground hover:text-red-400 hover:bg-red-400/10 hover:border-red-400/20'
-                : 'text-muted-foreground hover:text-emerald-400 hover:bg-emerald-400/10 hover:border-emerald-400/20'
-            }`}
-          >
-            {product.active ? <ToggleRight size={12} /> : <ToggleLeft size={12} />}
-            {product.active ? 'Desativar' : 'Ativar'}
-          </button>
+        {/* Price */}
+        <div className="flex items-center justify-between">
+          <span className="text-sm font-bold text-gold">{fmt(product.price_sale)}</span>
+          <span className="text-[10px] text-muted-foreground flex items-center gap-1 truncate max-w-[100px]">
+            <Truck size={10} />
+            {product.supplier}
+          </span>
         </div>
-      )}
+
+        {/* Action buttons */}
+        {isManager && (
+          <div className="flex gap-2 pt-1 border-t border-border">
+            <button
+              onClick={() => onEdit(product)}
+              className="flex-1 flex items-center justify-center gap-1.5 h-8 rounded-md text-xs text-muted-foreground hover:text-gold hover:bg-gold/10 border border-transparent hover:border-gold/20 transition-all"
+            >
+              <Edit2 size={12} />
+              Editar
+            </button>
+            <button
+              onClick={() => onToggle(product.id, !product.active)}
+              className={`flex-1 flex items-center justify-center gap-1.5 h-8 rounded-md text-xs border border-transparent transition-all ${
+                product.active
+                  ? 'text-muted-foreground hover:text-red-400 hover:bg-red-400/10 hover:border-red-400/20'
+                  : 'text-muted-foreground hover:text-emerald-400 hover:bg-emerald-400/10 hover:border-emerald-400/20'
+              }`}
+            >
+              {product.active ? <ToggleRight size={12} /> : <ToggleLeft size={12} />}
+              {product.active ? 'Desativar' : 'Ativar'}
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   )
 }
@@ -684,7 +698,6 @@ export function ProductsPage() {
             Todos
           </button>
           {ALL_CATEGORIES.map(([key, cfg]) => {
-            const ChipIcon = cfg.icon
             const isActive = categoryFilter === key
             return (
               <button
@@ -697,7 +710,7 @@ export function ProductsPage() {
                     : 'border-border text-muted-foreground hover:text-foreground hover:border-border/80'
                 }`}
               >
-                <ChipIcon size={11} />
+                <span className="w-2 h-2 rounded-full" style={{ background: cfg.dot }} />
                 {cfg.label}
               </button>
             )
@@ -715,23 +728,25 @@ export function ProductsPage() {
       ) : (
         <>
           {/* ── Mobile Cards (sm:hidden) ── */}
-          <div className="animate-slide-up sm:hidden space-y-3">
+          <div className="animate-slide-up sm:hidden">
             {filtered.length === 0 ? (
               <div className="flex flex-col items-center gap-2 py-12 text-muted-foreground">
                 <Package size={32} className="opacity-20" />
                 <span className="text-sm">Nenhum produto encontrado</span>
               </div>
             ) : (
-              filtered.map((product) => (
-                <ProductCard
-                  key={product.id}
-                  product={product}
-                  isManager={isManager}
-                  onEdit={openEdit}
-                  onToggle={handleToggle}
-                  onDrillDown={openDrillDown}
-                />
-              ))
+              <div className="grid grid-cols-2 gap-3">
+                {filtered.map((product) => (
+                  <ProductCard
+                    key={product.id}
+                    product={product}
+                    isManager={isManager}
+                    onEdit={openEdit}
+                    onToggle={handleToggle}
+                    onDrillDown={openDrillDown}
+                  />
+                ))}
+              </div>
             )}
           </div>
 

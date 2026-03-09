@@ -6,7 +6,6 @@ import {
   ArrowLeft,
   ChevronRight,
   CheckCircle2,
-  AlertTriangle,
   Plus,
   Minus,
   Clock,
@@ -242,8 +241,6 @@ export function StockEntryPage() {
 
   const activeOrigin = origin === 'Outro' ? customOrigin.trim() : (origin ?? '')
   const canProceed = activeOrigin.length > 0 && quantity >= 1
-
-  const criticalProducts = products?.filter(p => p.current_stock <= p.min_stock) ?? []
 
   const filteredProducts = (products ?? []).filter(p => {
     const matchSearch =
@@ -940,35 +937,6 @@ export function StockEntryPage() {
       </div>
 
       <div className="px-4 space-y-4 mt-1">
-        {/* Critical banner */}
-        {criticalProducts.length > 0 && (
-          <div
-            className="rounded-xl p-3 space-y-2.5"
-            style={{ background: 'hsl(0 70% 15% / 0.3)', border: '1px solid hsl(0 70% 35% / 0.25)' }}
-          >
-            <div className="flex items-center gap-2">
-              <AlertTriangle size={13} className="text-red-400 flex-shrink-0" />
-              <p className="text-xs font-bold text-red-400 uppercase tracking-wider">
-                {criticalProducts.length} produto{criticalProducts.length > 1 ? 's' : ''} em estoque crítico
-              </p>
-            </div>
-            <div className="flex gap-2 overflow-x-auto no-scrollbar pb-0.5">
-              {criticalProducts.map(p => (
-                <button
-                  key={p.id}
-                  type="button"
-                  onClick={() => handleSelectProduct(p)}
-                  className="flex-shrink-0 flex items-center gap-1.5 pl-2.5 pr-3 py-1.5 rounded-lg transition-all active:scale-95"
-                  style={{ background: 'hsl(0 60% 20% / 0.4)', border: '1px solid hsl(0 70% 35% / 0.25)' }}
-                >
-                  <span className="text-[11px] font-semibold text-red-300">{p.name}</span>
-                  <span className="text-[10px] font-black text-red-500">{p.current_stock}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
         {/* Product grid */}
         {sortedProducts.length === 0 ? (
           <div className="flex flex-col items-center py-16 text-center space-y-2">
