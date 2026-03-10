@@ -349,7 +349,7 @@ export function StockEntryPage() {
   const [step, setStep] = useState<Step>('select')
   const [search, setSearch] = useState('')
   const [categoryFilter, setCategoryFilter] = useState<ProductCategory | 'all'>('all')
-  const [selectedLocationId, setSelectedLocationId] = useState<string | null>(userLocationId ?? 'loc-deposito')
+  const [selectedLocationId, setSelectedLocationId] = useState<string | null>(userLocationId ?? 'loc-degusto-tijuca')
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
 
   // C-01: tipo de movimento e sinal do ajuste
@@ -461,7 +461,7 @@ export function StockEntryPage() {
         action: movementType,
         quantity: getSubmitQuantity(),
         notes: `${activeOrigin}${invoice ? ` — NF: ${invoice}` : ''}`,
-        location_id: selectedLocationId ?? 'loc-deposito',
+        location_id: selectedLocationId ?? 'loc-degusto-tijuca',
       })
       goTo('success')
     } catch {

@@ -1,7 +1,7 @@
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts'
+import { useState } from 'react'
 import {
   TrendingUp, TrendingDown, ShoppingBag, AlertTriangle, PackagePlus,
-  Activity, DollarSign, Package, ArrowRight, Clock, Layers,
+  Activity, DollarSign, ArrowRight, Clock, ChevronDown, ChevronUp,
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useProducts } from '@/hooks/useProducts'
@@ -62,6 +62,7 @@ function KpiCard({
   icon: Icon,
   accent = 'none',
   trend,
+  onClick,
 }: {
   title: string
   value: string | number
@@ -69,6 +70,7 @@ function KpiCard({
   icon: React.ElementType
   accent?: 'gold' | 'red' | 'green' | 'none'
   trend?: { value: number; label: string }
+  onClick?: () => void
 }) {
   const accentBorder = {
     gold:  'border-l-[hsl(42,60%,55%)]',
@@ -85,7 +87,10 @@ function KpiCard({
   }[accent]
 
   return (
-    <div className={`relative bg-card border border-border border-l-4 ${accentBorder} rounded-xl p-4 overflow-hidden`}>
+    <div
+      className={`relative bg-card border border-border border-l-4 ${accentBorder} rounded-xl p-4 overflow-hidden ${onClick ? 'cursor-pointer hover:bg-secondary/50 transition-colors' : ''}`}
+      onClick={onClick}
+    >
       <Icon size={36} className="absolute right-3 top-1/2 -translate-y-1/2 opacity-[0.06] text-foreground" aria-hidden />
       <p className="text-[10px] tracking-widest uppercase text-muted-foreground mb-2">{title}</p>
       <p className={`text-2xl font-black leading-none tabular-nums ${accentValue}`}>{value}</p>
@@ -102,18 +107,6 @@ function KpiCard({
   )
 }
 
-function ChartTooltip({ active, payload, label }: {
-  active?: boolean; payload?: { value: number }[]; label?: string
-}) {
-  if (!active || !payload?.length) return null
-  return (
-    <div className="bg-popover border border-border rounded-lg px-3 py-2 text-xs shadow-lg">
-      <p className="text-muted-foreground mb-0.5">{label}</p>
-      <p className="font-bold text-gold">{payload[0].value} un</p>
-    </div>
-  )
-}
-
 // ─── DashboardPage ───────────────────────────────────────────────────────────
 
 export function DashboardPage() {
@@ -122,6 +115,7 @@ export function DashboardPage() {
   const { data: movements, isLoading: loadingMovements } = useStockMovements({ limit: 30 })
   const { data: orders, isLoading: loadingOrders } = useDeliveryOrders()
   const { data: trendData } = useMovementTrend(30)
+  const [showFinancial, setShowFinancial] = useState(false)
 
   // ── Derived stats ─────────────────────────────────────────────────────────
   const criticalProducts = products?.filter(p => p.current_stock <= p.min_stock) ?? []
@@ -141,7 +135,6 @@ export function DashboardPage() {
   const deliveredToday  = orders?.filter(o => o.status === 'delivered' && o.delivered_at?.startsWith(today)) ?? []
   const deliveredYesterday = orders?.filter(o => o.status === 'delivered' && o.delivered_at?.startsWith(yesterday)) ?? []
 
-  // Variation helper: returns label string like "↑ 12%" or "↓ 5%"
   function calcVariation(current: number, previous: number): { value: number; label: string } | undefined {
     if (previous === 0 && current === 0) return undefined
     if (previous === 0) return { value: 100, label: '+100% vs ontem' }
@@ -153,15 +146,7 @@ export function DashboardPage() {
   const stockValue = products?.reduce((acc, p) => acc + p.current_stock * (p.price_sale ?? 0), 0) ?? 0
   const costValue  = products?.reduce((acc, p) => acc + p.current_stock * (p.price_cost ?? 0), 0) ?? 0
   const margin     = stockValue > 0 ? Math.round(((stockValue - costValue) / stockValue) * 100) : 0
-
   const totalUnits = products?.reduce((acc, p) => acc + p.current_stock, 0) ?? 0
-
-  // Category chart
-  const categoryData = Object.entries(CATEGORY_CONFIG).map(([key, cfg]) => ({
-    name: cfg.label,
-    value: products?.filter(p => p.category === key).reduce((acc, p) => acc + p.current_stock, 0) ?? 0,
-    color: cfg.color,
-  }))
 
   // Low-stock products (sorted by criticality then stock %)
   const sortedProducts = [...(products ?? [])].sort((a, b) => {
@@ -187,13 +172,6 @@ export function DashboardPage() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-24 bg-secondary rounded-xl" />)}
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-24 bg-secondary rounded-xl" />)}
-        </div>
-        <div className="grid md:grid-cols-2 gap-5">
-          <Skeleton className="h-52 bg-secondary rounded-xl" />
-          <Skeleton className="h-52 bg-secondary rounded-xl" />
-        </div>
         <div className="grid md:grid-cols-2 gap-5">
           <Skeleton className="h-64 bg-secondary rounded-xl" />
           <Skeleton className="h-64 bg-secondary rounded-xl" />
@@ -216,149 +194,97 @@ export function DashboardPage() {
         <RealtimeIndicator />
       </div>
 
-      {/* ── KPI Row 1: Operacional ── */}
-      <div>
-        <p className="text-[10px] uppercase tracking-widest text-muted-foreground mb-2.5 font-medium">Operacional — Hoje</p>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <KpiCard
-            title="Estoque Crítico"
-            value={criticalProducts.length}
-            sub={criticalProducts.length > 0 ? 'precisam reposição' : 'tudo ok'}
-            accent={criticalProducts.length > 0 ? 'red' : 'green'}
-            icon={AlertTriangle}
-          />
-          <KpiCard
-            title="Pedidos Pendentes"
-            value={pendingOrders.length}
-            sub="aguardando entrega"
-            accent={pendingOrders.length > 0 ? 'gold' : 'none'}
-            icon={ShoppingBag}
-          />
-          <KpiCard
-            title="Entregas Hoje"
-            value={deliveredToday.length}
-            sub="pedidos entregues"
-            accent="green"
-            icon={Activity}
-            trend={calcVariation(deliveredToday.length, deliveredYesterday.length)}
-          />
-          <KpiCard
-            title="Entradas Hoje"
-            value={todayIns}
-            sub="unidades adicionadas"
-            accent="green"
-            icon={PackagePlus}
-            trend={calcVariation(todayIns, yesterdayIns)}
-          />
-        </div>
-      </div>
-
-      {/* ── KPI Row 2: Financeiro ── */}
-      <div>
-        <p className="text-[10px] uppercase tracking-widest text-muted-foreground mb-2.5 font-medium">Estoque — Financeiro</p>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <KpiCard
-            title="Valor de Venda"
-            value={formatCurrency(stockValue)}
-            sub="a preço de venda"
-            accent="gold"
-            icon={DollarSign}
-          />
-          <KpiCard
-            title="Valor de Custo"
-            value={formatCurrency(costValue)}
-            sub="a preço de custo"
-            accent="none"
-            icon={DollarSign}
-          />
-          <KpiCard
-            title="Margem Bruta"
-            value={`${margin}%`}
-            sub="venda vs custo"
-            accent={margin > 30 ? 'green' : margin > 15 ? 'gold' : 'red'}
-            icon={TrendingUp}
-          />
-          <KpiCard
-            title="Total em Estoque"
-            value={totalUnits}
-            sub="unidades"
-            accent="none"
-            icon={Layers}
-          />
-        </div>
-      </div>
-
-      {/* ── Quick Actions ── */}
-      <div className="flex gap-3 flex-wrap">
+      {/* ── Critical alert (only when there are critical products) ── */}
+      {criticalProducts.length > 0 && (
         <button
-          onClick={() => navigate('/entrada')}
-          className="flex items-center gap-2 h-10 px-5 rounded-xl font-bold text-sm tracking-wide hover:opacity-90 active:scale-[0.98] transition-all"
-          style={{ background: GOLD, color: 'hsl(240 25% 4%)' }}
+          onClick={() => navigate('/produtos', { state: { criticalOnly: true } })}
+          className="w-full rounded-xl p-3 flex items-center gap-3 transition-colors hover:opacity-90"
+          style={{ background: 'hsl(0 60% 10% / 0.7)', border: '1px solid hsl(0 70% 28% / 0.5)' }}
         >
-          <PackagePlus size={15} />
-          Registrar Entrada
+          <AlertTriangle size={16} className="text-red-400 shrink-0" />
+          <span className="text-sm font-semibold text-red-400 flex-1 text-left">
+            {criticalProducts.length} produto{criticalProducts.length > 1 ? 's' : ''} em estoque crítico
+          </span>
+          <ArrowRight size={14} className="text-red-400/60 shrink-0" />
         </button>
-        <button
+      )}
+
+      {/* ── KPI Row: 4 cards operacionais ── */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <KpiCard
+          title="Estoque Crítico"
+          value={criticalProducts.length}
+          sub={criticalProducts.length > 0 ? 'precisam reposição' : 'tudo ok'}
+          accent={criticalProducts.length > 0 ? 'red' : 'green'}
+          icon={AlertTriangle}
+          onClick={() => navigate('/produtos', { state: { criticalOnly: true } })}
+        />
+        <KpiCard
+          title="Pedidos Pendentes"
+          value={pendingOrders.length}
+          sub="aguardando entrega"
+          accent={pendingOrders.length > 0 ? 'gold' : 'none'}
+          icon={ShoppingBag}
           onClick={() => navigate('/pedidos')}
-          className="flex items-center gap-2 h-10 px-5 rounded-xl border font-semibold text-sm hover:bg-gold/10 active:scale-[0.98] transition-all"
-          style={{ borderColor: 'hsl(42 60% 55% / 0.35)', color: GOLD }}
-        >
-          <ShoppingBag size={15} />
-          Ver Pedidos
-        </button>
-        <button
-          onClick={() => navigate('/produtos')}
-          className="flex items-center gap-2 h-10 px-5 rounded-xl border font-semibold text-sm hover:bg-white/[0.04] active:scale-[0.98] transition-all"
-          style={{ borderColor: 'hsl(240 15% 14%)', color: 'rgba(255,255,255,0.5)' }}
-        >
-          <Package size={15} />
-          Catálogo
-        </button>
+        />
+        <KpiCard
+          title="Entregas Hoje"
+          value={deliveredToday.length}
+          sub="pedidos entregues"
+          accent="green"
+          icon={Activity}
+          trend={calcVariation(deliveredToday.length, deliveredYesterday.length)}
+        />
+        <KpiCard
+          title="Entradas Hoje"
+          value={todayIns}
+          sub="unidades adicionadas"
+          accent="green"
+          icon={PackagePlus}
+          trend={calcVariation(todayIns, yesterdayIns)}
+        />
       </div>
 
-      {/* ── Chart + Stock Overview ── */}
-      <div className="grid md:grid-cols-2 gap-5">
-
-        {/* Bar chart */}
-        <div className="bg-card border border-border rounded-xl p-5">
-          <p className="text-xs tracking-widest uppercase text-muted-foreground mb-4 font-medium">
-            Estoque por Categoria
-          </p>
-          <ResponsiveContainer width="100%" height={180}>
-            <BarChart data={categoryData} barCategoryGap="30%">
-              <XAxis
-                dataKey="name"
-                tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }}
-                axisLine={false}
-                tickLine={false}
-              />
-              <YAxis
-                tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }}
-                axisLine={false}
-                tickLine={false}
-                width={28}
-              />
-              <Tooltip content={<ChartTooltip />} cursor={{ fill: 'rgba(255,255,255,0.03)' }} />
-              <Bar dataKey="value" radius={[4, 4, 0, 0]}>
-                {categoryData.map((entry, i) => (
-                  <Cell key={i} fill={entry.color} fillOpacity={0.85} />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
-          {/* Category legend */}
-          <div className="grid grid-cols-2 gap-x-4 gap-y-2 mt-3 pt-3 border-t border-border">
-            {categoryData.map(cat => (
-              <div key={cat.name} className="flex items-center justify-between text-xs">
-                <div className="flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-sm" style={{ background: cat.color }} />
-                  <span className="text-muted-foreground">{cat.name}</span>
-                </div>
-                <span className="font-semibold tabular-nums" style={{ color: cat.color }}>{cat.value} un</span>
-              </div>
-            ))}
+      {/* ── Financial strip (collapsible — secondary info) ── */}
+      <div className="bg-card border border-border rounded-xl overflow-hidden">
+        <button
+          onClick={() => setShowFinancial(v => !v)}
+          className="w-full flex items-center justify-between px-4 py-3 hover:bg-secondary/50 transition-colors"
+        >
+          <div className="flex items-center gap-3">
+            <DollarSign size={14} className="text-gold" />
+            <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Financeiro</span>
+            <span className="text-sm font-bold text-gold tabular-nums">{formatCurrency(stockValue)}</span>
+            <span className="text-xs text-muted-foreground hidden sm:inline">
+              · Custo {formatCurrency(costValue)} · Margem {margin}%
+            </span>
           </div>
-        </div>
+          {showFinancial ? <ChevronUp size={14} className="text-muted-foreground" /> : <ChevronDown size={14} className="text-muted-foreground" />}
+        </button>
+        {showFinancial && (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 p-4 pt-1 border-t border-border">
+            <div>
+              <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Valor de Venda</p>
+              <p className="text-lg font-black text-gold tabular-nums mt-0.5">{formatCurrency(stockValue)}</p>
+            </div>
+            <div>
+              <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Valor de Custo</p>
+              <p className="text-lg font-black text-foreground tabular-nums mt-0.5">{formatCurrency(costValue)}</p>
+            </div>
+            <div>
+              <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Margem Bruta</p>
+              <p className={`text-lg font-black tabular-nums mt-0.5 ${margin > 30 ? 'text-emerald-400' : margin > 15 ? 'text-gold' : 'text-red-400'}`}>{margin}%</p>
+            </div>
+            <div>
+              <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Total em Estoque</p>
+              <p className="text-lg font-black text-foreground tabular-nums mt-0.5">{totalUnits} un</p>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* ── Stock Health + Trend ── */}
+      <div className="grid md:grid-cols-2 gap-5">
 
         {/* Stock health list */}
         <div className="bg-card border border-border rounded-xl p-5">
@@ -380,7 +306,6 @@ export function DashboardPage() {
 
               return (
                 <div key={p.id} className="flex items-center gap-3">
-                  {/* Product image/fallback with critical indicator */}
                   <div className="relative flex-shrink-0">
                     {isCrit && (
                       <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse z-10 ring-2 ring-background" />
@@ -398,7 +323,6 @@ export function DashboardPage() {
                       )}
                     </div>
                   </div>
-                  {/* Bar + labels */}
                   <div className="flex-1 min-w-0">
                     <div className="flex justify-between items-center mb-1">
                       <span className="text-xs font-medium text-foreground truncate max-w-[140px]">{p.name}</span>
@@ -406,9 +330,9 @@ export function DashboardPage() {
                         {p.current_stock} un
                       </span>
                     </div>
-                    <div className="h-1.5 bg-secondary rounded-full overflow-hidden">
+                    <div className="h-2 bg-secondary rounded-full overflow-hidden">
                       <div
-                        className="h-1.5 rounded-full transition-all duration-500"
+                        className="h-2 rounded-full transition-all duration-500"
                         style={{
                           width: `${pct}%`,
                           backgroundColor: isCrit ? 'hsl(0, 70%, 55%)' : GOLD,
@@ -425,33 +349,37 @@ export function DashboardPage() {
           </div>
         </div>
 
-      </div>
-
-      {/* ── Movement Trend Chart ── */}
-      {trendData && trendData.length > 0 && (
-        <div className="bg-card border border-border rounded-xl p-5">
-          <div className="flex items-center justify-between mb-1">
-            <p className="text-xs tracking-widest uppercase text-muted-foreground font-medium">
-              Tendência — Últimos 30 dias
-            </p>
-            <div className="flex items-center gap-3 text-[10px] text-muted-foreground">
-              <span className="flex items-center gap-1">
-                <span className="w-3 h-0.5 bg-emerald-500 inline-block rounded" />
-                Entradas
-              </span>
-              <span className="flex items-center gap-1">
-                <span className="w-3 h-0.5 bg-red-500 inline-block rounded" />
-                Saídas
-              </span>
+        {/* Trend chart */}
+        {trendData && trendData.length > 0 ? (
+          <div className="bg-card border border-border rounded-xl p-5">
+            <div className="flex items-center justify-between mb-1">
+              <p className="text-xs tracking-widest uppercase text-muted-foreground font-medium">
+                Tendência — 30 dias
+              </p>
+              <div className="flex items-center gap-3 text-[10px] text-muted-foreground">
+                <span className="flex items-center gap-1">
+                  <span className="w-3 h-0.5 bg-emerald-500 inline-block rounded" />
+                  Entradas
+                </span>
+                <span className="flex items-center gap-1">
+                  <span className="w-3 h-0.5 bg-red-500 inline-block rounded" />
+                  Saídas
+                </span>
+              </div>
+            </div>
+            <div className="h-[220px] md:h-[260px]">
+              <MovementTrendChart data={trendData} height={-1} />
             </div>
           </div>
-          <div className="h-[200px] md:h-[280px]">
-            <MovementTrendChart data={trendData} height={-1} />
+        ) : (
+          <div className="bg-card border border-border rounded-xl p-5 flex items-center justify-center">
+            <p className="text-sm text-muted-foreground">Sem dados de tendência</p>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* ── Movements + Orders ── */}
+      </div>
+
+      {/* ── Recent Movements + Pending Orders ── */}
       <div className="grid md:grid-cols-2 gap-5">
 
         {/* Recent movements */}
@@ -460,10 +388,15 @@ export function DashboardPage() {
             <p className="text-xs tracking-widest uppercase text-muted-foreground font-medium">
               Movimentações Recentes
             </p>
-            <Clock size={13} className="text-muted-foreground" />
+            <button
+              onClick={() => navigate('/relatorios')}
+              className="text-xs text-muted-foreground hover:text-gold transition-colors flex items-center gap-1"
+            >
+              Ver todas <ArrowRight size={11} />
+            </button>
           </div>
           <div className="space-y-0.5">
-            {movements?.slice(0, 8).map(m => {
+            {movements?.slice(0, 6).map(m => {
               const action = ACTION_MAP[m.action] ?? { label: m.action, color: 'text-muted-foreground', symbol: '·' }
               const when = new Date(m.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
               return (

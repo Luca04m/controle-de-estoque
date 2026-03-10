@@ -34,7 +34,7 @@ interface NavItem {
 const NAV_ITEMS: NavItem[] = [
   { to: '/dashboard',      label: 'Dashboard',      icon: <LayoutDashboard size={18} /> },
   { to: '/entrada',        label: 'Movimentação',   icon: <PackagePlus size={18} /> },
-  { to: '/pedidos',        label: 'Pedidos',        icon: <ShoppingBag size={18} /> },
+  { to: '/pedidos',        label: 'Pedidos Delivery', icon: <ShoppingBag size={18} /> },
   { to: '/transferencias', label: 'Transferências', icon: <ArrowRightLeft size={18} /> },
   { to: '/produtos',       label: 'Produtos',       icon: <Package size={18} /> },
   { to: '/locais',         label: 'Lojas',          icon: <MapPin size={18} /> },
@@ -183,19 +183,24 @@ function SidebarContent({ collapsed, pendingCount, profile, onNavClick, onSignOu
           {/* B-03: passa pendingCount para o desktop ConnectionStatus */}
           <ConnectionStatus collapsed={collapsed} pendingCount={pendingCount} />
         </div>
-        <a
-          href={`${import.meta.env.BASE_URL}guia.html`}
-          target="_blank"
-          rel="noopener noreferrer"
-          aria-label="Abrir guia de uso"
+        <NavLink
+          to="/guia"
+          onClick={onNavClick}
+          aria-label="Guia de uso"
           title={collapsed ? 'Guia de uso' : undefined}
-          className={`w-full flex items-center gap-3 rounded-lg text-sm text-muted-foreground hover:bg-secondary hover:text-foreground transition-all ${
-            collapsed ? 'justify-center px-0 py-2.5' : 'px-3 py-2.5'
-          }`}
+          className={({ isActive }) =>
+            `w-full flex items-center gap-3 rounded-lg text-sm transition-all ${
+              collapsed ? 'justify-center px-0 py-2.5' : 'px-3 py-2.5'
+            } ${
+              isActive
+                ? 'text-gold bg-gold/10 font-semibold'
+                : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
+            }`
+          }
         >
           <HelpCircle size={18} />
           {!collapsed && 'Guia de uso'}
-        </a>
+        </NavLink>
         <button
           onClick={onSignOut}
           aria-label="Sair do sistema"
@@ -360,15 +365,17 @@ export function AppLayout({ children }: { children: ReactNode }) {
               {pendingCount}
             </Badge>
           )}
-          <a
-            href={`${import.meta.env.BASE_URL}guia.html`}
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label="Abrir guia de uso"
-            className="flex items-center justify-center w-8 h-8 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary transition-all"
+          <NavLink
+            to="/guia"
+            aria-label="Guia de uso"
+            className={({ isActive }) =>
+              `flex items-center justify-center w-8 h-8 rounded-lg transition-all ${
+                isActive ? 'text-gold' : 'text-muted-foreground hover:text-foreground hover:bg-secondary'
+              }`
+            }
           >
             <HelpCircle size={16} />
-          </a>
+          </NavLink>
           {/* A-03: text-xs ao invés de text-[10px] */}
           <span className="text-xs text-muted-foreground max-w-[80px] truncate">
             {profile?.full_name ?? profile?.role ?? '—'}

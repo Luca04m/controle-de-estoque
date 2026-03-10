@@ -12,7 +12,7 @@ import { toast } from 'sonner'
 import type { Profile } from '@/types'
 
 const loginSchema = z.object({
-  email: z.string().email('E-mail inválido'),
+  username: z.string().min(1, 'Informe o usuário'),
   password: z.string().min(1, 'Informe a senha'),
 })
 
@@ -34,13 +34,13 @@ export function LoginPage() {
     setLoading(true)
 
     if (IS_MOCK) {
-      const session = mockLogin(data.email, data.password)
+      const session = mockLogin(data.username, data.password)
       if (!session) {
-        toast.error('Senha incorreta. Use 1234.')
+        toast.error('Usuário ou senha incorretos.')
         setLoading(false)
         return
       }
-      setUser({ id: 'mock', email: session.email } as never)
+      setUser({ id: 'mock', email: `${session.username}@mock` } as never)
       setProfile({
         id: 'mock',
         user_id: 'mock',
@@ -55,11 +55,11 @@ export function LoginPage() {
     }
 
     const { error } = await supabase.auth.signInWithPassword({
-      email: data.email,
+      email: data.username,
       password: data.password,
     })
     if (error) {
-      toast.error('Credenciais inválidas. Verifique e-mail e senha.')
+      toast.error('Credenciais inválidas.')
     }
     setLoading(false)
   }
@@ -107,21 +107,21 @@ export function LoginPage() {
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
             <div className="space-y-1.5">
               <Label
-                htmlFor="email"
+                htmlFor="username"
                 className="text-[11px] font-semibold tracking-[0.18em] uppercase text-muted-foreground"
               >
-                E-mail
+                Usuário
               </Label>
               <Input
-                id="email"
-                type="email"
-                placeholder="seu@email.com"
-                autoComplete="email"
+                id="username"
+                type="text"
+                placeholder="seu usuário"
+                autoComplete="username"
                 className="h-11 bg-secondary border-input focus:border-gold focus-visible:ring-gold/30 transition-colors rounded-lg"
-                {...register('email')}
+                {...register('username')}
               />
-              {errors.email && (
-                <p className="text-xs text-destructive">{errors.email.message}</p>
+              {errors.username && (
+                <p className="text-xs text-destructive">{errors.username.message}</p>
               )}
             </div>
 
@@ -163,9 +163,9 @@ export function LoginPage() {
               <span className="text-gold font-mono font-semibold">1234</span>
             </p>
             <div className="flex gap-2 justify-center text-[10px] text-muted-foreground">
-              <span>angelo@mrlion.com → operador</span>
+              <span>angelo → operador</span>
               <span>·</span>
-              <span>joao@mrlion.com → gestor</span>
+              <span>joao → gestor</span>
             </div>
           </div>
         ) : (

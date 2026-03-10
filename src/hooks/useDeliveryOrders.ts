@@ -237,7 +237,7 @@ export function useCancelOrder() {
           o.id === orderId ? { ...o, status: 'cancelled' as const } : o
         )
         // Restore stock at the original location
-        const locationId = order.location_id ?? 'loc-deposito'
+        const locationId = order.location_id ?? 'loc-degusto-tijuca'
         for (const item of order.items as OrderItem[]) {
           updateMockLocationStock(item.product_id, locationId, item.quantity)
         }

@@ -1570,7 +1570,7 @@ export function OrdersPage() {
     { key: 'today', label: 'Hoje' },
     { key: 'week', label: 'Semana' },
     { key: 'month', label: 'Este Mês' },
-    { key: 'all', label: 'Todos' },
+    { key: 'all', label: 'Tudo' },
   ]
 
   const statusChips: { key: StatusFilter; label: string }[] = [
@@ -1600,7 +1600,7 @@ export function OrdersPage() {
       />
       {/* Header */}
       <div className="flex items-center justify-between gap-2 pt-1">
-        <h1 className="text-2xl font-bold text-white">Pedidos</h1>
+        <h1 className="text-2xl font-bold text-white">Pedidos Delivery</h1>
         <div className="flex items-center gap-2">
           {/* Select toggle */}
           <button
@@ -1667,7 +1667,7 @@ export function OrdersPage() {
       ) : null}
 
       {/* Filter bar */}
-      <div className="space-y-2.5">
+      <div className="space-y-3">
         {/* Search */}
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/35 pointer-events-none" />
@@ -1683,28 +1683,39 @@ export function OrdersPage() {
           />
         </div>
 
-        {/* Date chips + Status chips + Sort */}
-        <div className="flex flex-wrap gap-2 items-center">
-          {dateChips.map((chip) => (
-            <PillButton
-              key={chip.key}
-              active={dateFilter === chip.key}
-              onClick={() => setDateFilter(chip.key)}
-            >
-              {chip.label}
-            </PillButton>
-          ))}
-          <div className="w-px self-stretch" style={{ backgroundColor: 'hsl(240 15% 13%)' }} />
-          {statusChips.map((chip) => (
-            <PillButton
-              key={chip.key}
-              active={statusFilter === chip.key}
-              onClick={() => setStatusFilter(chip.key)}
-            >
-              {chip.label}
-            </PillButton>
-          ))}
-          <div className="w-px self-stretch" style={{ backgroundColor: 'hsl(240 15% 13%)' }} />
+        {/* Filters row — period + status + sort in separate groups */}
+        <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
+          {/* Period */}
+          <div className="flex items-center gap-1.5">
+            <span className="text-[9px] text-white/25 uppercase tracking-[0.15em] font-semibold shrink-0 w-14">Período</span>
+            <div className="flex gap-1">
+              {dateChips.map((chip) => (
+                <PillButton key={chip.key} active={dateFilter === chip.key} onClick={() => setDateFilter(chip.key)}>
+                  {chip.label}
+                </PillButton>
+              ))}
+            </div>
+          </div>
+
+          {/* Divider */}
+          <div className="hidden sm:block w-px h-5 bg-white/10" />
+
+          {/* Status */}
+          <div className="flex items-center gap-1.5">
+            <span className="text-[9px] text-white/25 uppercase tracking-[0.15em] font-semibold shrink-0 w-14">Status</span>
+            <div className="flex gap-1">
+              {statusChips.map((chip) => (
+                <PillButton key={chip.key} active={statusFilter === chip.key} onClick={() => setStatusFilter(chip.key)}>
+                  {chip.label}
+                </PillButton>
+              ))}
+            </div>
+          </div>
+
+          {/* Divider */}
+          <div className="hidden sm:block w-px h-5 bg-white/10" />
+
+          {/* Sort */}
           <div className="flex items-center gap-1.5">
             <ArrowUpDown className="w-3 h-3 text-white/30 shrink-0" />
             <select

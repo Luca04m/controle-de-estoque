@@ -23,7 +23,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (IS_MOCK) {
       const session = mockGetSession()
       if (session) {
-        setUser({ id: 'mock', email: session.email } as never)
+        setUser({ id: 'mock', email: `${session.username}@mock` } as never)
         setProfile({
           id: 'mock',
           user_id: 'mock',

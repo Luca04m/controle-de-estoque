@@ -446,7 +446,7 @@ export function ReportsPage() {
                           {operatorName}
                         </span>
                       </TableCell>
-                      <TableCell className="text-xs text-muted-foreground max-w-[200px] truncate">
+                      <TableCell className="text-xs text-muted-foreground max-w-[280px] truncate">
                         {notes ? (
                           <span title={notes} className="cursor-default">
                             {notes}

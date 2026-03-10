@@ -114,9 +114,9 @@ function StockBar({ current, min }: { current: number; min: number }) {
   const pct = min > 0 ? Math.min(100, (current / (min * 3)) * 100) : 100
   const isCrit = current <= min
   return (
-    <div className="mt-1 h-1.5 w-full max-w-[80px] bg-secondary rounded-full overflow-hidden">
+    <div className="mt-1 h-2.5 w-full max-w-[100px] bg-secondary rounded-full overflow-hidden">
       <div
-        className="h-1.5 rounded-full transition-all duration-500"
+        className="h-2.5 rounded-full transition-all duration-500"
         style={{
           width: `${pct}%`,
           backgroundColor: isCrit ? 'hsl(0, 70%, 55%)' : 'hsl(42, 60%, 55%)',
@@ -402,9 +402,9 @@ function ProductCard({
               {product.current_stock} / mín {product.min_stock}
             </span>
           </div>
-          <div className="h-1.5 w-full bg-secondary rounded-full overflow-hidden">
+          <div className="h-2.5 w-full bg-secondary rounded-full overflow-hidden">
             <div
-              className="h-1.5 rounded-full transition-all duration-500"
+              className="h-2.5 rounded-full transition-all duration-500"
               style={{
                 width: `${Math.min(100, product.min_stock > 0 ? (product.current_stock / (product.min_stock * 3)) * 100 : 100)}%`,
                 backgroundColor: isCritical ? 'hsl(0, 70%, 55%)' : 'hsl(42, 60%, 55%)',
