@@ -658,8 +658,21 @@ export function ProductsPage() {
                         <TableCell className="font-medium text-foreground">
                           <button
                             onClick={() => openDrillDown(product)}
-                            className="flex items-center gap-1 text-left group"
+                            className="flex items-center gap-2.5 text-left group"
                           >
+                            {(() => {
+                              const img = getProductImage(product.sku)
+                              const catCfg = CATEGORY_CONFIG[product.category as CategoryKey]
+                              return img ? (
+                                <div className="w-9 h-9 rounded-lg overflow-hidden bg-[hsl(240_18%_6%)] border border-border/50 shrink-0 flex items-center justify-center">
+                                  <img src={img} alt="" className="w-full h-full object-contain p-0.5" />
+                                </div>
+                              ) : (
+                                <div className="w-9 h-9 rounded-lg border border-border/50 shrink-0 flex items-center justify-center" style={{ background: catCfg?.bg }}>
+                                  <span className="text-xs font-bold" style={{ color: catCfg?.dot }}>{product.name.charAt(0)}</span>
+                                </div>
+                              )
+                            })()}
                             <span className="group-hover:text-gold transition-colors">{product.name}</span>
                             <ChevronRight size={12} className="text-muted-foreground group-hover:text-gold transition-colors shrink-0" />
                             {isCritical && (

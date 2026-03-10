@@ -4,7 +4,7 @@
  *
  * Catálogo: 3 linhas × 3 formatos + acessórios = 10 SKUs
  * Simulação: 60 dias de operação real (jan–mar 2026)
- * Lojas: 3 Degusto Club (RJ) + 1 Porquinho Delivery (BH)
+ * Lojas: 3 Degusto Club (RJ) + 1 Porquinho Delivery (BH) + 1 Casa Mr. Lion (Matozinhos-MG)
  */
 
 import type { Product, StockMovement, DeliveryOrder, Location, LocationStock } from '@/types'
@@ -63,6 +63,19 @@ export const MOCK_LOCATIONS: Location[] = [
     created_at: '2025-06-01T00:00:00Z',
     updated_at: '2026-03-09T00:00:00Z',
   },
+  {
+    id: 'loc-casa-mrlion',
+    name: 'Casa Mr. Lion',
+    type: 'deposito',
+    address: 'R. Argemiro Cardoso, 165 - Distrito Industrial',
+    city: 'Matozinhos',
+    state: 'MG',
+    active: true,
+    contact_name: 'João Lamas',
+    contact_phone: null,
+    created_at: '2025-01-01T00:00:00Z',
+    updated_at: '2026-03-09T00:00:00Z',
+  },
 ]
 
 // ── LOCATION_STOCK (estoque por ponto de venda) ─────────────────────────────
@@ -109,6 +122,18 @@ export const MOCK_LOCATION_STOCK: LocationStock[] = [
   { id: 'ls-33', product_id: 'blend-sg',     location_id: 'loc-porquinho', quantity: 4,  updated_at: '2026-03-09T00:00:00Z' },
   { id: 'ls-34', product_id: 'blend-cmp',    location_id: 'loc-porquinho', quantity: 5,  updated_at: '2026-03-09T00:00:00Z' },
   { id: 'ls-35', product_id: 'acesso-copo',  location_id: 'loc-porquinho', quantity: 4,  updated_at: '2026-03-09T00:00:00Z' },
+
+  // Casa Mr. Lion (Matozinhos-MG) — depósito/sede com estoque alto
+  { id: 'ls-36', product_id: 'honey-sg',     location_id: 'loc-casa-mrlion', quantity: 120, updated_at: '2026-03-09T00:00:00Z' },
+  { id: 'ls-37', product_id: 'honey-cmp',    location_id: 'loc-casa-mrlion', quantity: 60,  updated_at: '2026-03-09T00:00:00Z' },
+  { id: 'ls-38', product_id: 'honey-png',    location_id: 'loc-casa-mrlion', quantity: 40,  updated_at: '2026-03-09T00:00:00Z' },
+  { id: 'ls-39', product_id: 'capu-sg',      location_id: 'loc-casa-mrlion', quantity: 80,  updated_at: '2026-03-09T00:00:00Z' },
+  { id: 'ls-40', product_id: 'capu-cmp',     location_id: 'loc-casa-mrlion', quantity: 50,  updated_at: '2026-03-09T00:00:00Z' },
+  { id: 'ls-41', product_id: 'capu-png',     location_id: 'loc-casa-mrlion', quantity: 30,  updated_at: '2026-03-09T00:00:00Z' },
+  { id: 'ls-42', product_id: 'blend-sg',     location_id: 'loc-casa-mrlion', quantity: 70,  updated_at: '2026-03-09T00:00:00Z' },
+  { id: 'ls-43', product_id: 'blend-cmp',    location_id: 'loc-casa-mrlion', quantity: 90,  updated_at: '2026-03-09T00:00:00Z' },
+  { id: 'ls-44', product_id: 'blend-png',    location_id: 'loc-casa-mrlion', quantity: 25,  updated_at: '2026-03-09T00:00:00Z' },
+  { id: 'ls-45', product_id: 'acesso-copo',  location_id: 'loc-casa-mrlion', quantity: 200, updated_at: '2026-03-09T00:00:00Z' },
 ]
 
 export const MOCK_PRODUCTS: Product[] = [

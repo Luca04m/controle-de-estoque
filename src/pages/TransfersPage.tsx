@@ -5,6 +5,7 @@ import { useTransferStock } from '@/hooks/useTransferStock'
 import { useStockMovements } from '@/hooks/useStockMovements'
 import { getMockStockForLocation } from '@/hooks/useLocationStock'
 import { useUserLocation } from '@/hooks/useUserLocation'
+import { getProductImage } from '@/lib/productImages'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -30,9 +31,14 @@ export function TransfersPage() {
 
   if (!isManager) {
     return (
-      <div className="p-6 text-center text-muted-foreground">
-        <ArrowRightLeft size={32} className="mx-auto mb-3 opacity-20" />
-        <p className="text-sm">Transferências são restritas a gestores.</p>
+      <div className="min-h-[60vh] flex flex-col items-center justify-center p-6 text-center">
+        <div
+          className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4"
+          style={{ background: 'hsl(240 18% 12%)' }}
+        >
+          <ArrowRightLeft size={28} className="text-muted-foreground/30" />
+        </div>
+        <p className="text-sm text-muted-foreground">Transferências são restritas a gestores.</p>
       </div>
     )
   }
@@ -43,6 +49,7 @@ export function TransfersPage() {
   const isValid = fromId && toId && productId && quantity > 0 && fromId !== toId && quantity <= availableAtOrigin
   const fromLocation = locations?.find(l => l.id === fromId)
   const toLocation = locations?.find(l => l.id === toId)
+  const productImage = selectedProduct ? getProductImage(selectedProduct.sku) : undefined
 
   async function handleTransfer() {
     if (!isValid) return
@@ -63,59 +70,94 @@ export function TransfersPage() {
   const transferMovements = recentMovements?.filter((m: { action: MovementAction }) => m.action === 'transfer') ?? []
 
   return (
-    <div className="p-4 sm:p-6 space-y-5 max-w-4xl">
-      {/* Header */}
-      <div>
-        <h1
-          className="text-2xl text-foreground flex items-center gap-2.5"
-          style={{ fontFamily: '"DM Serif Display", Georgia, serif' }}
+    <div className="p-4 sm:p-6 space-y-6 max-w-3xl mx-auto animate-slide-up">
+
+      {/* ── HEADER ──────────────────────────────────────────────────── */}
+      <div className="flex items-start gap-3.5">
+        <div
+          className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0"
+          style={{ background: 'hsl(42 60% 55% / 0.12)' }}
         >
-          <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'hsl(42 60% 55% / 0.15)' }}>
-            <ArrowRightLeft size={16} className="text-gold" />
-          </div>
-          Transferências
-        </h1>
-        <p className="text-xs text-muted-foreground mt-1 ml-[42px]">Mova estoque entre pontos de venda</p>
+          <ArrowRightLeft size={20} style={{ color: 'hsl(42 60% 55%)' }} />
+        </div>
+        <div>
+          <h1
+            className="text-2xl text-foreground leading-tight"
+            style={{ fontFamily: '"DM Serif Display", Georgia, serif' }}
+          >
+            Transferências
+          </h1>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Mova estoque entre pontos de venda
+          </p>
+        </div>
       </div>
 
-      {/* Success banner */}
+      {/* ── SUCCESS TOAST ───────────────────────────────────────────── */}
       {success && (
-        <div className="flex items-center gap-3 p-4 rounded-xl bg-emerald-950/50 border border-emerald-800/40 animate-slide-up">
+        <div className="flex items-center gap-3 px-4 py-3.5 rounded-xl bg-emerald-950/50 border border-emerald-800/40 animate-slide-up">
           <div className="w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center shrink-0">
             <CheckCircle2 size={16} className="text-emerald-400" />
           </div>
           <div>
             <span className="text-sm text-emerald-400 font-semibold block">Transferência realizada!</span>
-            <span className="text-xs text-emerald-400/70">Estoque atualizado nos dois pontos</span>
+            <span className="text-[11px] text-emerald-400/70">Estoque atualizado nos dois pontos</span>
           </div>
         </div>
       )}
 
-      {/* ── ROUTE PICKER ─────────────────────────────────────────────── */}
-      <div className="bg-card border border-border rounded-xl overflow-hidden">
-        <div className="px-5 pt-4 pb-3 border-b border-border/50">
-          <p className="text-[10px] tracking-[0.2em] uppercase text-muted-foreground font-semibold flex items-center gap-2">
-            <span className="w-5 h-5 rounded-md text-[10px] font-bold flex items-center justify-center" style={{ background: 'hsl(42 60% 55% / 0.15)', color: 'hsl(42 60% 55%)' }}>1</span>
-            Rota da transferência
-          </p>
-        </div>
+      {/* ── MAIN CARD ───────────────────────────────────────────────── */}
+      <div
+        className="rounded-2xl border overflow-hidden animate-slide-up"
+        style={{
+          background: 'hsl(240 20% 7%)',
+          borderColor: 'hsl(240 15% 14%)',
+        }}
+      >
 
-        <div className="p-5">
-          <div className="grid grid-cols-1 sm:grid-cols-[1fr_48px_1fr] gap-4 items-start">
-            {/* Origin */}
+        {/* ─── ROUTE SECTION ───────────────────────────────────────── */}
+        <div className="p-5 sm:p-6">
+          <p className="text-[10px] tracking-[0.2em] uppercase text-muted-foreground font-semibold mb-4 flex items-center gap-2">
+            <MapPin size={12} style={{ color: 'hsl(42 60% 55%)' }} />
+            Rota
+          </p>
+
+          <div className="grid grid-cols-1 sm:grid-cols-[1fr_40px_1fr] gap-3 items-start">
+            {/* Origin card */}
             <div className="space-y-2">
-              <span className="text-[10px] tracking-[0.15em] uppercase text-muted-foreground font-medium">Origem</span>
+              <span className="text-[10px] tracking-[0.12em] uppercase text-muted-foreground/70 font-medium">Origem</span>
               <Select value={fromId} onValueChange={(v) => { setFromId(v ?? ''); if (v === toId) setToId('') }}>
-                <SelectTrigger className="h-12 bg-secondary/50 border-border hover:border-muted-foreground/30 transition-colors">
-                  <SelectValue placeholder="Selecionar origem" />
+                <SelectTrigger
+                  className="h-14 rounded-xl border-transparent transition-all hover:border-[hsl(42_60%_55%_/_0.2)]"
+                  style={{
+                    background: fromLocation ? 'hsl(42 60% 55% / 0.06)' : 'hsl(240 15% 11%)',
+                    borderColor: fromLocation ? 'hsl(42 60% 55% / 0.15)' : 'transparent',
+                  }}
+                >
+                  {fromLocation ? (
+                    <div className="flex items-center gap-2.5 text-left">
+                      <div
+                        className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
+                        style={{ background: 'hsl(42 60% 55% / 0.12)' }}
+                      >
+                        <MapPin size={14} style={{ color: 'hsl(42 60% 55%)' }} />
+                      </div>
+                      <div className="min-w-0">
+                        <span className="block text-sm font-medium text-foreground truncate">{fromLocation.name}</span>
+                        <span className="block text-[10px] text-muted-foreground">{fromLocation.city}</span>
+                      </div>
+                    </div>
+                  ) : (
+                    <SelectValue placeholder="Selecionar origem" />
+                  )}
                 </SelectTrigger>
-                <SelectContent className="bg-card border-border">
+                <SelectContent className="bg-card border-border rounded-xl">
                   {locations?.map((loc) => (
-                    <SelectItem key={loc.id} value={loc.id}>
-                      <div className="flex items-center gap-2">
+                    <SelectItem key={loc.id} value={loc.id} className="rounded-lg">
+                      <div className="flex items-center gap-2.5">
                         <MapPin size={13} className="text-muted-foreground shrink-0" />
                         <div className="text-left">
-                          <span className="block">{loc.name}</span>
+                          <span className="block text-sm">{loc.name}</span>
                           <span className="text-[10px] text-muted-foreground">{loc.city} - {loc.state}</span>
                         </div>
                       </div>
@@ -123,38 +165,59 @@ export function TransfersPage() {
                   ))}
                 </SelectContent>
               </Select>
-              {fromLocation && (
-                <div className="px-3 py-2 rounded-lg bg-secondary/30 border border-border/50">
-                  <p className="text-[10px] text-muted-foreground truncate">{fromLocation.address}</p>
-                  <p className="text-[10px] text-muted-foreground">{fromLocation.city} - {fromLocation.state}</p>
-                </div>
-              )}
             </div>
 
-            {/* Arrow */}
-            <div className="hidden sm:flex items-center justify-center pt-8">
-              <div className="w-10 h-10 rounded-full border-2 border-dashed border-border flex items-center justify-center">
-                <ChevronRight size={16} className="text-muted-foreground" />
+            {/* Arrow connector */}
+            <div className="hidden sm:flex items-center justify-center pt-7">
+              <div
+                className="w-10 h-10 rounded-full flex items-center justify-center"
+                style={{
+                  background: 'hsl(42 60% 55% / 0.1)',
+                  border: '1.5px solid hsl(42 60% 55% / 0.25)',
+                }}
+              >
+                <ArrowRight size={16} style={{ color: 'hsl(42 60% 55%)' }} />
               </div>
             </div>
-            <div className="sm:hidden flex items-center justify-center">
-              <ArrowRight size={16} className="text-muted-foreground rotate-90" />
+            <div className="sm:hidden flex items-center justify-center py-1">
+              <ArrowRight size={16} className="text-muted-foreground/40 rotate-90" />
             </div>
 
-            {/* Destination */}
+            {/* Destination card */}
             <div className="space-y-2">
-              <span className="text-[10px] tracking-[0.15em] uppercase text-muted-foreground font-medium">Destino</span>
+              <span className="text-[10px] tracking-[0.12em] uppercase text-muted-foreground/70 font-medium">Destino</span>
               <Select value={toId} onValueChange={(v) => setToId(v ?? '')}>
-                <SelectTrigger className="h-12 bg-secondary/50 border-border hover:border-muted-foreground/30 transition-colors">
-                  <SelectValue placeholder="Selecionar destino" />
+                <SelectTrigger
+                  className="h-14 rounded-xl border-transparent transition-all hover:border-[hsl(42_60%_55%_/_0.2)]"
+                  style={{
+                    background: toLocation ? 'hsl(42 60% 55% / 0.06)' : 'hsl(240 15% 11%)',
+                    borderColor: toLocation ? 'hsl(42 60% 55% / 0.15)' : 'transparent',
+                  }}
+                >
+                  {toLocation ? (
+                    <div className="flex items-center gap-2.5 text-left">
+                      <div
+                        className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
+                        style={{ background: 'hsl(42 60% 55% / 0.12)' }}
+                      >
+                        <MapPin size={14} style={{ color: 'hsl(42 60% 55%)' }} />
+                      </div>
+                      <div className="min-w-0">
+                        <span className="block text-sm font-medium text-foreground truncate">{toLocation.name}</span>
+                        <span className="block text-[10px] text-muted-foreground">{toLocation.city}</span>
+                      </div>
+                    </div>
+                  ) : (
+                    <SelectValue placeholder="Selecionar destino" />
+                  )}
                 </SelectTrigger>
-                <SelectContent className="bg-card border-border">
+                <SelectContent className="bg-card border-border rounded-xl">
                   {locations?.filter((l) => l.id !== fromId).map((loc) => (
-                    <SelectItem key={loc.id} value={loc.id}>
-                      <div className="flex items-center gap-2">
+                    <SelectItem key={loc.id} value={loc.id} className="rounded-lg">
+                      <div className="flex items-center gap-2.5">
                         <MapPin size={13} className="text-muted-foreground shrink-0" />
                         <div className="text-left">
-                          <span className="block">{loc.name}</span>
+                          <span className="block text-sm">{loc.name}</span>
                           <span className="text-[10px] text-muted-foreground">{loc.city} - {loc.state}</span>
                         </div>
                       </div>
@@ -162,22 +225,22 @@ export function TransfersPage() {
                   ))}
                 </SelectContent>
               </Select>
-              {toLocation && (
-                <div className="px-3 py-2 rounded-lg bg-secondary/30 border border-border/50">
-                  <p className="text-[10px] text-muted-foreground truncate">{toLocation.address}</p>
-                  <p className="text-[10px] text-muted-foreground">{toLocation.city} - {toLocation.state}</p>
-                </div>
-              )}
             </div>
           </div>
 
           {/* Route summary pill */}
           {fromLocation && toLocation && (
-            <div className="mt-4 flex items-center gap-2 px-3 py-2 rounded-lg border border-gold/20 bg-gold/5">
-              <ArrowRightLeft size={12} className="text-gold shrink-0" />
-              <span className="text-xs font-medium text-foreground">{fromLocation.name}</span>
-              <ArrowRight size={10} className="text-gold" />
-              <span className="text-xs font-medium text-foreground">{toLocation.name}</span>
+            <div
+              className="mt-4 flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl animate-slide-up"
+              style={{
+                background: 'hsl(42 60% 55% / 0.06)',
+                border: '1px solid hsl(42 60% 55% / 0.15)',
+              }}
+            >
+              <ArrowRightLeft size={13} style={{ color: 'hsl(42 60% 55%)' }} />
+              <span className="text-xs font-semibold text-foreground">{fromLocation.name}</span>
+              <ArrowRight size={11} style={{ color: 'hsl(42 60% 55%)' }} />
+              <span className="text-xs font-semibold text-foreground">{toLocation.name}</span>
             </div>
           )}
 
@@ -189,72 +252,159 @@ export function TransfersPage() {
             </p>
           )}
         </div>
-      </div>
 
-      {/* ── PRODUCT + QUANTITY ────────────────────────────────────────── */}
-      <div className="bg-card border border-border rounded-xl overflow-hidden">
-        <div className="px-5 pt-4 pb-3 border-b border-border/50">
+        {/* ─── DIVIDER ─────────────────────────────────────────────── */}
+        <div className="mx-5 sm:mx-6 h-px" style={{ background: 'hsl(240 15% 14%)' }} />
+
+        {/* ─── PRODUCT + QUANTITY SECTION ───────────────────────────── */}
+        <div className="p-5 sm:p-6 space-y-5">
           <p className="text-[10px] tracking-[0.2em] uppercase text-muted-foreground font-semibold flex items-center gap-2">
-            <span className="w-5 h-5 rounded-md text-[10px] font-bold flex items-center justify-center" style={{ background: 'hsl(42 60% 55% / 0.15)', color: 'hsl(42 60% 55%)' }}>2</span>
+            <Package size={12} style={{ color: 'hsl(42 60% 55%)' }} />
             Produto e quantidade
           </p>
-        </div>
 
-        <div className="p-5 space-y-4">
           {/* Product selector */}
           <Select value={productId} onValueChange={(v) => setProductId(v ?? '')}>
-            <SelectTrigger className="h-12 bg-secondary/50 border-border hover:border-muted-foreground/30 transition-colors">
-              <SelectValue placeholder="Selecionar produto" />
-            </SelectTrigger>
-            <SelectContent className="bg-card border-border">
-              {products?.map((p) => (
-                <SelectItem key={p.id} value={p.id}>
-                  <div className="flex items-center gap-2.5">
-                    <Package size={14} className="text-muted-foreground shrink-0" />
-                    <span>{p.name}</span>
-                    <span className="text-[10px] text-muted-foreground font-mono">{p.sku}</span>
+            <SelectTrigger
+              className="h-14 rounded-xl border-transparent transition-all hover:border-[hsl(42_60%_55%_/_0.2)]"
+              style={{
+                background: selectedProduct ? 'hsl(240 15% 11%)' : 'hsl(240 15% 11%)',
+                borderColor: selectedProduct ? 'hsl(42 60% 55% / 0.15)' : 'transparent',
+              }}
+            >
+              {selectedProduct ? (
+                <div className="flex items-center gap-3 text-left">
+                  {productImage ? (
+                    <img
+                      src={productImage}
+                      alt={selectedProduct.name}
+                      className="w-9 h-9 rounded-lg object-contain"
+                      style={{ background: 'hsl(240 15% 14%)' }}
+                    />
+                  ) : (
+                    <div
+                      className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
+                      style={{ background: 'hsl(240 15% 14%)' }}
+                    >
+                      <Package size={16} className="text-muted-foreground/50" />
+                    </div>
+                  )}
+                  <div className="min-w-0">
+                    <span className="block text-sm font-medium text-foreground truncate">{selectedProduct.name}</span>
+                    <span className="block text-[10px] text-muted-foreground font-mono">{selectedProduct.sku}</span>
                   </div>
-                </SelectItem>
-              ))}
+                </div>
+              ) : (
+                <SelectValue placeholder="Selecionar produto" />
+              )}
+            </SelectTrigger>
+            <SelectContent className="bg-card border-border rounded-xl">
+              {products?.map((p) => {
+                const img = getProductImage(p.sku)
+                return (
+                  <SelectItem key={p.id} value={p.id} className="rounded-lg">
+                    <div className="flex items-center gap-2.5">
+                      {img ? (
+                        <img src={img} alt={p.name} className="w-7 h-7 rounded-md object-contain bg-secondary/50" />
+                      ) : (
+                        <Package size={14} className="text-muted-foreground shrink-0" />
+                      )}
+                      <div>
+                        <span className="block text-sm">{p.name}</span>
+                        <span className="text-[10px] text-muted-foreground font-mono">{p.sku}</span>
+                      </div>
+                    </div>
+                  </SelectItem>
+                )
+              })}
             </SelectContent>
           </Select>
 
-          {/* Stock comparison: origin vs destination */}
+          {/* Stock comparison row */}
           {fromId && toId && productId && (
-            <div className="grid grid-cols-2 gap-3">
-              <div className={`px-3 py-2.5 rounded-lg border ${availableAtOrigin <= (selectedProduct?.min_stock ?? 0) ? 'border-red-500/30 bg-red-500/5' : 'border-border bg-secondary/30'}`}>
-                <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Na origem</p>
-                <p className={`text-xl font-bold tabular-nums mt-0.5 ${availableAtOrigin <= (selectedProduct?.min_stock ?? 0) ? 'text-red-400' : 'text-foreground'}`}>
-                  {availableAtOrigin} <span className="text-xs font-normal text-muted-foreground">un</span>
+            <div className="grid grid-cols-3 gap-2.5 animate-slide-up">
+              {/* Origin stock */}
+              <div
+                className="rounded-xl px-3 py-3 text-center"
+                style={{
+                  background: availableAtOrigin <= (selectedProduct?.min_stock ?? 0)
+                    ? 'hsl(0 60% 50% / 0.08)'
+                    : 'hsl(240 15% 11%)',
+                  border: `1px solid ${
+                    availableAtOrigin <= (selectedProduct?.min_stock ?? 0)
+                      ? 'hsl(0 60% 50% / 0.2)'
+                      : 'hsl(240 15% 14%)'
+                  }`,
+                }}
+              >
+                <p className="text-[9px] tracking-[0.15em] uppercase text-muted-foreground/70 font-medium">Origem</p>
+                <p
+                  className="text-2xl font-bold tabular-nums mt-1"
+                  style={{
+                    color: availableAtOrigin <= (selectedProduct?.min_stock ?? 0)
+                      ? 'hsl(0 70% 60%)'
+                      : 'hsl(0 0% 95%)',
+                  }}
+                >
+                  {availableAtOrigin}
                 </p>
+                <p className="text-[10px] text-muted-foreground/50">unidades</p>
                 {availableAtOrigin <= (selectedProduct?.min_stock ?? 0) && (
-                  <div className="flex items-center gap-1 mt-1">
-                    <AlertTriangle size={10} className="text-red-400" />
-                    <span className="text-[10px] text-red-400">Estoque baixo</span>
+                  <div className="flex items-center justify-center gap-1 mt-1.5">
+                    <AlertTriangle size={9} style={{ color: 'hsl(0 70% 60%)' }} />
+                    <span className="text-[9px]" style={{ color: 'hsl(0 70% 60%)' }}>Baixo</span>
                   </div>
                 )}
               </div>
-              <div className="px-3 py-2.5 rounded-lg border border-border bg-secondary/30">
-                <p className="text-[10px] text-muted-foreground uppercase tracking-wider">No destino</p>
-                <p className="text-xl font-bold tabular-nums mt-0.5 text-foreground">
-                  {stockAtDest} <span className="text-xs font-normal text-muted-foreground">un</span>
+
+              {/* Destination stock */}
+              <div
+                className="rounded-xl px-3 py-3 text-center"
+                style={{
+                  background: 'hsl(240 15% 11%)',
+                  border: '1px solid hsl(240 15% 14%)',
+                }}
+              >
+                <p className="text-[9px] tracking-[0.15em] uppercase text-muted-foreground/70 font-medium">Destino</p>
+                <p className="text-2xl font-bold tabular-nums mt-1 text-foreground">{stockAtDest}</p>
+                <p className="text-[10px] text-muted-foreground/50">unidades</p>
+              </div>
+
+              {/* After transfer */}
+              <div
+                className="rounded-xl px-3 py-3 text-center"
+                style={{
+                  background: 'hsl(42 60% 55% / 0.06)',
+                  border: '1px solid hsl(42 60% 55% / 0.15)',
+                }}
+              >
+                <p className="text-[9px] tracking-[0.15em] uppercase font-medium" style={{ color: 'hsl(42 60% 55% / 0.6)' }}>
+                  Após
                 </p>
-                <p className="text-[10px] text-muted-foreground mt-1">
-                  Após: <strong className="text-foreground">{stockAtDest + quantity}</strong> un
+                <p className="text-2xl font-bold tabular-nums mt-1" style={{ color: 'hsl(42 60% 55%)' }}>
+                  {stockAtDest + quantity}
                 </p>
+                <p className="text-[10px]" style={{ color: 'hsl(42 60% 55% / 0.4)' }}>no destino</p>
               </div>
             </div>
           )}
 
-          {/* Quantity stepper + notes */}
-          <div className="grid grid-cols-1 sm:grid-cols-[200px_1fr] gap-3">
-            <div className="space-y-1.5">
-              <span className="text-[10px] tracking-[0.15em] uppercase text-muted-foreground font-medium">Quantidade</span>
-              <div className="flex items-center h-12 rounded-lg border border-border bg-secondary/50 overflow-hidden">
+          {/* Quantity stepper */}
+          <div className="grid grid-cols-1 sm:grid-cols-[180px_1fr] gap-3">
+            <div className="space-y-2">
+              <span className="text-[10px] tracking-[0.12em] uppercase text-muted-foreground/70 font-medium">Quantidade</span>
+              <div
+                className="flex items-center h-14 rounded-xl overflow-hidden"
+                style={{
+                  background: 'hsl(240 15% 11%)',
+                  border: '1px solid hsl(240 15% 14%)',
+                }}
+              >
                 <button
                   type="button"
                   onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                  className="w-12 h-full flex items-center justify-center hover:bg-secondary transition-colors text-muted-foreground hover:text-foreground"
+                  className="w-12 h-full flex items-center justify-center transition-colors text-muted-foreground hover:text-foreground"
+                  style={{ borderRight: '1px solid hsl(240 15% 14%)' }}
                 >
                   <Minus size={14} />
                 </button>
@@ -264,24 +414,31 @@ export function TransfersPage() {
                   max={availableAtOrigin}
                   value={quantity}
                   onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
-                  className="h-full border-0 bg-transparent text-center text-lg font-bold tabular-nums focus-visible:ring-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                  className="h-full border-0 bg-transparent text-center text-xl font-bold tabular-nums focus-visible:ring-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                 />
                 <button
                   type="button"
                   onClick={() => setQuantity(Math.min(availableAtOrigin || 999, quantity + 1))}
-                  className="w-12 h-full flex items-center justify-center hover:bg-secondary transition-colors text-muted-foreground hover:text-foreground"
+                  className="w-12 h-full flex items-center justify-center transition-colors text-muted-foreground hover:text-foreground"
+                  style={{ borderLeft: '1px solid hsl(240 15% 14%)' }}
                 >
                   <Plus size={14} />
                 </button>
               </div>
             </div>
-            <div className="space-y-1.5">
-              <span className="text-[10px] tracking-[0.15em] uppercase text-muted-foreground font-medium">Observação <span className="normal-case tracking-normal opacity-50">(opcional)</span></span>
+            <div className="space-y-2">
+              <span className="text-[10px] tracking-[0.12em] uppercase text-muted-foreground/70 font-medium">
+                Observação <span className="normal-case tracking-normal opacity-50">(opcional)</span>
+              </span>
               <Input
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
-                placeholder="Ex: Reposição semanal para fim de semana"
-                className="h-12 bg-secondary/50 border-border hover:border-muted-foreground/30 transition-colors"
+                placeholder="Ex: Reposição semanal"
+                className="h-14 rounded-xl border-transparent hover:border-[hsl(240_15%_18%)] transition-colors"
+                style={{
+                  background: 'hsl(240 15% 11%)',
+                  borderColor: 'hsl(240 15% 14%)',
+                }}
               />
             </div>
           </div>
@@ -294,61 +451,120 @@ export function TransfersPage() {
             </p>
           )}
         </div>
+
+        {/* ─── DIVIDER ─────────────────────────────────────────────── */}
+        <div className="mx-5 sm:mx-6 h-px" style={{ background: 'hsl(240 15% 14%)' }} />
+
+        {/* ─── SUBMIT BUTTON ───────────────────────────────────────── */}
+        <div className="p-5 sm:p-6">
+          <button
+            onClick={handleTransfer}
+            disabled={!isValid || transfer.isPending}
+            className="w-full h-14 rounded-xl font-bold text-sm tracking-wide flex items-center justify-center gap-2.5 transition-all disabled:opacity-25 disabled:cursor-not-allowed active:scale-[0.98]"
+            style={{
+              background: isValid
+                ? 'linear-gradient(135deg, hsl(42 60% 55%), hsl(42 50% 45%))'
+                : 'hsl(240 15% 11%)',
+              color: isValid ? 'hsl(240 25% 4%)' : 'hsl(240 10% 30%)',
+              boxShadow: isValid
+                ? '0 4px 24px hsl(42 60% 55% / 0.3), 0 1px 3px hsl(42 60% 55% / 0.15)'
+                : 'none',
+              border: isValid ? 'none' : '1px solid hsl(240 15% 14%)',
+            }}
+          >
+            <Send size={16} />
+            {transfer.isPending ? 'Transferindo...' : 'Confirmar Transferência'}
+          </button>
+        </div>
       </div>
 
-      {/* ── CONFIRM BUTTON ───────────────────────────────────────────── */}
-      <button
-        onClick={handleTransfer}
-        disabled={!isValid || transfer.isPending}
-        className="w-full h-14 rounded-xl font-bold text-sm tracking-wide flex items-center justify-center gap-2.5 transition-all disabled:opacity-30 disabled:cursor-not-allowed active:scale-[0.98]"
-        style={{
-          backgroundColor: isValid ? 'hsl(42 60% 55%)' : 'hsl(240 10% 16%)',
-          color: isValid ? 'hsl(240 25% 4%)' : 'hsl(240 10% 35%)',
-          boxShadow: isValid ? '0 0 20px hsl(42 60% 55% / 0.25)' : 'none',
-        }}
-      >
-        <Send size={16} />
-        {transfer.isPending ? 'Transferindo...' : 'Confirmar Transferência'}
-      </button>
-
-      {/* ── RECENT TRANSFERS ─────────────────────────────────────────── */}
+      {/* ── RECENT TRANSFERS ──────────────────────────────────────── */}
       {transferMovements.length > 0 && (
-        <div className="bg-card border border-border rounded-xl overflow-hidden">
-          <div className="px-5 pt-4 pb-3 border-b border-border/50 flex items-center gap-2">
-            <Clock size={13} className="text-muted-foreground" />
+        <div
+          className="rounded-2xl border overflow-hidden animate-slide-up"
+          style={{
+            background: 'hsl(240 20% 7%)',
+            borderColor: 'hsl(240 15% 14%)',
+          }}
+        >
+          <div className="px-5 sm:px-6 pt-5 pb-3 flex items-center gap-2.5">
+            <Clock size={13} style={{ color: 'hsl(42 60% 55% / 0.5)' }} />
             <p className="text-[10px] tracking-[0.2em] uppercase text-muted-foreground font-semibold">
               Transferências Recentes
             </p>
           </div>
-          <div className="divide-y divide-border/50">
-            {transferMovements.slice(0, 10).map((mv) => (
-              <div key={mv.id} className="flex items-center justify-between px-5 py-3">
-                <div className="min-w-0 flex-1">
-                  <span className="font-medium text-sm text-foreground truncate block">{mv.product?.name ?? mv.product_id}</span>
-                  <p className="text-xs text-muted-foreground truncate">{mv.notes ?? '—'}</p>
+          <div>
+            {transferMovements.slice(0, 10).map((mv, idx) => {
+              const mvImage = mv.product?.sku ? getProductImage(mv.product.sku) : undefined
+              return (
+                <div
+                  key={mv.id}
+                  className="flex items-center gap-3.5 px-5 sm:px-6 py-3.5"
+                  style={{
+                    borderTop: idx > 0 ? '1px solid hsl(240 15% 12%)' : undefined,
+                  }}
+                >
+                  {mvImage ? (
+                    <img
+                      src={mvImage}
+                      alt={mv.product?.name ?? ''}
+                      className="w-9 h-9 rounded-lg object-contain shrink-0"
+                      style={{ background: 'hsl(240 15% 12%)' }}
+                    />
+                  ) : (
+                    <div
+                      className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
+                      style={{ background: 'hsl(240 15% 12%)' }}
+                    >
+                      <Package size={14} className="text-muted-foreground/40" />
+                    </div>
+                  )}
+                  <div className="min-w-0 flex-1">
+                    <span className="font-medium text-sm text-foreground truncate block">
+                      {mv.product?.name ?? mv.product_id}
+                    </span>
+                    <p className="text-[11px] text-muted-foreground/60 truncate">{mv.notes ?? '—'}</p>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <Badge
+                      variant="outline"
+                      className="text-xs font-semibold tabular-nums"
+                      style={{
+                        background: mv.quantity > 0 ? 'hsl(160 50% 45% / 0.1)' : 'hsl(0 60% 50% / 0.1)',
+                        color: mv.quantity > 0 ? 'hsl(160 50% 55%)' : 'hsl(0 70% 60%)',
+                        borderColor: mv.quantity > 0 ? 'hsl(160 50% 45% / 0.2)' : 'hsl(0 60% 50% / 0.2)',
+                      }}
+                    >
+                      {mv.quantity > 0 ? '+' : ''}{mv.quantity}
+                    </Badge>
+                    <p className="text-[10px] text-muted-foreground/50 mt-1 tabular-nums">
+                      {new Date(mv.created_at).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                    </p>
+                  </div>
                 </div>
-                <div className="text-right shrink-0 ml-3">
-                  <Badge variant="outline" className={mv.quantity > 0 ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-red-500/10 text-red-400 border-red-500/20'}>
-                    {mv.quantity > 0 ? '+' : ''}{mv.quantity}
-                  </Badge>
-                  <p className="text-[10px] text-muted-foreground mt-0.5 tabular-nums">
-                    {new Date(mv.created_at).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
-                  </p>
-                </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
         </div>
       )}
 
-      {/* Empty state */}
+      {/* ── EMPTY STATE ───────────────────────────────────────────── */}
       {transferMovements.length === 0 && (
-        <div className="border border-dashed border-border/60 rounded-xl p-10 flex flex-col items-center text-center">
-          <div className="w-12 h-12 rounded-full bg-secondary/60 flex items-center justify-center mb-4">
-            <ArrowRightLeft size={20} className="text-muted-foreground/40" />
+        <div
+          className="rounded-2xl p-12 flex flex-col items-center text-center animate-slide-up"
+          style={{
+            border: '1px dashed hsl(240 15% 16%)',
+            background: 'hsl(240 20% 6%)',
+          }}
+        >
+          <div
+            className="w-14 h-14 rounded-2xl flex items-center justify-center mb-4"
+            style={{ background: 'hsl(240 15% 10%)' }}
+          >
+            <ArrowRightLeft size={22} className="text-muted-foreground/30" />
           </div>
           <p className="text-sm text-muted-foreground font-medium">Nenhuma transferência registrada</p>
-          <p className="text-xs text-muted-foreground/50 mt-1 max-w-xs">
+          <p className="text-xs text-muted-foreground/40 mt-1.5 max-w-[260px] leading-relaxed">
             Preencha o formulário acima para mover estoque entre os pontos de venda
           </p>
         </div>
