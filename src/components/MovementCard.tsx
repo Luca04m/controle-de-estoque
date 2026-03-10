@@ -3,10 +3,11 @@ import type { StockMovement, MovementAction } from '@/types'
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const ACTION_CONFIG: Record<MovementAction, { label: string; color: string; bg: string }> = {
-  in:         { label: 'Entrada', color: '#22c55e', bg: 'hsl(142 65% 40% / 0.12)' },
-  out:        { label: 'Saída',   color: '#ef4444', bg: 'hsl(0 70% 55% / 0.12)'   },
-  adjustment: { label: 'Ajuste', color: '#f59e0b', bg: 'hsl(42 60% 55% / 0.12)'  },
-  loss:       { label: 'Perda',  color: '#f97316', bg: 'hsl(25 90% 50% / 0.12)'   },
+  in:         { label: 'Entrada',       color: '#22c55e', bg: 'hsl(142 65% 40% / 0.12)' },
+  out:        { label: 'Saída',         color: '#ef4444', bg: 'hsl(0 70% 55% / 0.12)'   },
+  adjustment: { label: 'Ajuste',        color: '#f59e0b', bg: 'hsl(42 60% 55% / 0.12)'  },
+  loss:       { label: 'Perda',         color: '#f97316', bg: 'hsl(25 90% 50% / 0.12)'   },
+  transfer:   { label: 'Transferência', color: '#8b5cf6', bg: 'hsl(258 65% 55% / 0.12)' },
 }
 
 // ─── MovementCard ─────────────────────────────────────────────────────────────

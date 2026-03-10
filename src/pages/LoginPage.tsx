@@ -46,7 +46,7 @@ export function LoginPage() {
         user_id: 'mock',
         role: session.role,
         full_name: session.full_name,
-        location_id: null,
+        location_id: session.location_id ?? null,
       } as Profile)
       setAuthLoading(false)
       setLoading(false)

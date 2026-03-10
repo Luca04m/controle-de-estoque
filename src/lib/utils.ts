@@ -44,6 +44,7 @@ export interface MovementSummary {
   out: TypeStat
   adjustment: TypeStat
   loss: TypeStat
+  transfer: TypeStat
   byCategory: Record<string, number>
   total: number
 }
@@ -54,6 +55,7 @@ export function calculateMovementSummary(movements: StockMovement[]): MovementSu
     out:        { count: 0, quantity: 0 },
     adjustment: { count: 0, quantity: 0 },
     loss:       { count: 0, quantity: 0 },
+    transfer:   { count: 0, quantity: 0 },
     byCategory: {},
     total: movements.length,
   }

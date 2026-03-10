@@ -16,6 +16,8 @@ import {
   Menu,
   X,
   HelpCircle,
+  MapPin,
+  ArrowRightLeft,
 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/authStore'
@@ -30,11 +32,13 @@ interface NavItem {
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { to: '/dashboard',  label: 'Dashboard',    icon: <LayoutDashboard size={18} /> },
-  { to: '/entrada',    label: 'Movimentação', icon: <PackagePlus size={18} /> },
-  { to: '/pedidos',    label: 'Pedidos',      icon: <ShoppingBag size={18} /> },
-  { to: '/produtos',   label: 'Produtos',     icon: <Package size={18} /> },
-  { to: '/relatorios', label: 'Relatórios',   icon: <BarChart3 size={18} /> },
+  { to: '/dashboard',      label: 'Dashboard',      icon: <LayoutDashboard size={18} /> },
+  { to: '/entrada',        label: 'Movimentação',   icon: <PackagePlus size={18} /> },
+  { to: '/pedidos',        label: 'Pedidos',        icon: <ShoppingBag size={18} /> },
+  { to: '/transferencias', label: 'Transferências', icon: <ArrowRightLeft size={18} /> },
+  { to: '/produtos',       label: 'Produtos',       icon: <Package size={18} /> },
+  { to: '/locais',         label: 'Lojas',          icon: <MapPin size={18} /> },
+  { to: '/relatorios',     label: 'Relatórios',     icon: <BarChart3 size={18} /> },
 ]
 
 // ── A-03 / A-04: Contraste e tamanho de texto corrigidos

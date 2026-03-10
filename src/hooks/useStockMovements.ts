@@ -5,6 +5,7 @@ import { useAuthStore } from '@/stores/authStore'
 import { useRealtimeStore } from '@/stores/realtimeStore'
 import { IS_MOCK } from '@/lib/mockAuth'
 import { MOCK_MOVEMENTS } from '@/lib/mockData'
+import { updateMockLocationStock, getMockStockForLocation } from '@/hooks/useLocationStock'
 import type { StockMovement, MovementAction } from '@/types'
 import { toast } from 'sonner'
 
@@ -27,6 +28,7 @@ export interface MovementInput {
   quantity: number
   notes: string
   order_id?: string | null
+  location_id: string
 }
 
 export function useStockMovements(filters?: { product_id?: string; limit?: number }) {
@@ -90,6 +92,19 @@ export function useRegisterMovement() {
       if (!user) throw new Error('Usuário não autenticado')
 
       if (IS_MOCK) {
+        // Validate stock won't go negative for 'out' and 'loss'
+        if (input.action === 'out' || input.action === 'loss') {
+          const available = getMockStockForLocation(input.product_id, input.location_id)
+          if (available < input.quantity) {
+            throw new Error(`Estoque insuficiente nesta loja (disponível: ${available})`)
+          }
+        }
+
+        const delta = input.action === 'in' ? input.quantity
+          : input.action === 'adjustment' ? input.quantity
+          : -input.quantity
+        updateMockLocationStock(input.product_id, input.location_id, delta)
+
         const newMv: StockMovement = {
           id: `mock-mv-${crypto.randomUUID()}`,
           product_id: input.product_id,
@@ -97,6 +112,7 @@ export function useRegisterMovement() {
           quantity: input.quantity,
           notes: input.notes,
           order_id: input.order_id ?? null,
+          location_id: input.location_id,
           user_id: user.id,
           created_at: new Date().toISOString(),
           profile: { full_name: 'Você' },
@@ -107,15 +123,16 @@ export function useRegisterMovement() {
 
       // Validate stock won't go negative for 'out' and 'loss'
       if (input.action === 'out' || input.action === 'loss') {
-        const { data: product } = await supabase
-          .from('products')
-          .select('current_stock, name')
-          .eq('id', input.product_id)
+        const { data: locStock } = await supabase
+          .from('location_stock')
+          .select('quantity')
+          .eq('product_id', input.product_id)
+          .eq('location_id', input.location_id)
           .single()
 
-        if (product && product.current_stock < input.quantity) {
+        if (!locStock || locStock.quantity < input.quantity) {
           throw new Error(
-            `Estoque insuficiente. Disponível: ${product.current_stock} unidades de ${product.name}`
+            `Estoque insuficiente nesta loja (disponível: ${locStock?.quantity ?? 0})`
           )
         }
       }
@@ -126,6 +143,7 @@ export function useRegisterMovement() {
         quantity: input.quantity,
         notes: input.notes,
         order_id: input.order_id ?? null,
+        location_id: input.location_id,
         user_id: user.id,
         created_at: new Date().toISOString(),
       }
@@ -144,7 +162,7 @@ export function useRegisterMovement() {
         .single()
       if (error) throw error
 
-      // Update current_stock
+      // Update location_stock + products.current_stock
       const delta = input.action === 'in' ? input.quantity
         : input.action === 'adjustment' ? input.quantity
         : -input.quantity
@@ -152,6 +170,7 @@ export function useRegisterMovement() {
       await supabase.rpc('update_stock', {
         p_product_id: input.product_id,
         p_delta: delta,
+        p_location_id: input.location_id,
       })
 
       return data as StockMovement
@@ -159,6 +178,8 @@ export function useRegisterMovement() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['stock_movements'] })
       qc.invalidateQueries({ queryKey: ['products'] })
+      qc.invalidateQueries({ queryKey: ['location_stock'] })
+      qc.invalidateQueries({ queryKey: ['stock_matrix'] })
       toast.success('Movimentação registrada!')
     },
     onError: (err: Error) => toast.error(err.message),
@@ -268,6 +289,7 @@ export interface BatchMovementInput {
   product_id: string
   quantity: number
   notes: string
+  location_id: string
 }
 
 export function useRegisterBatchMovements() {
@@ -287,10 +309,14 @@ export function useRegisterBatchMovements() {
           quantity: item.quantity,
           notes: item.notes,
           order_id: null,
+          location_id: item.location_id,
           user_id: user.id,
           created_at: new Date().toISOString(),
           profile: { full_name: 'Você' },
         }))
+        for (const item of items) {
+          updateMockLocationStock(item.product_id, item.location_id, item.quantity)
+        }
         _mockMovements = [...newMovements, ..._mockMovements]
         return { succeeded: items.length, failed: 0 }
       }
@@ -303,6 +329,7 @@ export function useRegisterBatchMovements() {
             quantity: item.quantity,
             notes: item.notes,
             order_id: null,
+            location_id: item.location_id,
             user_id: user.id,
             created_at: new Date().toISOString(),
           }
@@ -323,6 +350,7 @@ export function useRegisterBatchMovements() {
           await supabase.rpc('update_stock', {
             p_product_id: item.product_id,
             p_delta: item.quantity,
+            p_location_id: item.location_id,
           })
 
           return data

@@ -5,8 +5,10 @@
 
 export const IS_MOCK = import.meta.env.VITE_SUPABASE_URL?.includes('placeholder')
 
-const MOCK_USERS: Record<string, { role: 'operator' | 'manager'; full_name: string }> = {
-  'joao@gmail.com': { role: 'manager', full_name: 'João' },
+const MOCK_USERS: Record<string, { role: 'operator' | 'manager'; full_name: string; location_id: string | null }> = {
+  'joao@gmail.com': { role: 'manager', full_name: 'João', location_id: null },
+  'angelo@mrlion.com': { role: 'operator', full_name: 'Angelo', location_id: 'loc-degusto' },
+  'teste@teste.com': { role: 'manager', full_name: 'Teste', location_id: null },
 }
 const MOCK_PASSWORD = '1234'
 const STORAGE_KEY = 'mock_session'
@@ -15,6 +17,7 @@ export type MockSession = {
   email: string
   role: 'operator' | 'manager'
   full_name: string
+  location_id: string | null
 }
 
 export function mockLogin(email: string, password: string): MockSession | null {

@@ -7,6 +7,7 @@ export interface LocalMovement {
   action: MovementAction
   quantity: number
   order_id: string | null
+  location_id: string | null
   user_id: string
   notes: string
   created_at: string
@@ -19,6 +20,7 @@ export interface LocalOrder {
   items: OrderItem[]
   status: OrderStatus
   user_id: string
+  location_id: string | null
   notes: string | null
   reference: string | null
   created_at: string
@@ -34,6 +36,10 @@ class MrLionDB extends Dexie {
     this.version(1).stores({
       movements: 'id, product_id, synced, created_at',
       orders: 'id, status, synced, created_at',
+    })
+    this.version(2).stores({
+      movements: 'id, product_id, location_id, synced, created_at',
+      orders: 'id, status, location_id, synced, created_at',
     })
   }
 }

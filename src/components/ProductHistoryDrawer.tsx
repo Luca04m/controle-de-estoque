@@ -17,10 +17,11 @@ import type { Product, StockMovement, MovementAction } from '@/types'
 const GOLD = 'hsl(42, 60%, 55%)'
 
 const ACTION_CONFIG: Record<MovementAction, { label: string; color: string }> = {
-  in:         { label: 'Entrada', color: '#22c55e' },
-  out:        { label: 'Saída',   color: '#ef4444' },
-  adjustment: { label: 'Ajuste', color: '#f59e0b' },
-  loss:       { label: 'Perda',  color: '#f97316' },
+  in:         { label: 'Entrada',       color: '#22c55e' },
+  out:        { label: 'Saída',         color: '#ef4444' },
+  adjustment: { label: 'Ajuste',        color: '#f59e0b' },
+  loss:       { label: 'Perda',         color: '#f97316' },
+  transfer:   { label: 'Transferência', color: '#8b5cf6' },
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────

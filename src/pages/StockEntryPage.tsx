@@ -20,6 +20,8 @@ import {
 import { useNavigate } from 'react-router-dom'
 import { useProducts } from '@/hooks/useProducts'
 import { useRegisterMovement, useStockMovements } from '@/hooks/useStockMovements'
+import { useUserLocation } from '@/hooks/useUserLocation'
+import { LocationSelector } from '@/components/LocationSelector'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -37,6 +39,7 @@ const ORIGIN_LABELS_BY_TYPE: Record<MovementAction, readonly string[]> = {
   out:        ['Venda Delivery', 'Venda B2B', 'Transferência', 'Amostras / Brinde', 'Outro'],
   adjustment: ['Contagem Física', 'Correção Sistema', 'Devolução', 'Outro'],
   loss:       ['Dano no Transporte', 'Dano no Armazenamento', 'Extravio', 'Vencimento', 'Outro'],
+  transfer:   ['Transferência entre lojas'],
 }
 
 // C-01: metadados visuais por tipo de movimento
@@ -85,6 +88,15 @@ const MOVEMENT_TYPE_META: Record<MovementAction, {
     borderOpacity: 'hsl(25 90% 60% / 0.3)',
     originLabel: 'Causa da Perda',
   },
+  transfer: {
+    label: 'Transferência',
+    subtitle: 'Entre pontos de venda',
+    sign: '↔',
+    color: '#8b5cf6',
+    bgOpacity: 'hsl(258 65% 55% / 0.1)',
+    borderOpacity: 'hsl(258 65% 55% / 0.3)',
+    originLabel: 'Destino',
+  },
 }
 
 const QUICK_QTY = [1, 5, 10, 24, 48] as const
@@ -112,6 +124,7 @@ const ACTION_COLORS: Record<MovementAction, string> = {
   out:        '#f87171',
   adjustment: '#fbbf24',
   loss:       '#fb923c',
+  transfer:   '#8b5cf6',
 }
 
 type Step = 'select' | 'quantity' | 'confirm' | 'success'
@@ -330,11 +343,13 @@ export function StockEntryPage() {
   const { data: products, isLoading } = useProducts()
   const { data: recentMovements } = useStockMovements({ limit: 5 })
   const registerMovement = useRegisterMovement()
+  const { userLocationId } = useUserLocation()
 
   // ── State ────────────────────────────────────────────────────────────────
   const [step, setStep] = useState<Step>('select')
   const [search, setSearch] = useState('')
   const [categoryFilter, setCategoryFilter] = useState<ProductCategory | 'all'>('all')
+  const [selectedLocationId, setSelectedLocationId] = useState<string | null>(userLocationId ?? 'loc-deposito')
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
 
   // C-01: tipo de movimento e sinal do ajuste
@@ -446,6 +461,7 @@ export function StockEntryPage() {
         action: movementType,
         quantity: getSubmitQuantity(),
         notes: `${activeOrigin}${invoice ? ` — NF: ${invoice}` : ''}`,
+        location_id: selectedLocationId ?? 'loc-deposito',
       })
       goTo('success')
     } catch {
@@ -1108,6 +1124,16 @@ export function StockEntryPage() {
           </div>
           {/* C-01: título genérico */}
           <h1 className="text-base font-bold text-white flex-1">Movimentação de Estoque</h1>
+        </div>
+
+        {/* Location selector */}
+        <div className="mt-3">
+          <LocationSelector
+            value={selectedLocationId}
+            onChange={setSelectedLocationId}
+            showAll={false}
+            required
+          />
         </div>
 
         <div className="relative">

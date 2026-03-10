@@ -26,7 +26,33 @@ export interface Product {
   updated_at: string
 }
 
-export type MovementAction = 'in' | 'out' | 'adjustment' | 'loss'
+export type LocationType = 'deposito' | 'loja_fisica' | 'marketplace' | 'ecommerce'
+
+export interface Location {
+  id: string
+  name: string
+  type: LocationType
+  address: string | null
+  city: string | null
+  state: string | null
+  active: boolean
+  contact_name: string | null
+  contact_phone: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface LocationStock {
+  id: string
+  product_id: string
+  location_id: string
+  quantity: number
+  updated_at: string
+  product?: Pick<Product, 'name' | 'sku' | 'min_stock' | 'category'>
+  location?: Pick<Location, 'name' | 'type'>
+}
+
+export type MovementAction = 'in' | 'out' | 'adjustment' | 'loss' | 'transfer'
 
 export interface StockMovement {
   id: string
@@ -34,11 +60,13 @@ export interface StockMovement {
   action: MovementAction
   quantity: number
   order_id: string | null
+  location_id: string | null
   user_id: string
   notes: string
   created_at: string
   product?: Pick<Product, 'name' | 'sku'>
   profile?: Pick<Profile, 'full_name'>
+  location?: Pick<Location, 'name'>
 }
 
 export type OrderStatus = 'pending' | 'confirmed' | 'delivered' | 'cancelled'
@@ -55,6 +83,7 @@ export interface DeliveryOrder {
   items: OrderItem[]
   status: OrderStatus
   user_id: string
+  location_id: string | null
   notes: string | null
   reference: string | null
   address: string | null
@@ -63,6 +92,7 @@ export interface DeliveryOrder {
   delivered_at: string | null
   created_at: string
   profile?: Pick<Profile, 'full_name'>
+  location?: Pick<Location, 'name'>
 }
 
 export interface Alert {

@@ -4,6 +4,7 @@ import { useAuthStore } from '@/stores/authStore'
 import { IS_MOCK } from '@/lib/mockAuth'
 import { MOCK_ORDERS } from '@/lib/mockData'
 import { addMockRestockMovements } from '@/hooks/useStockMovements'
+import { getMockStockForLocation, updateMockLocationStock } from '@/hooks/useLocationStock'
 import { formatOrderNumber } from '@/lib/utils'
 import type { DeliveryOrder, OrderItem, StockMovement } from '@/types'
 import { toast } from 'sonner'
@@ -68,6 +69,7 @@ export interface CreateOrderInput {
   notes: string | null
   address: string | null
   total_value: number | null
+  location_id: string
 }
 
 export function useDeliveryOrders(status?: string) {
@@ -100,11 +102,25 @@ export function useCreateOrder() {
       if (!user) throw new Error('Usuário não autenticado')
 
       if (IS_MOCK) {
+        // Validate stock at location for all items
+        for (const item of input.items) {
+          const available = getMockStockForLocation(item.product_id, input.location_id)
+          if (available < item.quantity) {
+            throw new Error(`Estoque insuficiente para ${item.product_name} nesta loja (disponível: ${available})`)
+          }
+        }
+
+        // Deduct stock from location
+        for (const item of input.items) {
+          updateMockLocationStock(item.product_id, input.location_id, -item.quantity)
+        }
+
         const newOrder: DeliveryOrder = {
           id: `mock-ord-${crypto.randomUUID()}`,
           items: input.items,
           status: 'confirmed',
           user_id: user.id,
+          location_id: input.location_id,
           reference: input.reference,
           notes: input.notes,
           address: input.address,
@@ -118,17 +134,18 @@ export function useCreateOrder() {
         return newOrder
       }
 
-      // Validate stock for all items
+      // Validate stock at location for all items
       for (const item of input.items) {
-        const { data: product } = await supabase
-          .from('products')
-          .select('current_stock, name')
-          .eq('id', item.product_id)
+        const { data: locStock } = await supabase
+          .from('location_stock')
+          .select('quantity')
+          .eq('product_id', item.product_id)
+          .eq('location_id', input.location_id)
           .single()
 
-        if (!product || product.current_stock < item.quantity) {
+        if (!locStock || locStock.quantity < item.quantity) {
           throw new Error(
-            `Estoque insuficiente para ${item.product_name}. Disponível: ${product?.current_stock ?? 0}`
+            `Estoque insuficiente para ${item.product_name} nesta loja (disponível: ${locStock?.quantity ?? 0})`
           )
         }
       }
@@ -140,6 +157,7 @@ export function useCreateOrder() {
           items: input.items,
           status: 'confirmed' as const,
           user_id: user.id,
+          location_id: input.location_id,
           reference: input.reference,
           notes: input.notes,
         }])
@@ -154,6 +172,7 @@ export function useCreateOrder() {
         action: 'out' as const,
         quantity: item.quantity,
         order_id: order.id,
+        location_id: input.location_id,
         user_id: user.id,
         notes: `Pedido ${input.reference ?? order.id}`,
       }))
@@ -161,11 +180,12 @@ export function useCreateOrder() {
       const { error: mvError } = await supabase.from('stock_movements').insert(movements)
       if (mvError) throw mvError
 
-      // Update stock for each product
+      // Update stock for each product at location
       for (const item of input.items) {
         await supabase.rpc('update_stock', {
           p_product_id: item.product_id,
           p_delta: -item.quantity,
+          p_location_id: input.location_id,
         })
       }
 
@@ -175,6 +195,8 @@ export function useCreateOrder() {
       qc.invalidateQueries({ queryKey: ['delivery_orders'] })
       qc.invalidateQueries({ queryKey: ['products'] })
       qc.invalidateQueries({ queryKey: ['stock_movements'] })
+      qc.invalidateQueries({ queryKey: ['location_stock'] })
+      qc.invalidateQueries({ queryKey: ['stock_matrix'] })
       toast.success('Pedido confirmado e estoque atualizado!')
     },
     onError: (err: Error) => toast.error(err.message),
@@ -214,6 +236,11 @@ export function useCancelOrder() {
         _mockOrders = _mockOrders.map((o) =>
           o.id === orderId ? { ...o, status: 'cancelled' as const } : o
         )
+        // Restore stock at the original location
+        const locationId = order.location_id ?? 'loc-deposito'
+        for (const item of order.items as OrderItem[]) {
+          updateMockLocationStock(item.product_id, locationId, item.quantity)
+        }
         // Create restock movements for each item
         const restockMovements: StockMovement[] = (order.items as OrderItem[]).map((item) => ({
           id: `mock-restock-${crypto.randomUUID()}`,
@@ -222,6 +249,7 @@ export function useCancelOrder() {
           quantity: item.quantity,
           notes: `Devolução por cancelamento do pedido ${orderNumber}`,
           order_id: orderId,
+          location_id: locationId,
           user_id: user?.id ?? 'mock-user',
           created_at: new Date().toISOString(),
           product: { name: item.product_name, sku: '' },

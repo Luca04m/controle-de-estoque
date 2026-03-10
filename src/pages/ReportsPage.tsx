@@ -26,6 +26,7 @@ const ACTION_LABELS: Record<MovementAction, { label: string; color: string }> = 
   out: { label: 'Saída', color: 'text-red-400' },
   adjustment: { label: 'Ajuste', color: 'text-amber-400' },
   loss: { label: 'Perda', color: 'text-orange-400' },
+  transfer: { label: 'Transferência', color: 'text-violet-400' },
 }
 
 const PAGE_SIZE = 50
