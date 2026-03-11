@@ -15,7 +15,6 @@ const OrdersPage    = lazy(() => import('@/pages/OrdersPage').then(m => ({ defau
 const ProductsPage  = lazy(() => import('@/pages/ProductsPage').then(m => ({ default: m.ProductsPage })))
 const ReportsPage   = lazy(() => import('@/pages/ReportsPage').then(m => ({ default: m.ReportsPage })))
 const LocationsPage = lazy(() => import('@/pages/LocationsPage').then(m => ({ default: m.LocationsPage })))
-const TransfersPage = lazy(() => import('@/pages/TransfersPage').then(m => ({ default: m.TransfersPage })))
 const GuidePage     = lazy(() => import('@/pages/GuidePage').then(m => ({ default: m.GuidePage })))
 
 // ── QueryClient otimizado para zero latência em modo mock ──
@@ -67,7 +66,6 @@ function AppRoutes() {
                     <Route path="/produtos"  element={<ProductsPage />} />
                     <Route path="/relatorios" element={<ReportsPage />} />
                     <Route path="/locais"      element={<LocationsPage />} />
-                    <Route path="/transferencias" element={<TransfersPage />} />
                     <Route path="/guia"           element={<GuidePage />} />
 <Route path="*"          element={<Navigate to="/" replace />} />
                   </Routes>

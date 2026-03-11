@@ -16,7 +16,6 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Skeleton } from '@/components/ui/skeleton'
 import type { Product, ProductCategory } from '@/types'
 
@@ -88,7 +87,7 @@ function StatusBadge({ isCritical, active }: { isCritical: boolean; active: bool
     return (
       <span className="flex items-center gap-1.5 text-xs bg-red-950/40 text-red-400 border border-red-800/30 rounded-md px-2 py-0.5 w-fit">
         <span className="w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse shrink-0" />
-        Crítico
+        Critico
       </span>
     )
   }
@@ -105,24 +104,6 @@ function StatusBadge({ isCritical, active }: { isCritical: boolean; active: bool
       <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground shrink-0" />
       Inativo
     </span>
-  )
-}
-
-// ─── StockBar ────────────────────────────────────────────────────────────────
-
-function StockBar({ current, min }: { current: number; min: number }) {
-  const pct = min > 0 ? Math.min(100, (current / (min * 3)) * 100) : 100
-  const isCrit = current <= min
-  return (
-    <div className="mt-1 h-2.5 w-full max-w-[100px] bg-secondary rounded-full overflow-hidden">
-      <div
-        className="h-2.5 rounded-full transition-all duration-500"
-        style={{
-          width: `${pct}%`,
-          backgroundColor: isCrit ? 'hsl(0, 70%, 55%)' : 'hsl(42, 60%, 55%)',
-        }}
-      />
-    </div>
   )
 }
 
@@ -238,7 +219,7 @@ function ProductFormDialog({
             </div>
           </div>
 
-          {/* Estoque atual + mínimo */}
+          {/* Estoque atual + minimo */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <Label className="text-xs tracking-wider uppercase text-muted-foreground">Estoque Atual</Label>
@@ -250,7 +231,7 @@ function ProductFormDialog({
               />
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs tracking-wider uppercase text-muted-foreground">Estoque Mínimo</Label>
+              <Label className="text-xs tracking-wider uppercase text-muted-foreground">Estoque Minimo</Label>
               <Input
                 type="number"
                 min={0}
@@ -260,7 +241,7 @@ function ProductFormDialog({
             </div>
           </div>
 
-          {/* Preço custo + venda */}
+          {/* Preco custo + venda */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <Label className="text-xs tracking-wider uppercase text-muted-foreground">Custo (R$)</Label>
@@ -275,7 +256,7 @@ function ProductFormDialog({
               {errors.price_cost && <p className="text-xs text-destructive">{errors.price_cost.message}</p>}
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs tracking-wider uppercase text-muted-foreground">Preço Venda (R$)</Label>
+              <Label className="text-xs tracking-wider uppercase text-muted-foreground">Preco Venda (R$)</Label>
               <Input
                 type="number"
                 min={0}
@@ -299,11 +280,11 @@ function ProductFormDialog({
             {errors.supplier && <p className="text-xs text-destructive">{errors.supplier.message}</p>}
           </div>
 
-          {/* Localização */}
+          {/* Localizacao */}
           <div className="space-y-1.5">
-            <Label className="text-xs tracking-wider uppercase text-muted-foreground">Localização</Label>
+            <Label className="text-xs tracking-wider uppercase text-muted-foreground">Localizacao</Label>
             <Input
-              placeholder="Ex: Galpão A - Prateleira 1"
+              placeholder="Ex: Galpao A - Prateleira 1"
               className="bg-secondary border-border"
               {...register('location')}
             />
@@ -323,9 +304,9 @@ function ProductFormDialog({
   )
 }
 
-// ─── ProductCard (mobile) ─────────────────────────────────────────────────────
+// ─── CatalogCard ─────────────────────────────────────────────────────────────
 
-function ProductCard({
+function CatalogCard({
   product,
   isManager,
   onEdit,
@@ -341,103 +322,159 @@ function ProductCard({
   const isCritical = product.current_stock <= product.min_stock
   const img = getProductImage(product.sku)
   const catCfg = CATEGORY_CONFIG[product.category as CategoryKey]
+  const stockPct = product.min_stock > 0
+    ? Math.min(100, (product.current_stock / (product.min_stock * 3)) * 100)
+    : 100
 
   return (
     <div
-      className={`rounded-xl border border-border bg-card overflow-hidden transition-all ${
+      className={`group relative rounded-2xl border overflow-hidden transition-all duration-300 ${
         !product.active ? 'opacity-40' : ''
       }`}
-      style={{ borderColor: isCritical ? 'hsl(0 70% 30% / 0.5)' : undefined }}
+      style={{
+        background: 'hsl(232 25% 8%)',
+        borderColor: isCritical ? 'hsl(0 70% 30% / 0.5)' : 'hsl(232 20% 16%)',
+      }}
+      onMouseEnter={(e) => {
+        if (product.active) {
+          e.currentTarget.style.borderColor = 'hsl(42 60% 55% / 0.4)'
+          e.currentTarget.style.boxShadow = '0 0 24px hsl(42 60% 55% / 0.08), 0 8px 32px hsl(0 0% 0% / 0.3)'
+        }
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.borderColor = isCritical ? 'hsl(0 70% 30% / 0.5)' : 'hsl(232 20% 16%)'
+        e.currentTarget.style.boxShadow = 'none'
+      }}
     >
-      {/* Image + stock badge */}
-      <div
-        className="relative h-28 flex items-center justify-center"
-        style={{ background: 'hsl(240 18% 6%)' }}
+      {/* ── Image Area ── */}
+      <button
+        onClick={() => onDrillDown(product)}
+        className="relative w-full aspect-[4/3] flex items-center justify-center overflow-hidden cursor-pointer"
+        style={{ background: 'hsl(240 18% 5%)' }}
       >
         {img ? (
-          <img src={img} alt={product.name} className="h-full w-full object-contain p-3" />
+          <img
+            src={img}
+            alt={product.name}
+            className="h-full w-full object-contain p-5 transition-transform duration-500 ease-out group-hover:scale-110"
+          />
         ) : (
-          <span className="text-3xl font-bold" style={{ color: catCfg?.dot }}>
+          <span
+            className="text-5xl font-black transition-transform duration-500 group-hover:scale-110"
+            style={{ color: catCfg?.dot, opacity: 0.6 }}
+          >
             {product.name.charAt(0).toUpperCase()}
           </span>
         )}
+
+        {/* Gradient overlay at bottom of image */}
+        <div
+          className="absolute inset-x-0 bottom-0 h-12 pointer-events-none"
+          style={{ background: 'linear-gradient(to top, hsl(232 25% 8%), transparent)' }}
+        />
+
+        {/* Critical badge */}
         {isCritical && (
-          <div className="absolute top-2 right-2 text-[9px] font-black uppercase tracking-widest bg-red-600 text-white px-1.5 py-0.5 rounded">
-            Crítico
+          <div className="absolute top-3 right-3 flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest bg-red-600/90 text-white px-2 py-1 rounded-lg backdrop-blur-sm">
+            <AlertTriangle size={10} />
+            Critico
           </div>
         )}
+
+        {/* Stock count overlay */}
         <div
-          className="absolute bottom-2 right-2 text-xs font-black tabular-nums"
-          style={{ color: isCritical ? '#f87171' : 'hsl(42 60% 55%)' }}
+          className="absolute bottom-3 right-3 text-sm font-black tabular-nums px-2 py-0.5 rounded-md backdrop-blur-sm"
+          style={{
+            color: isCritical ? '#f87171' : 'hsl(42 60% 55%)',
+            background: 'hsl(232 25% 8% / 0.7)',
+          }}
         >
           {product.current_stock} un
         </div>
-      </div>
+      </button>
 
-      <div className="p-3 space-y-2.5">
-        {/* Name + drill-down */}
+      {/* ── Card Body ── */}
+      <div className="p-4 space-y-3">
+        {/* Name + drill-down arrow */}
         <button
           onClick={() => onDrillDown(product)}
-          className="text-left group flex items-center gap-1 w-full"
+          className="text-left group/name flex items-start gap-1.5 w-full"
         >
-          <span className="font-semibold text-sm text-foreground group-hover:text-gold transition-colors leading-snug line-clamp-2 flex-1">
+          <span
+            className="font-semibold text-[15px] text-foreground leading-snug line-clamp-2 flex-1 transition-colors duration-200 group-hover/name:text-[hsl(42_60%_55%)]"
+            style={{ fontFamily: '"Space Grotesk", system-ui, sans-serif' }}
+          >
             {product.name}
           </span>
-          <ChevronRight size={13} className="text-muted-foreground group-hover:text-gold transition-colors shrink-0" />
+          <ChevronRight
+            size={14}
+            className="text-muted-foreground mt-1 shrink-0 transition-all duration-200 group-hover/name:text-[hsl(42_60%_55%)] group-hover/name:translate-x-0.5"
+          />
         </button>
 
-        {/* Badges */}
-        <div className="flex flex-wrap gap-1.5">
+        {/* Badges row */}
+        <div className="flex items-center flex-wrap gap-1.5">
           <CategoryBadge category={product.category} />
-          <span className="font-mono text-[10px] text-muted-foreground border border-border rounded px-1.5 py-0.5">
+          <span className="font-mono text-[10px] text-muted-foreground border border-border/60 rounded px-1.5 py-0.5">
             {product.sku}
           </span>
+          <StatusBadge isCritical={isCritical} active={product.active} />
         </div>
 
         {/* Stock bar */}
         <div>
-          <div className="flex justify-between text-[10px] text-muted-foreground mb-1">
-            <span>Estoque</span>
-            <span className={isCritical ? 'text-red-400 font-bold' : ''}>
-              {product.current_stock} / mín {product.min_stock}
+          <div className="flex justify-between text-[10px] text-muted-foreground mb-1.5">
+            <span className="uppercase tracking-wider font-medium">Estoque</span>
+            <span className={isCritical ? 'text-red-400 font-bold' : 'text-foreground/70'}>
+              {product.current_stock} / min {product.min_stock}
             </span>
           </div>
-          <div className="h-2.5 w-full bg-secondary rounded-full overflow-hidden">
+          <div className="h-2 w-full bg-secondary/60 rounded-full overflow-hidden">
             <div
-              className="h-2.5 rounded-full transition-all duration-500"
+              className="h-2 rounded-full transition-all duration-700 ease-out"
               style={{
-                width: `${Math.min(100, product.min_stock > 0 ? (product.current_stock / (product.min_stock * 3)) * 100 : 100)}%`,
-                backgroundColor: isCritical ? 'hsl(0, 70%, 55%)' : 'hsl(42, 60%, 55%)',
+                width: `${stockPct}%`,
+                background: isCritical
+                  ? 'linear-gradient(90deg, hsl(0 70% 45%), hsl(0 70% 55%))'
+                  : 'linear-gradient(90deg, hsl(42 60% 40%), hsl(42 60% 55%))',
               }}
             />
           </div>
         </div>
 
-        {/* Price */}
-        <div className="flex items-center justify-between">
-          <span className="text-sm font-bold text-gold">{fmt(product.price_sale)}</span>
-          <span className="text-[10px] text-muted-foreground flex items-center gap-1 truncate max-w-[100px]">
-            <Truck size={10} />
+        {/* Price + supplier */}
+        <div className="flex items-center justify-between pt-1">
+          <span
+            className="text-lg font-bold tabular-nums"
+            style={{ color: 'hsl(42 60% 55%)' }}
+          >
+            {fmt(product.price_sale)}
+          </span>
+          <span className="text-[10px] text-muted-foreground flex items-center gap-1 truncate max-w-[120px]">
+            <Truck size={10} className="shrink-0" />
             {product.supplier}
           </span>
         </div>
 
-        {/* Action buttons */}
+        {/* Manager actions — elegant hover reveal on desktop */}
         {isManager && (
-          <div className="flex gap-2 pt-1 border-t border-border">
+          <div
+            className="flex gap-2 pt-2 border-t transition-opacity duration-300 sm:opacity-0 sm:group-hover:opacity-100"
+            style={{ borderColor: 'hsl(232 20% 16%)' }}
+          >
             <button
               onClick={() => onEdit(product)}
-              className="flex-1 flex items-center justify-center gap-1.5 h-8 rounded-md text-xs text-muted-foreground hover:text-gold hover:bg-gold/10 border border-transparent hover:border-gold/20 transition-all"
+              className="flex-1 flex items-center justify-center gap-1.5 h-9 rounded-lg text-xs font-medium text-muted-foreground hover:text-[hsl(42_60%_55%)] border border-transparent hover:border-[hsl(42_60%_55%_/_0.25)] hover:bg-[hsl(42_60%_55%_/_0.08)] transition-all duration-200"
             >
               <Edit2 size={12} />
               Editar
             </button>
             <button
               onClick={() => onToggle(product.id, !product.active)}
-              className={`flex-1 flex items-center justify-center gap-1.5 h-8 rounded-md text-xs border border-transparent transition-all ${
+              className={`flex-1 flex items-center justify-center gap-1.5 h-9 rounded-lg text-xs font-medium border border-transparent transition-all duration-200 ${
                 product.active
-                  ? 'text-muted-foreground hover:text-red-400 hover:bg-red-400/10 hover:border-red-400/20'
-                  : 'text-muted-foreground hover:text-emerald-400 hover:bg-emerald-400/10 hover:border-emerald-400/20'
+                  ? 'text-muted-foreground hover:text-red-400 hover:bg-red-400/8 hover:border-red-400/20'
+                  : 'text-muted-foreground hover:text-emerald-400 hover:bg-emerald-400/8 hover:border-emerald-400/20'
               }`}
             >
               {product.active ? <ToggleRight size={12} /> : <ToggleLeft size={12} />}
@@ -508,7 +545,7 @@ export function ProductsPage() {
               className="text-2xl text-foreground"
               style={{ fontFamily: '"DM Serif Display", Georgia, serif' }}
             >
-              Catálogo
+              Catalogo
             </h1>
             <p className="text-xs text-muted-foreground mt-0.5">
               {activeCount} produto{activeCount !== 1 ? 's' : ''} ativo{activeCount !== 1 ? 's' : ''}
@@ -581,166 +618,42 @@ export function ProductsPage() {
             }`}
           >
             <span className={`w-2 h-2 rounded-full ${criticalOnly ? 'bg-red-400 animate-pulse' : 'bg-muted-foreground'}`} />
-            Críticos
+            Criticos
           </button>
         </div>
       </div>
 
       {/* ── Loading ── */}
       {isLoading ? (
-        <div className="space-y-2">
-          {Array.from({ length: 5 }).map((_, i) => (
-            <Skeleton key={i} className="h-14 w-full bg-secondary rounded-lg" />
+        <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <Skeleton key={i} className="aspect-[3/4] w-full bg-secondary rounded-2xl" />
           ))}
         </div>
+      ) : filtered.length === 0 ? (
+        <div className="animate-slide-up flex flex-col items-center gap-3 py-16 text-muted-foreground">
+          <Package size={40} className="opacity-20" />
+          <span className="text-sm">Nenhum produto encontrado</span>
+        </div>
       ) : (
-        <>
-          {/* ── Mobile Cards (sm:hidden) ── */}
-          <div className="animate-slide-up sm:hidden">
-            {filtered.length === 0 ? (
-              <div className="flex flex-col items-center gap-2 py-12 text-muted-foreground">
-                <Package size={32} className="opacity-20" />
-                <span className="text-sm">Nenhum produto encontrado</span>
-              </div>
-            ) : (
-              <div className="grid grid-cols-2 gap-3">
-                {filtered.map((product) => (
-                  <ProductCard
-                    key={product.id}
-                    product={product}
-                    isManager={isManager}
-                    onEdit={openEdit}
-                    onToggle={handleToggle}
-                    onDrillDown={openDrillDown}
-                  />
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* ── Desktop Table (hidden sm:block) ── */}
-          <div className="animate-slide-up hidden sm:block rounded-xl border border-border overflow-auto">
-            <Table>
-              <TableHeader>
-                <TableRow className="border-border hover:bg-transparent">
-                  <TableHead className="text-xs tracking-wider uppercase text-muted-foreground font-medium">Produto</TableHead>
-                  <TableHead className="text-xs tracking-wider uppercase text-muted-foreground font-medium">SKU</TableHead>
-                  <TableHead className="text-xs tracking-wider uppercase text-muted-foreground font-medium">Categoria</TableHead>
-                  <TableHead className="text-right text-xs tracking-wider uppercase text-muted-foreground font-medium">Estoque</TableHead>
-                  <TableHead className="text-right text-xs tracking-wider uppercase text-muted-foreground font-medium">Mínimo</TableHead>
-                  <TableHead className="text-right text-xs tracking-wider uppercase text-muted-foreground font-medium">Preço</TableHead>
-                  <TableHead className="text-xs tracking-wider uppercase text-muted-foreground font-medium">Status</TableHead>
-                  {isManager && (
-                    <TableHead className="text-right text-xs tracking-wider uppercase text-muted-foreground font-medium">Ações</TableHead>
-                  )}
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filtered.length === 0 ? (
-                  <TableRow className="border-border">
-                    <TableCell colSpan={8} className="text-center text-muted-foreground py-12">
-                      <div className="flex flex-col items-center gap-2">
-                        <Package size={32} className="opacity-20" />
-                        <span className="text-sm">Nenhum produto encontrado</span>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  filtered.map((product) => {
-                    const isCritical = product.current_stock <= product.min_stock
-                    return (
-                      <TableRow
-                        key={product.id}
-                        className={`border-border hover:bg-secondary/50 transition-colors ${
-                          !product.active ? 'opacity-40' : ''
-                        }`}
-                      >
-                        <TableCell className="font-medium text-foreground">
-                          <button
-                            onClick={() => openDrillDown(product)}
-                            className="flex items-center gap-2.5 text-left group"
-                          >
-                            {(() => {
-                              const img = getProductImage(product.sku)
-                              const catCfg = CATEGORY_CONFIG[product.category as CategoryKey]
-                              return img ? (
-                                <div className="w-9 h-9 rounded-lg overflow-hidden bg-[hsl(240_18%_6%)] border border-border/50 shrink-0 flex items-center justify-center">
-                                  <img src={img} alt="" className="w-full h-full object-contain p-0.5" />
-                                </div>
-                              ) : (
-                                <div className="w-9 h-9 rounded-lg border border-border/50 shrink-0 flex items-center justify-center" style={{ background: catCfg?.bg }}>
-                                  <span className="text-xs font-bold" style={{ color: catCfg?.dot }}>{product.name.charAt(0)}</span>
-                                </div>
-                              )
-                            })()}
-                            <span className="group-hover:text-gold transition-colors">{product.name}</span>
-                            <ChevronRight size={12} className="text-muted-foreground group-hover:text-gold transition-colors shrink-0" />
-                            {isCritical && (
-                              <AlertTriangle
-                                size={11}
-                                className="text-red-400 shrink-0"
-                              />
-                            )}
-                          </button>
-                        </TableCell>
-                        <TableCell className="font-mono text-xs text-muted-foreground">
-                          {product.sku}
-                        </TableCell>
-                        <TableCell>
-                          <CategoryBadge category={product.category} />
-                        </TableCell>
-                        <TableCell className="text-right tabular-nums">
-                          <span className={isCritical ? 'text-red-400 font-bold' : 'text-foreground'}>
-                            {product.current_stock}
-                          </span>
-                          <StockBar current={product.current_stock} min={product.min_stock} />
-                        </TableCell>
-                        <TableCell className="text-right tabular-nums text-muted-foreground">
-                          {product.min_stock}
-                        </TableCell>
-                        <TableCell className="text-right tabular-nums text-gold font-semibold">
-                          {fmt(product.price_sale)}
-                        </TableCell>
-                        <TableCell>
-                          <StatusBadge isCritical={isCritical} active={product.active} />
-                        </TableCell>
-                        {isManager && (
-                          <TableCell className="text-right">
-                            <div className="flex gap-1.5 justify-end">
-                              <button
-                                onClick={() => openEdit(product)}
-                                title="Editar produto"
-                                className="p-2 rounded-md text-muted-foreground hover:text-gold hover:bg-gold/10 border border-transparent hover:border-gold/20 transition-all"
-                              >
-                                <Edit2 size={14} />
-                              </button>
-                              <button
-                                onClick={() => toggle.mutate({ id: product.id, active: !product.active })}
-                                title={product.active ? 'Desativar produto' : 'Ativar produto'}
-                                className={`p-2 rounded-md border border-transparent transition-all ${
-                                  product.active
-                                    ? 'text-muted-foreground hover:text-red-400 hover:bg-red-400/10 hover:border-red-400/20'
-                                    : 'text-muted-foreground hover:text-emerald-400 hover:bg-emerald-400/10 hover:border-emerald-400/20'
-                                }`}
-                              >
-                                {product.active ? <ToggleRight size={14} /> : <ToggleLeft size={14} />}
-                              </button>
-                            </div>
-                          </TableCell>
-                        )}
-                      </TableRow>
-                    )
-                  })
-                )}
-              </TableBody>
-            </Table>
-          </div>
-        </>
+        /* ── Product Card Grid ── */
+        <div className="animate-slide-up grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-5">
+          {filtered.map((product) => (
+            <CatalogCard
+              key={product.id}
+              product={product}
+              isManager={isManager}
+              onEdit={openEdit}
+              onToggle={handleToggle}
+              onDrillDown={openDrillDown}
+            />
+          ))}
+        </div>
       )}
 
       {!isManager && (
         <div className="text-xs text-muted-foreground border border-border rounded-lg px-4 py-3">
-          Visualização somente leitura. Contate o gestor para alterações no catálogo.
+          Visualizacao somente leitura. Contate o gestor para alteracoes no catalogo.
         </div>
       )}
 
