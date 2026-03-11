@@ -4,7 +4,7 @@ import { IS_MOCK } from '@/lib/mockAuth'
 import { MOCK_LOCATION_STOCK, MOCK_PRODUCTS, MOCK_LOCATIONS } from '@/lib/mockData'
 import type { LocationStock } from '@/types'
 
-let _mockLocationStock = [...MOCK_LOCATION_STOCK]
+const _mockLocationStock = [...MOCK_LOCATION_STOCK]
 
 export function getMockLocationStock() {
   return _mockLocationStock

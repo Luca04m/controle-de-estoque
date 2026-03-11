@@ -6,9 +6,11 @@ import { z } from 'zod'
 import {
   Search, Plus, Package, Edit2, ToggleLeft, ToggleRight,
   AlertTriangle,
-  Truck, ChevronRight,
+  Truck, ChevronRight, LayoutGrid, List, MapPin,
 } from 'lucide-react'
 import { useAllProducts, useCreateProduct, useUpdateProduct, useToggleProduct } from '@/hooks/useProducts'
+import { useLocations } from '@/hooks/useLocations'
+import { useStockMatrix } from '@/hooks/useLocationStock'
 import { ProductHistoryDrawer } from '@/components/ProductHistoryDrawer'
 import { useAuthStore } from '@/stores/authStore'
 import { getProductImage } from '@/lib/productImages'
@@ -17,7 +19,7 @@ import { Label } from '@/components/ui/label'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Skeleton } from '@/components/ui/skeleton'
-import type { Product, ProductCategory } from '@/types'
+import type { Product, ProductCategory, Location as LocType } from '@/types'
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -107,6 +109,48 @@ function StatusBadge({ isCritical, active }: { isCritical: boolean; active: bool
   )
 }
 
+// ─── LocationStockBadges ────────────────────────────────────────────────────
+
+function LocationStockBadges({
+  productId,
+  stockMatrix,
+  stores,
+  compact = false,
+}: {
+  productId: string
+  stockMatrix: Record<string, Record<string, number>> | undefined
+  stores: LocType[]
+  compact?: boolean
+}) {
+  if (!stockMatrix) return null
+  const productStock = stockMatrix[productId]
+  if (!productStock) return null
+
+  const shortName = (name: string) => name.replace('Degusto Club ', '').replace('Delivery', 'DLV')
+
+  return (
+    <div className={`flex flex-wrap gap-1 ${compact ? '' : 'mt-1'}`}>
+      {stores.map((loc) => {
+        const qty = productStock[loc.id] ?? 0
+        if (qty === 0) return null
+        return (
+          <span
+            key={loc.id}
+            className="inline-flex items-center gap-1 text-[10px] font-medium rounded px-1.5 py-0.5 border"
+            style={{
+              color: 'hsl(42 60% 55%)',
+              borderColor: 'hsl(42 60% 55% / 0.2)',
+              background: 'hsl(42 60% 55% / 0.08)',
+            }}
+          >
+            <MapPin size={8} className="shrink-0" />
+            {shortName(loc.name)}: {qty}
+          </span>
+        )
+      })}
+    </div>
+  )
+}
 
 
 // ─── ProductFormDialog ───────────────────────────────────────────────────────
@@ -174,37 +218,21 @@ function ProductFormDialog({
         </DialogHeader>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 pt-1">
-          {/* Nome */}
           <div className="space-y-1.5">
             <Label className="text-xs tracking-wider uppercase text-muted-foreground">Nome</Label>
-            <Input
-              placeholder="Ex: Whisky Mr. Lion Gold"
-              className="bg-secondary border-border"
-              {...register('name')}
-            />
+            <Input placeholder="Ex: Whisky Mr. Lion Gold" className="bg-secondary border-border" {...register('name')} />
             {errors.name && <p className="text-xs text-destructive">{errors.name.message}</p>}
           </div>
-
-          {/* SKU + Categoria */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <Label className="text-xs tracking-wider uppercase text-muted-foreground">SKU</Label>
-              <Input
-                placeholder="ML-GOLD-750"
-                className="bg-secondary border-border font-mono"
-                {...register('sku')}
-              />
+              <Input placeholder="ML-GOLD-750" className="bg-secondary border-border font-mono" {...register('sku')} />
               {errors.sku && <p className="text-xs text-destructive">{errors.sku.message}</p>}
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs tracking-wider uppercase text-muted-foreground">Categoria</Label>
-              <Select
-                value={categoryValue}
-                onValueChange={(v) => { if (v) setValue('category', v as ProductCategory) }}
-              >
-                <SelectTrigger className="bg-secondary border-border">
-                  <SelectValue />
-                </SelectTrigger>
+              <Select value={categoryValue} onValueChange={(v) => { if (v) setValue('category', v as ProductCategory) }}>
+                <SelectTrigger className="bg-secondary border-border"><SelectValue /></SelectTrigger>
                 <SelectContent className="bg-card border-border">
                   {ALL_CATEGORIES.map(([value, cfg]) => (
                     <SelectItem key={value} value={value}>
@@ -218,79 +246,38 @@ function ProductFormDialog({
               </Select>
             </div>
           </div>
-
-          {/* Estoque atual + minimo */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <Label className="text-xs tracking-wider uppercase text-muted-foreground">Estoque Atual</Label>
-              <Input
-                type="number"
-                min={0}
-                className="bg-secondary border-border"
-                {...register('current_stock', { valueAsNumber: true })}
-              />
+              <Input type="number" min={0} className="bg-secondary border-border" {...register('current_stock', { valueAsNumber: true })} />
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs tracking-wider uppercase text-muted-foreground">Estoque Minimo</Label>
-              <Input
-                type="number"
-                min={0}
-                className="bg-secondary border-border"
-                {...register('min_stock', { valueAsNumber: true })}
-              />
+              <Input type="number" min={0} className="bg-secondary border-border" {...register('min_stock', { valueAsNumber: true })} />
             </div>
           </div>
-
-          {/* Preco custo + venda */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <Label className="text-xs tracking-wider uppercase text-muted-foreground">Custo (R$)</Label>
-              <Input
-                type="number"
-                min={0}
-                step={0.01}
-                placeholder="0,00"
-                className="bg-secondary border-border"
-                {...register('price_cost', { valueAsNumber: true })}
-              />
+              <Input type="number" min={0} step={0.01} placeholder="0,00" className="bg-secondary border-border" {...register('price_cost', { valueAsNumber: true })} />
               {errors.price_cost && <p className="text-xs text-destructive">{errors.price_cost.message}</p>}
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs tracking-wider uppercase text-muted-foreground">Preco Venda (R$)</Label>
-              <Input
-                type="number"
-                min={0}
-                step={0.01}
-                placeholder="0,00"
-                className="bg-secondary border-border"
-                {...register('price_sale', { valueAsNumber: true })}
-              />
+              <Input type="number" min={0} step={0.01} placeholder="0,00" className="bg-secondary border-border" {...register('price_sale', { valueAsNumber: true })} />
               {errors.price_sale && <p className="text-xs text-destructive">{errors.price_sale.message}</p>}
             </div>
           </div>
-
-          {/* Fornecedor */}
           <div className="space-y-1.5">
             <Label className="text-xs tracking-wider uppercase text-muted-foreground">Fornecedor</Label>
-            <Input
-              placeholder="Ex: Lamas Destilaria"
-              className="bg-secondary border-border"
-              {...register('supplier')}
-            />
+            <Input placeholder="Ex: Lamas Destilaria" className="bg-secondary border-border" {...register('supplier')} />
             {errors.supplier && <p className="text-xs text-destructive">{errors.supplier.message}</p>}
           </div>
-
-          {/* Localizacao */}
           <div className="space-y-1.5">
             <Label className="text-xs tracking-wider uppercase text-muted-foreground">Localizacao</Label>
-            <Input
-              placeholder="Ex: Galpao A - Prateleira 1"
-              className="bg-secondary border-border"
-              {...register('location')}
-            />
+            <Input placeholder="Ex: Galpao A - Prateleira 1" className="bg-secondary border-border" {...register('location')} />
             {errors.location && <p className="text-xs text-destructive">{errors.location.message}</p>}
           </div>
-
           <button
             type="submit"
             disabled={create.isPending || update.isPending}
@@ -304,7 +291,7 @@ function ProductFormDialog({
   )
 }
 
-// ─── CatalogCard ─────────────────────────────────────────────────────────────
+// ─── CatalogCard (Grid view) ─────────────────────────────────────────────────
 
 function CatalogCard({
   product,
@@ -312,12 +299,16 @@ function CatalogCard({
   onEdit,
   onToggle,
   onDrillDown,
+  stockMatrix,
+  stores,
 }: {
   product: Product
   isManager: boolean
   onEdit: (p: Product) => void
   onToggle: (id: string, active: boolean) => void
   onDrillDown: (p: Product) => void
+  stockMatrix: Record<string, Record<string, number>> | undefined
+  stores: LocType[]
 }) {
   const isCritical = product.current_stock <= product.min_stock
   const img = getProductImage(product.sku)
@@ -346,7 +337,7 @@ function CatalogCard({
         e.currentTarget.style.boxShadow = 'none'
       }}
     >
-      {/* ── Image Area ── */}
+      {/* Image Area */}
       <button
         onClick={() => onDrillDown(product)}
         className="relative w-full aspect-[4/3] flex items-center justify-center overflow-hidden cursor-pointer"
@@ -366,22 +357,16 @@ function CatalogCard({
             {product.name.charAt(0).toUpperCase()}
           </span>
         )}
-
-        {/* Gradient overlay at bottom of image */}
         <div
           className="absolute inset-x-0 bottom-0 h-12 pointer-events-none"
           style={{ background: 'linear-gradient(to top, hsl(232 25% 8%), transparent)' }}
         />
-
-        {/* Critical badge */}
         {isCritical && (
           <div className="absolute top-3 right-3 flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest bg-red-600/90 text-white px-2 py-1 rounded-lg backdrop-blur-sm">
             <AlertTriangle size={10} />
             Critico
           </div>
         )}
-
-        {/* Stock count overlay */}
         <div
           className="absolute bottom-3 right-3 text-sm font-black tabular-nums px-2 py-0.5 rounded-md backdrop-blur-sm"
           style={{
@@ -393,38 +378,31 @@ function CatalogCard({
         </div>
       </button>
 
-      {/* ── Card Body ── */}
+      {/* Card Body */}
       <div className="p-4 space-y-3">
-        {/* Name + drill-down arrow */}
-        <button
-          onClick={() => onDrillDown(product)}
-          className="text-left group/name flex items-start gap-1.5 w-full"
-        >
+        <button onClick={() => onDrillDown(product)} className="text-left group/name flex items-start gap-1.5 w-full">
           <span
             className="font-semibold text-[15px] text-foreground leading-snug line-clamp-2 flex-1 transition-colors duration-200 group-hover/name:text-[hsl(42_60%_55%)]"
             style={{ fontFamily: '"Space Grotesk", system-ui, sans-serif' }}
           >
             {product.name}
           </span>
-          <ChevronRight
-            size={14}
-            className="text-muted-foreground mt-1 shrink-0 transition-all duration-200 group-hover/name:text-[hsl(42_60%_55%)] group-hover/name:translate-x-0.5"
-          />
+          <ChevronRight size={14} className="text-muted-foreground mt-1 shrink-0 transition-all duration-200 group-hover/name:text-[hsl(42_60%_55%)] group-hover/name:translate-x-0.5" />
         </button>
 
-        {/* Badges row */}
         <div className="flex items-center flex-wrap gap-1.5">
           <CategoryBadge category={product.category} />
-          <span className="font-mono text-[10px] text-muted-foreground border border-border/60 rounded px-1.5 py-0.5">
-            {product.sku}
-          </span>
+          <span className="font-mono text-[10px] text-muted-foreground border border-border/60 rounded px-1.5 py-0.5">{product.sku}</span>
           <StatusBadge isCritical={isCritical} active={product.active} />
         </div>
+
+        {/* Per-store stock badges */}
+        <LocationStockBadges productId={product.id} stockMatrix={stockMatrix} stores={stores} />
 
         {/* Stock bar */}
         <div>
           <div className="flex justify-between text-[10px] text-muted-foreground mb-1.5">
-            <span className="uppercase tracking-wider font-medium">Estoque</span>
+            <span className="uppercase tracking-wider font-medium">Estoque total</span>
             <span className={isCritical ? 'text-red-400 font-bold' : 'text-foreground/70'}>
               {product.current_stock} / min {product.min_stock}
             </span>
@@ -444,30 +422,16 @@ function CatalogCard({
 
         {/* Price + supplier */}
         <div className="flex items-center justify-between pt-1">
-          <span
-            className="text-lg font-bold tabular-nums"
-            style={{ color: 'hsl(42 60% 55%)' }}
-          >
-            {fmt(product.price_sale)}
-          </span>
+          <span className="text-lg font-bold tabular-nums" style={{ color: 'hsl(42 60% 55%)' }}>{fmt(product.price_sale)}</span>
           <span className="text-[10px] text-muted-foreground flex items-center gap-1 truncate max-w-[120px]">
-            <Truck size={10} className="shrink-0" />
-            {product.supplier}
+            <Truck size={10} className="shrink-0" />{product.supplier}
           </span>
         </div>
 
-        {/* Manager actions — elegant hover reveal on desktop */}
         {isManager && (
-          <div
-            className="flex gap-2 pt-2 border-t transition-opacity duration-300 sm:opacity-0 sm:group-hover:opacity-100"
-            style={{ borderColor: 'hsl(232 20% 16%)' }}
-          >
-            <button
-              onClick={() => onEdit(product)}
-              className="flex-1 flex items-center justify-center gap-1.5 h-9 rounded-lg text-xs font-medium text-muted-foreground hover:text-[hsl(42_60%_55%)] border border-transparent hover:border-[hsl(42_60%_55%_/_0.25)] hover:bg-[hsl(42_60%_55%_/_0.08)] transition-all duration-200"
-            >
-              <Edit2 size={12} />
-              Editar
+          <div className="flex gap-2 pt-2 border-t transition-opacity duration-300 sm:opacity-0 sm:group-hover:opacity-100" style={{ borderColor: 'hsl(232 20% 16%)' }}>
+            <button onClick={() => onEdit(product)} className="flex-1 flex items-center justify-center gap-1.5 h-9 rounded-lg text-xs font-medium text-muted-foreground hover:text-[hsl(42_60%_55%)] border border-transparent hover:border-[hsl(42_60%_55%_/_0.25)] hover:bg-[hsl(42_60%_55%_/_0.08)] transition-all duration-200">
+              <Edit2 size={12} />Editar
             </button>
             <button
               onClick={() => onToggle(product.id, !product.active)}
@@ -487,16 +451,130 @@ function CatalogCard({
   )
 }
 
+// ─── ListRow (List view) ─────────────────────────────────────────────────────
+
+function ListRow({
+  product,
+  isManager,
+  onEdit,
+  onToggle,
+  onDrillDown,
+  stockMatrix,
+  stores,
+}: {
+  product: Product
+  isManager: boolean
+  onEdit: (p: Product) => void
+  onToggle: (id: string, active: boolean) => void
+  onDrillDown: (p: Product) => void
+  stockMatrix: Record<string, Record<string, number>> | undefined
+  stores: LocType[]
+}) {
+  const isCritical = product.current_stock <= product.min_stock
+  const stockPct = product.min_stock > 0
+    ? Math.min(100, (product.current_stock / (product.min_stock * 3)) * 100)
+    : 100
+
+  return (
+    <div
+      className={`group rounded-xl border p-3 sm:p-4 transition-all duration-200 hover:border-[hsl(42_60%_55%_/_0.3)] ${
+        !product.active ? 'opacity-40' : ''
+      }`}
+      style={{
+        background: 'hsl(232 25% 8%)',
+        borderColor: isCritical ? 'hsl(0 70% 30% / 0.5)' : 'hsl(232 20% 16%)',
+      }}
+    >
+      <div className="flex items-start gap-3 sm:gap-4">
+        {/* Left: name, badges, per-store stock */}
+        <div className="flex-1 min-w-0 space-y-2">
+          <button onClick={() => onDrillDown(product)} className="text-left group/name flex items-center gap-1.5">
+            <span
+              className="font-semibold text-sm text-foreground truncate transition-colors group-hover/name:text-[hsl(42_60%_55%)]"
+              style={{ fontFamily: '"Space Grotesk", system-ui, sans-serif' }}
+            >
+              {product.name}
+            </span>
+            <ChevronRight size={12} className="text-muted-foreground shrink-0 transition-all group-hover/name:text-[hsl(42_60%_55%)] group-hover/name:translate-x-0.5" />
+          </button>
+
+          <div className="flex items-center flex-wrap gap-1.5">
+            <CategoryBadge category={product.category} />
+            <span className="font-mono text-[10px] text-muted-foreground border border-border/60 rounded px-1.5 py-0.5">{product.sku}</span>
+            <StatusBadge isCritical={isCritical} active={product.active} />
+          </div>
+
+          {/* Per-store stock */}
+          <LocationStockBadges productId={product.id} stockMatrix={stockMatrix} stores={stores} compact />
+        </div>
+
+        {/* Right: stock info + price */}
+        <div className="flex flex-col items-end gap-2 shrink-0">
+          <div className="text-right">
+            <span className={`text-lg font-black tabular-nums ${isCritical ? 'text-red-400' : 'text-foreground'}`}>
+              {product.current_stock}
+            </span>
+            <span className="text-xs text-muted-foreground ml-1">un</span>
+          </div>
+          <div className="w-20">
+            <div className="h-1.5 w-full bg-secondary/60 rounded-full overflow-hidden">
+              <div
+                className="h-1.5 rounded-full"
+                style={{
+                  width: `${stockPct}%`,
+                  background: isCritical
+                    ? 'linear-gradient(90deg, hsl(0 70% 45%), hsl(0 70% 55%))'
+                    : 'linear-gradient(90deg, hsl(42 60% 40%), hsl(42 60% 55%))',
+                }}
+              />
+            </div>
+            <p className="text-[9px] text-muted-foreground text-right mt-0.5">min {product.min_stock}</p>
+          </div>
+          <span className="text-sm font-bold tabular-nums" style={{ color: 'hsl(42 60% 55%)' }}>{fmt(product.price_sale)}</span>
+        </div>
+      </div>
+
+      {/* Manager actions row */}
+      {isManager && (
+        <div className="flex gap-2 mt-3 pt-2 border-t transition-opacity duration-300 sm:opacity-0 sm:group-hover:opacity-100" style={{ borderColor: 'hsl(232 20% 16%)' }}>
+          <button onClick={() => onEdit(product)} className="flex items-center gap-1.5 h-8 px-3 rounded-lg text-xs font-medium text-muted-foreground hover:text-[hsl(42_60%_55%)] border border-transparent hover:border-[hsl(42_60%_55%_/_0.25)] hover:bg-[hsl(42_60%_55%_/_0.08)] transition-all duration-200">
+            <Edit2 size={12} />Editar
+          </button>
+          <button
+            onClick={() => onToggle(product.id, !product.active)}
+            className={`flex items-center gap-1.5 h-8 px-3 rounded-lg text-xs font-medium border border-transparent transition-all duration-200 ${
+              product.active
+                ? 'text-muted-foreground hover:text-red-400 hover:bg-red-400/8 hover:border-red-400/20'
+                : 'text-muted-foreground hover:text-emerald-400 hover:bg-emerald-400/8 hover:border-emerald-400/20'
+            }`}
+          >
+            {product.active ? <ToggleRight size={12} /> : <ToggleLeft size={12} />}
+            {product.active ? 'Desativar' : 'Ativar'}
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ─── ProductsPage ─────────────────────────────────────────────────────────────
+
+type ViewMode = 'grid' | 'list'
 
 export function ProductsPage() {
   const { data: products, isLoading } = useAllProducts()
+  const { data: locations } = useLocations()
+  const { data: stockMatrix } = useStockMatrix()
   const toggle = useToggleProduct()
   const { profile } = useAuthStore()
   const isManager = profile?.role === 'manager'
   const location = useLocation()
 
-  // Initialize criticalOnly from navigation state (Dashboard alert button)
+  const stores = useMemo(
+    () => (locations ?? []).filter((l) => l.type !== 'deposito'),
+    [locations]
+  )
+
   const initialCriticalOnly = useMemo(() => {
     const fromNav = !!(location.state as { criticalOnly?: boolean } | null)?.criticalOnly
     if (fromNav) window.history.replaceState({}, '')
@@ -506,7 +584,9 @@ export function ProductsPage() {
 
   const [search, setSearch]             = useState('')
   const [categoryFilter, setCategoryFilter] = useState<CategoryKey | 'all'>('all')
+  const [locationFilter, setLocationFilter] = useState<string>('all')
   const [criticalOnly, setCriticalOnly] = useState(initialCriticalOnly)
+  const [viewMode, setViewMode]         = useState<ViewMode>('grid')
   const [dialogOpen, setDialogOpen]     = useState(false)
   const [editingProduct, setEditingProduct] = useState<Product | undefined>(undefined)
   const [drillProduct, setDrillProduct] = useState<Product | null>(null)
@@ -522,29 +602,40 @@ export function ProductsPage() {
     toggle.mutate({ id, active })
   }
 
-  const filtered = products?.filter((p) => {
-    const matchSearch =
-      p.name.toLowerCase().includes(search.toLowerCase()) ||
-      p.sku.toLowerCase().includes(search.toLowerCase())
-    const matchCategory = categoryFilter === 'all' || p.category === categoryFilter
-    const matchCritical = !criticalOnly || p.current_stock <= p.min_stock
-    return matchSearch && matchCategory && matchCritical
-  }) ?? []
+  const filtered = useMemo(() => {
+    let result = products ?? []
+
+    result = result.filter((p) => {
+      const matchSearch =
+        p.name.toLowerCase().includes(search.toLowerCase()) ||
+        p.sku.toLowerCase().includes(search.toLowerCase())
+      const matchCategory = categoryFilter === 'all' || p.category === categoryFilter
+      const matchCritical = !criticalOnly || p.current_stock <= p.min_stock
+      return matchSearch && matchCategory && matchCritical
+    })
+
+    // Filter by location stock
+    if (locationFilter !== 'all' && stockMatrix) {
+      result = result.filter((p) => {
+        const qty = stockMatrix[p.id]?.[locationFilter] ?? 0
+        return qty > 0
+      })
+    }
+
+    return result
+  }, [products, search, categoryFilter, criticalOnly, locationFilter, stockMatrix])
 
   const activeCount = products?.filter((p) => p.active).length ?? 0
 
   return (
     <div className="space-y-5 p-4 md:p-6">
 
-      {/* ── Header ── */}
+      {/* Header */}
       <div className="animate-slide-up flex items-center justify-between gap-4 flex-wrap">
         <div className="flex items-center gap-3">
           <Package size={22} className="text-gold shrink-0" />
           <div>
-            <h1
-              className="text-2xl text-foreground"
-              style={{ fontFamily: '"DM Serif Display", Georgia, serif' }}
-            >
+            <h1 className="text-2xl text-foreground" style={{ fontFamily: '"DM Serif Display", Georgia, serif' }}>
               Catalogo
             </h1>
             <p className="text-xs text-muted-foreground mt-0.5">
@@ -552,30 +643,87 @@ export function ProductsPage() {
             </p>
           </div>
         </div>
-        {isManager && (
-          <button
-            onClick={openNew}
-            className="flex items-center gap-2 h-9 px-4 rounded-lg gradient-gold text-[oklch(0.07_0_0)] font-semibold text-sm hover:opacity-90 transition-all"
-          >
-            <Plus size={15} />
-            Novo Produto
-          </button>
-        )}
+        <div className="flex items-center gap-2">
+          {/* View mode toggle */}
+          <div className="flex items-center rounded-lg border border-border overflow-hidden">
+            <button
+              onClick={() => setViewMode('grid')}
+              className={`flex items-center justify-center w-9 h-9 transition-all ${
+                viewMode === 'grid' ? 'bg-gold/10 text-gold' : 'text-muted-foreground hover:text-foreground hover:bg-secondary'
+              }`}
+              title="Visualização em grade"
+            >
+              <LayoutGrid size={16} />
+            </button>
+            <button
+              onClick={() => setViewMode('list')}
+              className={`flex items-center justify-center w-9 h-9 transition-all ${
+                viewMode === 'list' ? 'bg-gold/10 text-gold' : 'text-muted-foreground hover:text-foreground hover:bg-secondary'
+              }`}
+              title="Visualização em lista"
+            >
+              <List size={16} />
+            </button>
+          </div>
+          {isManager && (
+            <button
+              onClick={openNew}
+              className="flex items-center gap-2 h-9 px-4 rounded-lg gradient-gold text-[oklch(0.07_0_0)] font-semibold text-sm hover:opacity-90 transition-all"
+            >
+              <Plus size={15} />
+              Novo Produto
+            </button>
+          )}
+        </div>
       </div>
 
-      {/* ── Search + Category Filters ── */}
+      {/* Search + Filters */}
       <div className="animate-slide-up space-y-3">
         <div className="relative max-w-sm">
-          <Search
-            size={14}
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none"
-          />
+          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
           <Input
             placeholder="Buscar por nome ou SKU..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="pl-9 bg-card border-border h-9 text-sm"
           />
+        </div>
+
+        {/* Location filter pills */}
+        <div>
+          <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium mb-1.5 flex items-center gap-1">
+            <MapPin size={10} />
+            Loja
+          </p>
+          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={() => setLocationFilter('all')}
+              className={`text-xs px-3 py-1 rounded-full border transition-all font-medium ${
+                locationFilter === 'all'
+                  ? 'bg-card border-gold text-gold'
+                  : 'border-border text-muted-foreground hover:border-border/80 hover:text-foreground'
+              }`}
+            >
+              Todas as lojas
+            </button>
+            {stores.map((loc) => {
+              const isActive = locationFilter === loc.id
+              const shortName = loc.name.replace('Degusto Club ', 'Degusto ')
+              return (
+                <button
+                  key={loc.id}
+                  onClick={() => setLocationFilter(isActive ? 'all' : loc.id)}
+                  className={`text-xs px-3 py-1 rounded-full border transition-all font-medium ${
+                    isActive
+                      ? 'bg-gold/10 border-gold/40 text-gold'
+                      : 'border-border text-muted-foreground hover:border-border/80 hover:text-foreground'
+                  }`}
+                >
+                  {shortName}
+                </button>
+              )
+            })}
+          </div>
         </div>
 
         {/* Category filter chips */}
@@ -598,9 +746,7 @@ export function ProductsPage() {
                 onClick={() => setCategoryFilter(isActive ? 'all' : key)}
                 style={isActive ? { color: cfg.color, borderColor: `${cfg.color}60`, backgroundColor: cfg.bg } : {}}
                 className={`flex items-center gap-1.5 text-xs px-3 py-1 rounded-full border transition-all font-medium ${
-                  isActive
-                    ? ''
-                    : 'border-border text-muted-foreground hover:text-foreground hover:border-border/80'
+                  isActive ? '' : 'border-border text-muted-foreground hover:text-foreground hover:border-border/80'
                 }`}
               >
                 <span className="w-2 h-2 rounded-full" style={{ background: cfg.dot }} />
@@ -608,7 +754,6 @@ export function ProductsPage() {
               </button>
             )
           })}
-          {/* Critical-only filter chip */}
           <button
             onClick={() => setCriticalOnly(v => !v)}
             className={`flex items-center gap-1.5 text-xs px-3 py-1 rounded-full border transition-all font-medium ${
@@ -623,21 +768,29 @@ export function ProductsPage() {
         </div>
       </div>
 
-      {/* ── Loading ── */}
+      {/* Loading */}
       {isLoading ? (
-        <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <Skeleton key={i} className="aspect-[3/4] w-full bg-secondary rounded-2xl" />
-          ))}
-        </div>
+        viewMode === 'grid' ? (
+          <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <Skeleton key={i} className="aspect-[3/4] w-full bg-secondary rounded-2xl" />
+            ))}
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <Skeleton key={i} className="h-28 w-full bg-secondary rounded-xl" />
+            ))}
+          </div>
+        )
       ) : filtered.length === 0 ? (
         <div className="animate-slide-up flex flex-col items-center gap-3 py-16 text-muted-foreground">
           <Package size={40} className="opacity-20" />
           <span className="text-sm">Nenhum produto encontrado</span>
         </div>
-      ) : (
-        /* ── Product Card Grid ── */
-        <div className="animate-slide-up grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-5">
+      ) : viewMode === 'grid' ? (
+        /* Grid View */
+        <div className="animate-slide-up grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-5">
           {filtered.map((product) => (
             <CatalogCard
               key={product.id}
@@ -646,6 +799,24 @@ export function ProductsPage() {
               onEdit={openEdit}
               onToggle={handleToggle}
               onDrillDown={openDrillDown}
+              stockMatrix={stockMatrix}
+              stores={stores}
+            />
+          ))}
+        </div>
+      ) : (
+        /* List View */
+        <div className="animate-slide-up space-y-2">
+          {filtered.map((product) => (
+            <ListRow
+              key={product.id}
+              product={product}
+              isManager={isManager}
+              onEdit={openEdit}
+              onToggle={handleToggle}
+              onDrillDown={openDrillDown}
+              stockMatrix={stockMatrix}
+              stores={stores}
             />
           ))}
         </div>
@@ -665,7 +836,6 @@ export function ProductsPage() {
         />
       )}
 
-      {/* Full history drawer (replaces dialog) */}
       <ProductHistoryDrawer
         product={drillOpen ? drillProduct : null}
         onClose={closeDrillDown}

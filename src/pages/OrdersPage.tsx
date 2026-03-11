@@ -1,5 +1,6 @@
 import { useState, useMemo, useCallback, useRef, useEffect } from 'react'
 import { useProducts } from '@/hooks/useProducts'
+import { useLocations } from '@/hooks/useLocations'
 import {
   useDeliveryOrders,
   useCreateOrder,
@@ -939,6 +940,7 @@ interface OrderCardProps {
   onCancelOrder?: (id: string) => void
   onEdit?: (order: DeliveryOrder) => void
   onDelete?: (id: string) => void
+  locationName?: string
 }
 
 function OrderCard({
@@ -952,6 +954,7 @@ function OrderCard({
   onCancelOrder,
   onEdit,
   onDelete,
+  locationName,
 }: OrderCardProps) {
   const items = order.items as OrderItem[]
   const totalValue =
@@ -1149,6 +1152,14 @@ function OrderCard({
           <div className="flex items-start gap-2">
             <MapPin className="w-3.5 h-3.5 text-[hsl(42_60%_55%/0.7)] shrink-0 mt-0.5" />
             <span className="text-xs text-white/60 leading-relaxed">{order.address}</span>
+          </div>
+        )}
+
+        {/* Location indicator */}
+        {locationName && (
+          <div className="flex items-center gap-1.5 text-[10px] text-white/40">
+            <MapPin className="w-3 h-3 text-[hsl(42_60%_55%/0.5)]" />
+            <span>{locationName}</span>
           </div>
         )}
 
@@ -1353,7 +1364,9 @@ export function OrdersPage() {
   const [search, setSearch] = useState('')
   const [dateFilter, setDateFilter] = useState<DateFilter>('all')
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
+  const [locationFilter, setLocationFilter] = useState<string>('all')
   const [sortBy, setSortBy] = useState<SortBy>('newest')
+  const { data: locations } = useLocations()
   const [orderToCancel, setOrderToCancel] = useState<DeliveryOrder | null>(null)
   const [orderToEdit, setOrderToEdit] = useState<DeliveryOrder | null>(null)
 
@@ -1452,6 +1465,11 @@ export function OrdersPage() {
       result = result.filter((o) => o.status !== 'cancelled')
     }
 
+    // Location filter
+    if (locationFilter !== 'all') {
+      result = result.filter((o) => o.location_id === locationFilter)
+    }
+
     // Search
     const q = search.trim().toLowerCase()
     if (q) {
@@ -1474,7 +1492,7 @@ export function OrdersPage() {
     })
 
     return result
-  }, [orders, dateFilter, statusFilter, search, sortBy])
+  }, [orders, dateFilter, statusFilter, locationFilter, search, sortBy])
 
   const confirmedOrders = useMemo(
     () => filteredOrders.filter((o) => o.status === 'confirmed' || o.status === 'pending'),
@@ -1567,10 +1585,10 @@ export function OrdersPage() {
   }
 
   const dateChips: { key: DateFilter; label: string }[] = [
+    { key: 'all', label: 'Tudo' },
     { key: 'today', label: 'Hoje' },
     { key: 'week', label: 'Semana' },
     { key: 'month', label: 'Este Mês' },
-    { key: 'all', label: 'Tudo' },
   ]
 
   const statusChips: { key: StatusFilter; label: string }[] = [
@@ -1715,6 +1733,31 @@ export function OrdersPage() {
           {/* Divider */}
           <div className="hidden sm:block w-px h-5 bg-white/10" />
 
+          {/* Location */}
+          <div className="flex items-center gap-1.5">
+            <span className="text-[9px] text-white/25 uppercase tracking-[0.15em] font-semibold shrink-0 w-14 flex items-center gap-1">
+              <MapPin className="w-3 h-3" />
+              Loja
+            </span>
+            <div className="flex flex-wrap gap-1">
+              <PillButton active={locationFilter === 'all'} onClick={() => setLocationFilter('all')}>
+                Todas
+              </PillButton>
+              {(locations ?? []).filter(loc => loc.type !== 'deposito').map(loc => (
+                <PillButton
+                  key={loc.id}
+                  active={locationFilter === loc.id}
+                  onClick={() => setLocationFilter(loc.id)}
+                >
+                  {loc.name.replace('Degusto Club ', 'Degusto ')}
+                </PillButton>
+              ))}
+            </div>
+          </div>
+
+          {/* Divider */}
+          <div className="hidden sm:block w-px h-5 bg-white/10" />
+
           {/* Sort */}
           <div className="flex items-center gap-1.5">
             <ArrowUpDown className="w-3 h-3 text-white/30 shrink-0" />
@@ -1765,6 +1808,7 @@ export function OrdersPage() {
                   onCancelOrder={handleCancelOrder}
                   onEdit={handleEditOrder}
                   onDelete={handleDeleteOrder}
+                  locationName={locations?.find(l => l.id === order.location_id)?.name}
                 />
               ))}
             </>
@@ -1782,6 +1826,7 @@ export function OrdersPage() {
               onCancelOrder={handleCancelOrder}
               onEdit={handleEditOrder}
               onDelete={handleDeleteOrder}
+              locationName={locations?.find(l => l.id === order.location_id)?.name}
             />
           ))}
 
@@ -1802,6 +1847,7 @@ export function OrdersPage() {
                   onCancelOrder={handleCancelOrder}
                   onEdit={handleEditOrder}
                   onDelete={handleDeleteOrder}
+                  locationName={locations?.find(l => l.id === order.location_id)?.name}
                 />
               ))}
             </>
@@ -1819,6 +1865,7 @@ export function OrdersPage() {
               onCancelOrder={handleCancelOrder}
               onEdit={handleEditOrder}
               onDelete={handleDeleteOrder}
+              locationName={locations?.find(l => l.id === order.location_id)?.name}
             />
           ))}
 

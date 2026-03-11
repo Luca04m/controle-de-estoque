@@ -4,7 +4,7 @@ import { saveLocalMovement } from '@/lib/db'
 import { useAuthStore } from '@/stores/authStore'
 import { useRealtimeStore } from '@/stores/realtimeStore'
 import { IS_MOCK } from '@/lib/mockAuth'
-import { MOCK_MOVEMENTS } from '@/lib/mockData'
+import { MOCK_MOVEMENTS, MOCK_LOCATIONS } from '@/lib/mockData'
 import { updateMockLocationStock, getMockStockForLocation } from '@/hooks/useLocationStock'
 import type { StockMovement, MovementAction } from '@/types'
 import { toast } from 'sonner'
@@ -31,6 +31,12 @@ export interface MovementInput {
   location_id: string
 }
 
+function enrichMockLocation(m: StockMovement): StockMovement {
+  if (m.location || !m.location_id) return m
+  const loc = MOCK_LOCATIONS.find(l => l.id === m.location_id)
+  return loc ? { ...m, location: { name: loc.name } } : m
+}
+
 export function useStockMovements(filters?: { product_id?: string; limit?: number }) {
   return useQuery({
     queryKey: ['stock_movements', filters],
@@ -39,11 +45,11 @@ export function useStockMovements(filters?: { product_id?: string; limit?: numbe
         let result = [..._mockMovements]
         if (filters?.product_id) result = result.filter((m) => m.product_id === filters.product_id)
         if (filters?.limit) result = result.slice(0, filters.limit)
-        return result
+        return result.map(enrichMockLocation)
       }
       let q = supabase
         .from('stock_movements')
-        .select('*, products(name, sku), profiles(full_name)')
+        .select('*, products(name, sku), profiles(full_name), locations(name)')
         .order('created_at', { ascending: false })
       if (filters?.product_id) q = q.eq('product_id', filters.product_id)
       if (filters?.limit) q = q.limit(filters.limit)
@@ -204,12 +210,12 @@ export function useAllMovements(filters?: {
         if (filters?.action) result = result.filter((m) => m.action === filters.action)
         const offset = filters?.offset ?? 0
         const limit = filters?.limit ?? 50
-        const paginated = result.slice(offset, offset + limit)
+        const paginated = result.slice(offset, offset + limit).map(enrichMockLocation)
         return { data: paginated, count: result.length }
       }
       let q = supabase
         .from('stock_movements')
-        .select('*, products(name, sku), profiles(full_name)', { count: 'exact' })
+        .select('*, products(name, sku), profiles(full_name), locations(name)', { count: 'exact' })
         .order('created_at', { ascending: false })
 
       if (filters?.product_id) q = q.eq('product_id', filters.product_id)

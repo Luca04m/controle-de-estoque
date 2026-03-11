@@ -2,7 +2,7 @@
  * Mock data — produtos reais da Casa Mr. Lion
  * Usado quando VITE_SUPABASE_URL é placeholder (modo demo)
  *
- * Catálogo: 3 linhas × 3 formatos + acessórios = 10 SKUs
+ * Catálogo: 3 linhas × 3 formatos = 9 SKUs
  * Simulação: 60 dias de operação real (jan–mar 2026)
  * Lojas: 3 Degusto Club (RJ) + 1 Porquinho Delivery (BH) + 1 Casa Mr. Lion (Matozinhos-MG)
  */
@@ -90,7 +90,6 @@ export const MOCK_LOCATION_STOCK: LocationStock[] = [
   { id: 'ls-07', product_id: 'blend-sg',     location_id: 'loc-degusto-tijuca', quantity: 8,  updated_at: '2026-03-09T00:00:00Z' },
   { id: 'ls-08', product_id: 'blend-cmp',    location_id: 'loc-degusto-tijuca', quantity: 12, updated_at: '2026-03-09T00:00:00Z' },
   { id: 'ls-09', product_id: 'blend-png',    location_id: 'loc-degusto-tijuca', quantity: 1,  updated_at: '2026-03-09T00:00:00Z' },
-  { id: 'ls-10', product_id: 'acesso-copo',  location_id: 'loc-degusto-tijuca', quantity: 10, updated_at: '2026-03-09T00:00:00Z' },
 
   // Degusto Club Botafogo
   { id: 'ls-11', product_id: 'honey-sg',     location_id: 'loc-degusto-botafogo', quantity: 10, updated_at: '2026-03-09T00:00:00Z' },
@@ -100,7 +99,6 @@ export const MOCK_LOCATION_STOCK: LocationStock[] = [
   { id: 'ls-15', product_id: 'capu-cmp',     location_id: 'loc-degusto-botafogo', quantity: 3,  updated_at: '2026-03-09T00:00:00Z' },
   { id: 'ls-16', product_id: 'blend-sg',     location_id: 'loc-degusto-botafogo', quantity: 4,  updated_at: '2026-03-09T00:00:00Z' },
   { id: 'ls-17', product_id: 'blend-cmp',    location_id: 'loc-degusto-botafogo', quantity: 8,  updated_at: '2026-03-09T00:00:00Z' },
-  { id: 'ls-18', product_id: 'acesso-copo',  location_id: 'loc-degusto-botafogo', quantity: 6,  updated_at: '2026-03-09T00:00:00Z' },
 
   // Degusto Club Barra — loja do Angelo
   { id: 'ls-19', product_id: 'honey-sg',     location_id: 'loc-degusto-barra', quantity: 8,  updated_at: '2026-03-09T00:00:00Z' },
@@ -112,7 +110,6 @@ export const MOCK_LOCATION_STOCK: LocationStock[] = [
   { id: 'ls-25', product_id: 'blend-sg',     location_id: 'loc-degusto-barra', quantity: 6,  updated_at: '2026-03-09T00:00:00Z' },
   { id: 'ls-26', product_id: 'blend-cmp',    location_id: 'loc-degusto-barra', quantity: 10, updated_at: '2026-03-09T00:00:00Z' },
   { id: 'ls-27', product_id: 'blend-png',    location_id: 'loc-degusto-barra', quantity: 1,  updated_at: '2026-03-09T00:00:00Z' },
-  { id: 'ls-28', product_id: 'acesso-copo',  location_id: 'loc-degusto-barra', quantity: 8,  updated_at: '2026-03-09T00:00:00Z' },
 
   // Porquinho Delivery (BH) — estoque menor
   { id: 'ls-29', product_id: 'honey-sg',     location_id: 'loc-porquinho', quantity: 6,  updated_at: '2026-03-09T00:00:00Z' },
@@ -121,7 +118,6 @@ export const MOCK_LOCATION_STOCK: LocationStock[] = [
   { id: 'ls-32', product_id: 'capu-cmp',     location_id: 'loc-porquinho', quantity: 3,  updated_at: '2026-03-09T00:00:00Z' },
   { id: 'ls-33', product_id: 'blend-sg',     location_id: 'loc-porquinho', quantity: 4,  updated_at: '2026-03-09T00:00:00Z' },
   { id: 'ls-34', product_id: 'blend-cmp',    location_id: 'loc-porquinho', quantity: 5,  updated_at: '2026-03-09T00:00:00Z' },
-  { id: 'ls-35', product_id: 'acesso-copo',  location_id: 'loc-porquinho', quantity: 4,  updated_at: '2026-03-09T00:00:00Z' },
 
   // Casa Mr. Lion (Matozinhos-MG) — depósito/sede com estoque alto
   { id: 'ls-36', product_id: 'honey-sg',     location_id: 'loc-casa-mrlion', quantity: 120, updated_at: '2026-03-09T00:00:00Z' },
@@ -133,7 +129,6 @@ export const MOCK_LOCATION_STOCK: LocationStock[] = [
   { id: 'ls-42', product_id: 'blend-sg',     location_id: 'loc-casa-mrlion', quantity: 70,  updated_at: '2026-03-09T00:00:00Z' },
   { id: 'ls-43', product_id: 'blend-cmp',    location_id: 'loc-casa-mrlion', quantity: 90,  updated_at: '2026-03-09T00:00:00Z' },
   { id: 'ls-44', product_id: 'blend-png',    location_id: 'loc-casa-mrlion', quantity: 25,  updated_at: '2026-03-09T00:00:00Z' },
-  { id: 'ls-45', product_id: 'acesso-copo',  location_id: 'loc-casa-mrlion', quantity: 200, updated_at: '2026-03-09T00:00:00Z' },
 ]
 
 export const MOCK_PRODUCTS: Product[] = [
@@ -278,22 +273,6 @@ export const MOCK_PRODUCTS: Product[] = [
     updated_at: '2026-03-09T00:00:00Z',
   },
 
-  // ── ACESSÓRIOS ──────────────────────────────────────────────────────────
-  {
-    id: 'acesso-copo',
-    name: 'Copo Mr. Lion Personalizado',
-    sku: 'ML-ACESSO-COPO',
-    category: 'acessorio',
-    current_stock: 28,
-    min_stock: 20,
-    price_cost: 8,
-    price_sale: 18,
-    supplier: 'Fornecedor SP',
-    location: 'Degusto Tijuca - Caixa 1',
-    active: true,
-    created_at: '2025-06-01T00:00:00Z',
-    updated_at: '2026-03-09T00:00:00Z',
-  },
 ]
 
 const uAngelo = { full_name: 'Angelo' }
@@ -357,20 +336,6 @@ export const MOCK_MOVEMENTS: StockMovement[] = [
     product: { name: 'Mr. Lion Honey — Completo', sku: 'ML-HONEY-CMP' },
     profile: uJoao,
   },
-  {
-    id: 'mv-05',
-    product_id: 'acesso-copo',
-    action: 'out',
-    quantity: 6,
-    order_id: 'ord-02',
-    location_id: 'loc-porquinho',
-    user_id: 'mock-joao',
-    notes: 'Prospecção Pedrão — BH (brinde)',
-    created_at: daysAgo(0, 14),
-    product: { name: 'Copo Mr. Lion Personalizado', sku: 'ML-ACESSO-COPO' },
-    profile: uJoao,
-  },
-
   // ── DIA 1 ───────────────────────────────────────────────────────────────
   {
     id: 'mv-06',
@@ -550,19 +515,6 @@ export const MOCK_MOVEMENTS: StockMovement[] = [
     profile: uJoao,
   },
   {
-    id: 'mv-19',
-    product_id: 'acesso-copo',
-    action: 'in',
-    quantity: 20,
-    order_id: null,
-    location_id: 'loc-degusto-tijuca',
-    user_id: 'mock-angelo',
-    notes: 'Reposição copos — fornecedor gráfica',
-    created_at: daysAgo(7, 9),
-    product: { name: 'Copo Mr. Lion Personalizado', sku: 'ML-ACESSO-COPO' },
-    profile: uAngelo,
-  },
-  {
     id: 'mv-20',
     product_id: 'capu-png',
     action: 'adjustment',
@@ -726,20 +678,6 @@ export const MOCK_MOVEMENTS: StockMovement[] = [
     product: { name: 'Mr. Lion Blended — Completo', sku: 'ML-BLEND-CMP' },
     profile: uJoao,
   },
-  {
-    id: 'mv-32',
-    product_id: 'acesso-copo',
-    action: 'out',
-    quantity: 10,
-    order_id: 'ord-10',
-    location_id: 'loc-porquinho',
-    user_id: 'mock-joao',
-    notes: 'B2B — Boteco do Léo BH (brindes cliente)',
-    created_at: daysAgo(18, 10),
-    product: { name: 'Copo Mr. Lion Personalizado', sku: 'ML-ACESSO-COPO' },
-    profile: uJoao,
-  },
-
   // ── DIA 21 ──────────────────────────────────────────────────────────────
   {
     id: 'mv-33',
@@ -888,19 +826,6 @@ export const MOCK_MOVEMENTS: StockMovement[] = [
     product: { name: 'Mr. Lion Honey — Completo', sku: 'ML-HONEY-CMP' },
     profile: uJoao,
   },
-  {
-    id: 'mv-44',
-    product_id: 'acesso-copo',
-    action: 'in',
-    quantity: 24,
-    order_id: null,
-    location_id: 'loc-degusto-tijuca',
-    user_id: 'mock-angelo',
-    notes: 'Reposição copos — segundo lote gráfica',
-    created_at: daysAgo(27, 8),
-    product: { name: 'Copo Mr. Lion Personalizado', sku: 'ML-ACESSO-COPO' },
-    profile: uAngelo,
-  },
 ]
 
 export const MOCK_ORDERS: DeliveryOrder[] = [
@@ -925,15 +850,14 @@ export const MOCK_ORDERS: DeliveryOrder[] = [
   {
     id: 'ord-02',
     items: [
-      { product_id: 'acesso-copo', product_name: 'Copo Mr. Lion Personalizado', quantity: 6, unit_price: 18 },
-      { product_id: 'honey-sg',    product_name: 'Mr. Lion Honey — Só Garrafa', quantity: 4, unit_price: 89 },
+      { product_id: 'honey-sg', product_name: 'Mr. Lion Honey — Só Garrafa', quantity: 4, unit_price: 89 },
     ],
     status: 'confirmed',
     location_id: 'loc-porquinho',    user_id: 'mock-joao',
-    notes: 'Levar copos no encontro presencial',
+    notes: 'Encontro presencial Pedrão',
     reference: 'Pedrão — BH',
     address: 'Av. do Contorno, 2905, Santo Antônio, Belo Horizonte - MG',
-    total_value: 6 * 18 + 4 * 89,
+    total_value: 4 * 89,
     delivered_by: null,
     delivered_at: null,
     created_at: daysAgo(0, 14),
@@ -1061,16 +985,15 @@ export const MOCK_ORDERS: DeliveryOrder[] = [
   {
     id: 'ord-10',
     items: [
-      { product_id: 'honey-sg',    product_name: 'Mr. Lion Honey — Só Garrafa',  quantity: 24, unit_price: 89  },
-      { product_id: 'blend-cmp',   product_name: 'Mr. Lion Blended — Completo',  quantity: 8,  unit_price: 110 },
-      { product_id: 'acesso-copo', product_name: 'Copo Mr. Lion Personalizado',   quantity: 10, unit_price: 18  },
+      { product_id: 'honey-sg',  product_name: 'Mr. Lion Honey — Só Garrafa', quantity: 24, unit_price: 89  },
+      { product_id: 'blend-cmp', product_name: 'Mr. Lion Blended — Completo', quantity: 8,  unit_price: 110 },
     ],
     status: 'delivered',
     location_id: 'loc-porquinho',    user_id: 'mock-joao',
-    notes: 'Pedido mensal com brindes',
+    notes: 'Pedido mensal',
     reference: 'Boteco do Léo BH',
     address: 'Rua Sergipe, 1234, Savassi, Belo Horizonte - MG',
-    total_value: 24 * 89 + 8 * 110 + 10 * 18,
+    total_value: 24 * 89 + 8 * 110,
     delivered_by: 'João Lamas',
     delivered_at: daysAgo(18, 13),
     created_at: daysAgo(18, 10),

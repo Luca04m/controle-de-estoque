@@ -278,14 +278,21 @@ export function LocationsPage() {
 
                   {/* Stock summary pill */}
                   <div className="flex items-center gap-2">
-                    <div className="flex items-center gap-1.5 rounded-lg bg-white/[0.04] border border-white/[0.06] px-2.5 py-1.5 text-xs">
-                      <Package size={12} className="text-[hsl(42,60%,55%)]/70" />
-                      <span className="text-white/60">
-                        <span className="text-white/80 font-medium">{stock.totalUnits}</span> un.
-                        {' em '}
-                        <span className="text-white/80 font-medium">{stock.products}</span> produto{stock.products !== 1 ? 's' : ''}
-                      </span>
-                    </div>
+                    {loc.type === 'deposito' ? (
+                      <div className="flex items-center gap-1.5 rounded-lg bg-blue-500/[0.06] border border-blue-500/[0.10] px-2.5 py-1.5 text-xs">
+                        <Package size={12} className="text-blue-400/70" />
+                        <span className="text-blue-300/70 font-medium">Ponto de envio</span>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-1.5 rounded-lg bg-white/[0.04] border border-white/[0.06] px-2.5 py-1.5 text-xs">
+                        <Package size={12} className="text-[hsl(42,60%,55%)]/70" />
+                        <span className="text-white/60">
+                          <span className="text-white/80 font-medium">{stock.totalUnits}</span> un.
+                          {' em '}
+                          <span className="text-white/80 font-medium">{stock.products}</span> produto{stock.products !== 1 ? 's' : ''}
+                        </span>
+                      </div>
+                    )}
                     {!isActive && (
                       <Badge variant="outline" className="bg-red-500/10 text-red-400/80 border-red-500/20 text-[10px]">
                         Inativa
