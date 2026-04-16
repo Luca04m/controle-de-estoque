@@ -17,7 +17,8 @@ import type { Location } from '@/types'
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
-const GOLD = 'hsl(42, 60%, 55%)'
+// Tokens: consumir via CSS var (--gold). Uso inline apenas onde style={} é obrigatório.
+const GOLD = 'hsl(var(--gold))'
 
 const ACTION_MAP: Record<string, { label: string; color: string; symbol: string }> = {
   in:         { label: 'Entrada',  color: 'text-emerald-400', symbol: '+' },
@@ -119,10 +120,10 @@ function StoreCard({ data, onClick }: { data: StoreCardData; onClick: () => void
             style={{
               width: `${healthPercent}%`,
               backgroundColor: healthPercent >= 70
-                ? 'hsl(142, 65%, 45%)'
+                ? 'hsl(var(--success))'
                 : healthPercent >= 40
-                  ? 'hsl(42, 60%, 55%)'
-                  : 'hsl(0, 70%, 55%)',
+                  ? 'hsl(var(--gold))'
+                  : 'hsl(var(--destructive))',
             }}
           />
         </div>

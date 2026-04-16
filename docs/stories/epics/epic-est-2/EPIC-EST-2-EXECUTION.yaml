@@ -1,0 +1,184 @@
+epic:
+  id: EST-2
+  title: Refatoração + Evolução Mr Lion Stock
+  type: brownfield
+  status: InProgress
+  created_by: aiox-master
+  created_at: 2026-04-16
+  owner: pm
+  branch: feat/est-2-refactor
+
+  context:
+    project: controle-de-estoque (Mr Lion Stock)
+    project_path: /Volumes/KINGSTON/vault/apps/controle-de-estoque
+    base_commit: "26a9d81 feat: versão final — dashboard store-centric"
+    audit: docs/analysis/audit-2026-04-16.md
+    brief: docs/epics/epic-estoque-v2-brief.md
+
+  goal: |
+    Entregar um sistema claro, simples e suficiente para operação Mr Lion:
+    - 1 depósito + 3 lojas físicas + 2 marketplaces
+    - Produtos perecíveis (mel/café)
+    - Operadores em mobile, gerentes em desktop
+    - Operador novo entende o fluxo em < 10 min
+    - Registrar movimentação em ≤ 3 cliques
+    - Mobile funciona igual desktop (PWA)
+
+  strategy:
+    sequencing: AB-parallel
+    mvp_stories: 8
+    backlog_stories: 7
+    target_window_weeks: 3
+
+  success_criteria:
+    - Nenhum arquivo .tsx/.ts com mais de 400 linhas (páginas) / 250 (componentes)
+    - Dashboard carrega e responde "o que está acabando?" em 1 segundo
+    - Lotes com validade rastreados e alertas de vencimento ativos
+    - Scanner de código de barras funcionando no mobile PWA
+    - Tela de análise de perdas separada e acionável
+
+  stories:
+    # ═══ MVP (Wave 1) — ordem de execução ═══
+    - id: EST-2.1
+      key: A5
+      title: Design System mínimo (tokens + primitivos documentados)
+      wave: 1
+      dependency: null
+      rationale: Fundação — outras refatorações consomem tokens daqui
+      estimate: S
+      agent_suggested: dev
+
+    - id: EST-2.2
+      key: A4
+      title: Simplificar DashboardPage com hierarquia visual clara
+      wave: 1
+      dependency: EST-2.1
+      rationale: Ganho visível rápido + demonstra novo design system
+      estimate: M
+      agent_suggested: dev
+
+    - id: EST-2.3
+      key: A2
+      title: Decompor StockEntryPage em fluxos separados (Entrada/Saída/Ajuste/Perda/Transferência)
+      wave: 1
+      dependency: null
+      rationale: Maior ponto de dor atual (1875 linhas) + UX benefit direto
+      estimate: L
+      agent_suggested: dev
+
+    - id: EST-2.4
+      key: A1
+      title: Decompor OrdersPage (lista + detalhe + ações em rotas separadas)
+      wave: 1
+      dependency: null
+      rationale: Segundo maior arquivo (1985 linhas) — paralelizável com A2
+      estimate: L
+      agent_suggested: dev
+
+    - id: EST-2.5
+      key: B1
+      title: Lotes + validade (schema + UI + alertas de vencimento)
+      wave: 2
+      dependency: EST-2.1
+      rationale: Crítico business — mel é perecível
+      estimate: L
+      agent_suggested: data-engineer + dev
+
+    - id: EST-2.6
+      key: B2
+      title: Estoque mínimo/máximo + reposição sugerida
+      wave: 2
+      dependency: EST-2.1
+      rationale: Evita ruptura e capital parado
+      estimate: M
+      agent_suggested: dev
+
+    - id: EST-2.7
+      key: B4
+      title: Tela dedicada de análise de perdas (por loja/categoria/período)
+      wave: 2
+      dependency: EST-2.1
+      rationale: Auditoria + visibilidade financeira
+      estimate: M
+      agent_suggested: dev
+
+    - id: EST-2.8
+      key: B6
+      title: Scanner de código de barras (webcam via PWA)
+      wave: 2
+      dependency: EST-2.3
+      rationale: Produtividade do operador — entrada em 2 cliques
+      estimate: M
+      agent_suggested: dev
+
+    # ═══ Backlog (Wave 3+) ═══
+    - id: EST-2.9
+      key: A3
+      title: Decompor ProductsPage e extrair formulário de cadastro
+      status: backlog
+
+    - id: EST-2.10
+      key: A6
+      title: Consolidar mockData.ts em fixtures por domínio
+      status: backlog
+
+    - id: EST-2.11
+      key: B3
+      title: Curva ABC automática (por receita e por giro)
+      status: backlog
+
+    - id: EST-2.12
+      key: B5
+      title: Inventário cíclico (contagem + diff físico vs sistema)
+      status: backlog
+
+    - id: EST-2.13
+      key: B7
+      title: Cadastro de fornecedores + histórico de preço
+      status: backlog
+
+    - id: EST-2.14
+      key: B8
+      title: Preço de custo + margem + lucratividade
+      status: backlog
+
+    - id: EST-2.15
+      key: B9
+      title: Notificações push/email (vencimento, ruptura)
+      status: backlog
+
+  out_of_scope:
+    - Emissão de NF-e/NFC-e (provedor externo)
+    - YMS / gestão de frota
+    - Integração com ERP externo
+    - Sync automático marketplaces (fase futura)
+    - Kits com BOM de produção
+
+  execution_waves:
+    wave_1:
+      name: Fundação + Refatoração
+      stories: [EST-2.1, EST-2.2, EST-2.3, EST-2.4]
+      parallelizable: [EST-2.3, EST-2.4]
+      estimated_days: 8
+
+    wave_2:
+      name: Features de alto valor
+      stories: [EST-2.5, EST-2.6, EST-2.7, EST-2.8]
+      parallelizable: [EST-2.5, EST-2.6, EST-2.7]
+      estimated_days: 10
+
+  quality_gates:
+    per_story:
+      - Lint passing (eslint)
+      - TypeScript build passing (tsc -b)
+      - Manual smoke test (dev server)
+    per_wave:
+      - Git commit organizado (conventional commits)
+      - No file > 400 lines (pages) / 250 (components) após refatoração
+      - Merge back to main via @devops *push
+
+  current_state:
+    wave: 1
+    active_story: EST-2.1
+    completed_stories: []
+    branch: feat/est-2-refactor
