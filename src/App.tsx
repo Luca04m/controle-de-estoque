@@ -16,6 +16,10 @@ const ProductsPage  = lazy(() => import('@/pages/ProductsPage').then(m => ({ def
 const ReportsPage   = lazy(() => import('@/pages/ReportsPage').then(m => ({ default: m.ReportsPage })))
 const LocationsPage = lazy(() => import('@/pages/LocationsPage').then(m => ({ default: m.LocationsPage })))
 const GuidePage     = lazy(() => import('@/pages/GuidePage').then(m => ({ default: m.GuidePage })))
+// EST-2 demo features
+const BatchesPage   = lazy(() => import('@/pages/BatchesPage').then(m => ({ default: m.BatchesPage })))
+const ReplenishmentPage = lazy(() => import('@/pages/ReplenishmentPage').then(m => ({ default: m.ReplenishmentPage })))
+const LossAnalyticsPage = lazy(() => import('@/pages/LossAnalyticsPage').then(m => ({ default: m.LossAnalyticsPage })))
 
 // ── QueryClient otimizado para zero latência em modo mock ──
 const qc = new QueryClient({
@@ -66,6 +70,9 @@ function AppRoutes() {
                     <Route path="/produtos"  element={<ProductsPage />} />
                     <Route path="/relatorios" element={<ReportsPage />} />
                     <Route path="/locais"      element={<LocationsPage />} />
+                    <Route path="/lotes"       element={<BatchesPage />} />
+                    <Route path="/reposicao"   element={<ReplenishmentPage />} />
+                    <Route path="/perdas"      element={<LossAnalyticsPage />} />
                     <Route path="/guia"           element={<GuidePage />} />
 <Route path="*"          element={<Navigate to="/" replace />} />
                   </Routes>

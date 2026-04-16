@@ -17,6 +17,9 @@ import {
   X,
   HelpCircle,
   MapPin,
+  Calendar,
+  ShoppingCart,
+  TrendingDown,
 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/authStore'
@@ -31,12 +34,15 @@ interface NavItem {
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { to: '/dashboard',      label: 'Dashboard',      icon: <LayoutDashboard size={18} /> },
-  { to: '/entrada',        label: 'Movimentação',   icon: <PackagePlus size={18} /> },
+  { to: '/dashboard',      label: 'Dashboard',        icon: <LayoutDashboard size={18} /> },
+  { to: '/entrada',        label: 'Movimentação',     icon: <PackagePlus size={18} /> },
   { to: '/pedidos',        label: 'Pedidos Delivery', icon: <ShoppingBag size={18} /> },
-  { to: '/produtos',       label: 'Produtos',       icon: <Package size={18} /> },
-  { to: '/locais',         label: 'Lojas',          icon: <MapPin size={18} /> },
-  { to: '/relatorios',     label: 'Relatórios',     icon: <BarChart3 size={18} /> },
+  { to: '/produtos',       label: 'Produtos',         icon: <Package size={18} /> },
+  { to: '/locais',         label: 'Lojas',            icon: <MapPin size={18} /> },
+  { to: '/lotes',          label: 'Lotes & Validade', icon: <Calendar size={18} /> },
+  { to: '/reposicao',      label: 'Reposição',        icon: <ShoppingCart size={18} /> },
+  { to: '/perdas',         label: 'Perdas',           icon: <TrendingDown size={18} /> },
+  { to: '/relatorios',     label: 'Relatórios',       icon: <BarChart3 size={18} /> },
 ]
 
 // ── A-03 / A-04: Contraste e tamanho de texto corrigidos

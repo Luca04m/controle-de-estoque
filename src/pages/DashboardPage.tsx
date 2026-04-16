@@ -15,6 +15,7 @@ import { useLocations } from '@/hooks/useLocations'
 import { getMockLocationStock } from '@/hooks/useLocationStock'
 import { Skeleton } from '@/components/ui/skeleton'
 
+import { ExpiryBanner } from '@/features/batches/ExpiryBanner'
 import { RealtimeIndicator } from '@/components/dashboard/RealtimeIndicator'
 import { QuickStat } from '@/components/dashboard/QuickStat'
 import { StoreCard } from '@/components/dashboard/StoreCard'
@@ -140,6 +141,9 @@ export function DashboardPage() {
         </div>
         <RealtimeIndicator />
       </div>
+
+      {/* EST-2.5: Banner de lotes vencendo */}
+      <ExpiryBanner />
 
       {/* KPI Strip */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
