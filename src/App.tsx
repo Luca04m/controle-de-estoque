@@ -17,6 +17,12 @@ const ReportsPage   = lazy(() => import('@/pages/ReportsPage').then(m => ({ defa
 const LocationsPage = lazy(() => import('@/pages/LocationsPage').then(m => ({ default: m.LocationsPage })))
 const GuidePage     = lazy(() => import('@/pages/GuidePage').then(m => ({ default: m.GuidePage })))
 const OrderDetailPage = lazy(() => import('@/pages/orders/OrderDetailPage').then(m => ({ default: m.OrderDetailPage })))
+// EST-2.3 stock-entry sub-pages
+const StockInPage       = lazy(() => import('@/pages/stock-entry/StockInPage').then(m => ({ default: m.StockInPage })))
+const StockOutPage      = lazy(() => import('@/pages/stock-entry/StockOutPage').then(m => ({ default: m.StockOutPage })))
+const StockAdjustPage   = lazy(() => import('@/pages/stock-entry/StockAdjustPage').then(m => ({ default: m.StockAdjustPage })))
+const StockLossPage     = lazy(() => import('@/pages/stock-entry/StockLossPage').then(m => ({ default: m.StockLossPage })))
+const StockTransferPage = lazy(() => import('@/pages/stock-entry/StockTransferPage').then(m => ({ default: m.StockTransferPage })))
 // EST-2 demo features
 const BatchesPage   = lazy(() => import('@/pages/BatchesPage').then(m => ({ default: m.BatchesPage })))
 const ReplenishmentPage = lazy(() => import('@/pages/ReplenishmentPage').then(m => ({ default: m.ReplenishmentPage })))
@@ -66,7 +72,12 @@ function AppRoutes() {
                   <Routes>
                     <Route path="/"          element={<Navigate to="/dashboard" replace />} />
                     <Route path="/dashboard" element={<DashboardPage />} />
-                    <Route path="/entrada"   element={<StockEntryPage />} />
+                    <Route path="/entrada"          element={<StockEntryPage />} />
+                    <Route path="/entrada/in"      element={<StockInPage />} />
+                    <Route path="/entrada/out"     element={<StockOutPage />} />
+                    <Route path="/entrada/adjust"  element={<StockAdjustPage />} />
+                    <Route path="/entrada/loss"    element={<StockLossPage />} />
+                    <Route path="/entrada/transfer" element={<StockTransferPage />} />
                     <Route path="/pedidos"   element={<OrdersPage />} />
                     <Route path="/pedidos/:id" element={<OrderDetailPage />} />
                     <Route path="/produtos"  element={<ProductsPage />} />
