@@ -17,6 +17,10 @@ export interface Product {
   category: ProductCategory
   current_stock: number
   min_stock: number
+  /** EST-2.6: estoque máximo (null = sem limite). Opcional até migration rodar. */
+  max_stock?: number | null
+  /** EST-2.8: código de barras GTIN/EAN. Opcional até migration rodar. */
+  barcode?: string | null
   price_cost: number
   price_sale: number
   supplier: string
@@ -100,6 +104,33 @@ export interface Alert {
   product_id: string
   threshold: number
   active: boolean
+}
+
+// EST-2.5 — Lotes + validade
+export interface ProductBatch {
+  id: string
+  product_id: string
+  location_id: string
+  batch_code: string
+  manufactured_at: string | null
+  expiry_date: string
+  quantity: number
+  created_by: string | null
+  notes: string | null
+  created_at: string
+  updated_at: string
+  product?: Pick<Product, 'name' | 'sku'>
+  location?: Pick<Location, 'name'>
+}
+
+export type BatchStatus = 'expired' | 'critical' | 'warning' | 'ok'
+
+export interface ExpiringBatch extends ProductBatch {
+  product_name: string
+  sku: string
+  location_name: string
+  status: BatchStatus
+  days_until_expiry: number
 }
 
 export interface RealtimeStatus {
