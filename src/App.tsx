@@ -16,6 +16,7 @@ const ProductsPage  = lazy(() => import('@/pages/ProductsPage').then(m => ({ def
 const ReportsPage   = lazy(() => import('@/pages/ReportsPage').then(m => ({ default: m.ReportsPage })))
 const LocationsPage = lazy(() => import('@/pages/LocationsPage').then(m => ({ default: m.LocationsPage })))
 const GuidePage     = lazy(() => import('@/pages/GuidePage').then(m => ({ default: m.GuidePage })))
+const OrderDetailPage = lazy(() => import('@/pages/orders/OrderDetailPage').then(m => ({ default: m.OrderDetailPage })))
 // EST-2 demo features
 const BatchesPage   = lazy(() => import('@/pages/BatchesPage').then(m => ({ default: m.BatchesPage })))
 const ReplenishmentPage = lazy(() => import('@/pages/ReplenishmentPage').then(m => ({ default: m.ReplenishmentPage })))
@@ -67,6 +68,7 @@ function AppRoutes() {
                     <Route path="/dashboard" element={<DashboardPage />} />
                     <Route path="/entrada"   element={<StockEntryPage />} />
                     <Route path="/pedidos"   element={<OrdersPage />} />
+                    <Route path="/pedidos/:id" element={<OrderDetailPage />} />
                     <Route path="/produtos"  element={<ProductsPage />} />
                     <Route path="/relatorios" element={<ReportsPage />} />
                     <Route path="/locais"      element={<LocationsPage />} />
