@@ -1,9 +1,9 @@
 // Painel de controle — KPIs, produção possível, reposição, distribuição de valor.
 import { useMemo } from 'react'
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts'
-import { Boxes, Wine, AlertTriangle, TriangleAlert, ArrowRight } from 'lucide-react'
+import { AlertTriangle, TriangleAlert, ArrowRight } from 'lucide-react'
 import { useEstoque } from '../store'
-import { RECEITAS, ITEM_BY_ID, gerarHistorico } from '../mock'
+import { RECEITAS, ITEM_BY_ID } from '../mock'
 import {
   disponibilidade, resumoEstoque, listaCompras, valorEstoque, statusEstoque,
   fmtBRL, fmtNum,
@@ -70,7 +70,7 @@ export function Dashboard({ goto }: { goto: (s: 'estoque' | 'producao') => void 
                     <div className="font-display text-xl leading-tight">{pa.nome.replace('Mr. Lion ', '').replace(' 750ml', '')}</div>
                     <div className="text-[11px] uppercase tracking-wider text-gold-dim mt-1">{pa.sku} · {pa.estoque} em estoque</div>
                   </div>
-                  {pa.fotoUrl && <img src={pa.fotoUrl} alt={pa.nome} className="w-12 h-20 object-contain object-top" style={{ filter: 'drop-shadow(0 8px 14px rgba(0,0,0,.55))' }} />}
+                  {pa.fotoUrl && <img src={pa.fotoUrl} alt={pa.nome} className="h-24 w-auto object-contain" style={{ filter: 'drop-shadow(0 8px 14px rgba(0,0,0,.55))' }} />}
                 </div>
                 <div className="mt-3 relative">
                   <div className={`font-display text-5xl leading-none ${d.fabricaveis === 0 ? '' : 'text-gold'}`} style={d.fabricaveis === 0 ? { color: 'hsl(var(--crit))' } : undefined}>{fmtNum(d.fabricaveis)}</div>

@@ -4,9 +4,9 @@
 // Números de estoque/mínimo/receita são EXEMPLO realista — ajustar com a destilaria.
 // ════════════════════════════════════════════════════════════════════
 
-import honeyImg from '@/assets/products/honey/garrafa-semfundo.webp'
-import cappuccinoImg from '@/assets/products/cappuccino/garrafa-semfundo.webp'
-import blendedImg from '@/assets/products/blended/garrafa-semfundo.webp'
+import honeyImg from '@/assets/products/honey/garrafa-norm.webp'
+import cappuccinoImg from '@/assets/products/cappuccino/garrafa-norm.webp'
+import blendedImg from '@/assets/products/blended/garrafa-norm.webp'
 import type { Item, Fornecedor, Receita, OrdemProducao, Movimento } from './types'
 
 // ── Fornecedores ──

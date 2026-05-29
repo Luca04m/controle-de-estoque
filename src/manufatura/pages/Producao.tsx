@@ -6,7 +6,6 @@ import { useEstoque } from '../store'
 import { RECEITAS, ITEM_BY_ID } from '../mock'
 import { disponibilidade, fmtNum } from '../engine'
 import { CategoriaIcon } from '../ui'
-import type { Item } from '../types'
 
 const STATUS_MO: Record<string, { label: string; cor: string }> = {
   planejada: { label: 'Planejada', cor: 'var(--neutral)' },
@@ -16,7 +15,7 @@ const STATUS_MO: Record<string, { label: string; cor: string }> = {
 }
 
 export function Producao() {
-  const { itens, ordens, ajustar } = useEstoque()
+  const { itens, ordens, registrarProducao } = useEstoque()
   const [produtoId, setProdutoId] = useState('pa_honey')
   const [qty, setQty] = useState(50)
 
@@ -30,10 +29,9 @@ export function Producao() {
 
   function registrar() {
     if (!podeProduzir) return
-    receita.componentes.forEach(c => ajustar(c.itemId, -c.quantidade * qty, 'consumo_producao'))
-    ajustar(produtoId, qty, 'entrada_producao')
+    registrarProducao(produtoId, qty)
     toast.success(`Produção registrada: ${qty} × ${pa.nome.replace('Mr. Lion ', '')}`, {
-      description: 'Insumos consumidos e produto acabado adicionado ao estoque.',
+      description: 'Insumos consumidos, produto acabado em estoque e ordem concluída.',
     })
     setQty(50)
   }
@@ -57,7 +55,7 @@ export function Producao() {
             <button key={r.id} onClick={() => setProdutoId(r.produtoId)}
               className={`flex items-center gap-3 pl-3 pr-5 py-2.5 rounded-xl border transition ${active ? 'border-[hsl(var(--gold)/0.5)] gold-glow' : 'border-[hsl(var(--gold)/0.1)] hover:border-[hsl(var(--gold)/0.3)]'}`}
               style={{ background: active ? 'hsl(var(--gold)/0.08)' : 'hsl(var(--surface-raised))' }}>
-              {p.fotoUrl && <img src={p.fotoUrl} alt="" className="w-7 h-11 object-contain" />}
+              {p.fotoUrl && <img src={p.fotoUrl} alt="" className="h-12 w-auto object-contain" />}
               <div className="text-left">
                 <div className={`font-medium ${active ? 'text-gold' : ''}`}>{p.nome.replace('Mr. Lion ', '').replace(' 750ml', '')}</div>
                 <div className="text-[11px] text-text-muted tnum">{fmtNum(d.fabricaveis)} fabricáveis</div>
@@ -85,7 +83,7 @@ export function Producao() {
               const sustenta = sustentaById.get(c.itemId) ?? 0
               const gargalo = c.itemId === disp.gargaloItemId
               return (
-                <div key={c.itemId} className={`flex items-center gap-3 px-3 py-2.5 rounded-lg ${gargalo ? '' : ''}`}
+                <div key={c.itemId} className="flex items-center gap-3 px-3 py-2.5 rounded-lg"
                   style={gargalo ? { background: 'hsl(var(--warn)/0.07)' } : undefined}>
                   <span className="w-8 h-8 rounded-lg grid place-items-center shrink-0 text-gold" style={{ background: 'hsl(var(--gold)/0.09)', border: '1px solid hsl(var(--gold)/0.12)' }}>
                     <CategoriaIcon categoria={it.categoria} size={15} />
@@ -159,7 +157,7 @@ export function Producao() {
             return (
               <div key={o.id} className="flex items-center gap-4 px-5 py-3.5">
                 <span className="font-mono text-xs text-text-muted w-20">{o.codigo}</span>
-                {p.fotoUrl && <img src={p.fotoUrl} alt="" className="w-6 h-9 object-contain" />}
+                {p.fotoUrl && <img src={p.fotoUrl} alt="" className="h-9 w-auto object-contain" />}
                 <div className="flex-1 min-w-0">
                   <div className="text-sm font-medium truncate">{p.nome.replace('Mr. Lion ', '')}</div>
                   <div className="text-[11px] text-text-muted tnum">{fmtNum(o.qtdReal ?? o.qtdPlanejada)} un · {new Date(o.criadaEm).toLocaleDateString('pt-BR')}</div>
@@ -176,5 +174,3 @@ export function Producao() {
     </div>
   )
 }
-// (Item type usado indiretamente via ITEM_BY_ID)
-export type { Item }

@@ -82,6 +82,25 @@ export interface OrdemProducao {
   prioridade: number               // menor = mais prioritária (reserva insumo antes)
 }
 
+export type StatusPO = 'aberta' | 'parcial' | 'recebida' | 'cancelada'
+
+export interface POLinha {
+  itemId: string
+  qtd: number
+  precoUnitario: number
+}
+
+export interface PurchaseOrder {
+  id: string
+  codigo: string                   // ex.: PC-0007
+  fornecedorId: string
+  status: StatusPO
+  linhas: POLinha[]
+  total: number
+  criadaEm: string                 // ISO
+  recebidaEm?: string
+}
+
 export type TipoMovimento =
   | 'recebimento' | 'consumo_producao' | 'entrada_producao'
   | 'venda' | 'ajuste' | 'transferencia' | 'perda'

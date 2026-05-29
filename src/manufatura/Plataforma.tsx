@@ -10,16 +10,19 @@ import { resumoEstoque, statusEstoque, fmtBRL } from './engine'
 import { Dashboard } from './pages/Dashboard'
 import { Estoque } from './pages/Estoque'
 import { Producao } from './pages/Producao'
+import { Compras } from './pages/Compras'
+import { Movimentacoes } from './pages/Movimentacoes'
+import { Relatorios } from './pages/Relatorios'
 
 type Secao = 'dashboard' | 'estoque' | 'producao' | 'compras' | 'movimentacoes' | 'relatorios'
 
-const NAV: { id: Secao; label: string; icon: typeof LayoutDashboard; soon?: boolean }[] = [
+const NAV: { id: Secao; label: string; icon: typeof LayoutDashboard }[] = [
   { id: 'dashboard',     label: 'Painel',         icon: LayoutDashboard },
   { id: 'estoque',       label: 'Estoque',        icon: Boxes },
   { id: 'producao',      label: 'Produção',       icon: Factory },
-  { id: 'compras',       label: 'Compras',        icon: ShoppingCart, soon: true },
-  { id: 'movimentacoes', label: 'Movimentações',  icon: Truck, soon: true },
-  { id: 'relatorios',    label: 'Relatórios',     icon: BarChart3, soon: true },
+  { id: 'compras',       label: 'Compras',        icon: ShoppingCart },
+  { id: 'movimentacoes', label: 'Movimentações',  icon: Truck },
+  { id: 'relatorios',    label: 'Relatórios',     icon: BarChart3 },
 ]
 
 const TITULOS: Record<Secao, string> = {
@@ -73,10 +76,10 @@ export function Plataforma() {
         <header className="sticky top-0 z-30 h-14 flex items-center gap-3 px-4 md:px-7 border-b border-[hsl(var(--gold)/0.08)]"
           style={{ background: 'hsl(var(--surface-base) / 0.78)', backdropFilter: 'blur(14px)' }}>
           <button className="md:hidden text-text-muted hover:text-foreground" onClick={() => setMobileNav(true)}><Menu size={20} /></button>
-          <div className="flex items-center gap-2 text-sm">
-            <span className="text-text-muted">Casa Mr. Lion</span>
-            <span className="text-text-muted/50">/</span>
-            <span className="text-foreground font-medium">{TITULOS[secao]}</span>
+          <div className="flex items-center gap-2 text-sm min-w-0">
+            <span className="text-text-muted hidden xs:inline">Casa Mr. Lion</span>
+            <span className="text-text-muted/50 hidden xs:inline">/</span>
+            <span className="text-foreground font-medium truncate">{TITULOS[secao]}</span>
           </div>
 
           <button onClick={() => setPaletteOpen(true)}
@@ -85,6 +88,7 @@ export function Plataforma() {
             <span className="text-xs">Buscar item, ação…</span>
             <kbd className="ml-2 flex items-center gap-0.5 text-[10px] text-text-muted border border-[hsl(var(--gold)/0.18)] rounded px-1.5 py-0.5"><Command size={10} />K</kbd>
           </button>
+          <button onClick={() => setPaletteOpen(true)} className="sm:hidden ml-auto text-text-secondary hover:text-foreground"><Search size={18} /></button>
 
           <button onClick={() => setSecao('producao')}
             className="flex items-center gap-1.5 h-9 px-3.5 rounded-lg gradient-gold text-[hsl(30_14%_8%)] font-semibold text-sm hover:brightness-110 transition">
@@ -96,7 +100,9 @@ export function Plataforma() {
           {secao === 'dashboard' && <Dashboard goto={setSecao} />}
           {secao === 'estoque' && <Estoque />}
           {secao === 'producao' && <Producao />}
-          {(secao === 'compras' || secao === 'movimentacoes' || secao === 'relatorios') && <EmBreve titulo={TITULOS[secao]} />}
+          {secao === 'compras' && <Compras />}
+          {secao === 'movimentacoes' && <Movimentacoes />}
+          {secao === 'relatorios' && <Relatorios />}
         </main>
       </div>
 
@@ -119,14 +125,14 @@ function SidebarBody({ secao, setSecao, alertas, valor }: {
         </div>
       </div>
 
-      <nav className="flex-1 px-3 py-4 space-y-0.5">
+      <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
         <div className="px-3 pb-2 text-[10px] tracking-[0.2em] uppercase text-text-muted">Operação</div>
-        {NAV.map(({ id, label, icon: Icon, soon }) => {
+        {NAV.map(({ id, label, icon: Icon }) => {
           const active = secao === id
           return (
-            <button key={id} disabled={soon} onClick={() => setSecao(id)}
+            <button key={id} onClick={() => setSecao(id)}
               className={`group w-full flex items-center gap-3 h-9 px-3 rounded-lg text-sm transition-all relative ${
-                active ? 'text-gold font-semibold' : soon ? 'text-text-muted/50 cursor-default' : 'text-text-secondary hover:text-foreground hover:bg-[hsl(var(--gold)/0.05)]'
+                active ? 'text-gold font-semibold' : 'text-text-secondary hover:text-foreground hover:bg-[hsl(var(--gold)/0.05)]'
               }`}
               style={active ? { background: 'hsl(var(--gold) / 0.10)' } : undefined}>
               {active && <span className="absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-full bg-[hsl(var(--gold))]" />}
@@ -135,7 +141,6 @@ function SidebarBody({ secao, setSecao, alertas, valor }: {
               {id === 'estoque' && alertas > 0 && (
                 <span className="ml-auto text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ color: 'hsl(var(--warn))', background: 'hsl(var(--warn) / 0.15)' }}>{alertas}</span>
               )}
-              {soon && <span className="ml-auto text-[9px] tracking-wider uppercase text-text-muted/60">em breve</span>}
             </button>
           )
         })}
@@ -155,20 +160,10 @@ function SidebarBody({ secao, setSecao, alertas, valor }: {
   )
 }
 
-function EmBreve({ titulo }: { titulo: string }) {
-  return (
-    <div className="flex flex-col items-center justify-center h-[60vh] text-center gap-3 animate-fade-up">
-      <div className="w-14 h-14 rounded-2xl grid place-items-center surface-overlay text-gold"><Factory size={26} /></div>
-      <h2 className="font-display text-2xl">{titulo}</h2>
-      <p className="text-sm text-text-secondary max-w-sm">Módulo da próxima leva — fornecedores, ordens de compra e relatórios entram aqui sobre a mesma base de dados.</p>
-    </div>
-  )
-}
-
 function CommandPalette({ onClose, goto }: { onClose: () => void; goto: (s: Secao) => void }) {
   const [q, setQ] = useState('')
   const { itens } = useEstoque()
-  const navHits = NAV.filter(n => !n.soon && n.label.toLowerCase().includes(q.toLowerCase()))
+  const navHits = NAV.filter(n => n.label.toLowerCase().includes(q.toLowerCase()))
   const itemHits = q ? itens.filter(i => (i.nome + i.sku).toLowerCase().includes(q.toLowerCase())).slice(0, 6) : []
   return (
     <div className="fixed inset-0 z-[60] flex items-start justify-center pt-[12vh] px-4" onClick={onClose}>
@@ -184,7 +179,7 @@ function CommandPalette({ onClose, goto }: { onClose: () => void; goto: (s: Seca
           <div className="px-2 py-1 text-[10px] tracking-[0.2em] uppercase text-text-muted">Navegar</div>
           {navHits.map(n => (
             <button key={n.id} onClick={() => goto(n.id)}
-              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-text-secondary hover:bg-[hsl(var(--gold)/0.08)] hover:text-foreground transition">
+              className="group w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-text-secondary hover:bg-[hsl(var(--gold)/0.08)] hover:text-foreground transition">
               <n.icon size={16} /> {n.label} <ArrowRight size={13} className="ml-auto opacity-0 group-hover:opacity-100" />
             </button>
           ))}
