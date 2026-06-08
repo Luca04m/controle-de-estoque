@@ -7,7 +7,7 @@
 import honeyImg from '@/assets/products/honey/garrafa-norm.webp'
 import cappuccinoImg from '@/assets/products/cappuccino/garrafa-norm.webp'
 import blendedImg from '@/assets/products/blended/garrafa-norm.webp'
-import type { Item, Fornecedor, Receita, OrdemProducao, Movimento } from './types'
+import type { Item, Fornecedor, Receita, OrdemProducao, Movimento, LinhaProduto, GrupoProduto } from './types'
 
 // ── Fornecedores ──
 export const FORNECEDORES: Fornecedor[] = [
@@ -113,6 +113,52 @@ export const ORDENS: OrdemProducao[] = [
 export const ITEM_BY_ID = (id: string) => ITENS.find(i => i.id === id)
 export const FORNECEDOR_BY_ID = (id?: string) => FORNECEDORES.find(f => f.id === id)
 export const RECEITA_BY_PRODUTO = (produtoId: string) => RECEITAS.find(r => r.produtoId === produtoId)
+
+// ════════════════════════════════════════════════════════════════════
+// Organização POR PRODUTO — derivada do BOM (fonte única = RECEITAS).
+// Um insumo "pertence" às linhas cujas receitas o consomem; o produto
+// acabado pertence à própria linha. Compartilhado = entra em 2+ produtos.
+// ════════════════════════════════════════════════════════════════════
+
+/** Metadados de cada bucket de organização (rótulo + cor + PA da linha). */
+export const GRUPO_META: Record<GrupoProduto, { label: string; cor: string; produtoId?: string }> = {
+  honey:         { label: 'Honey',           cor: '40 73% 55%',  produtoId: 'pa_honey' },
+  cappuccino:    { label: 'Cappuccino',      cor: '25 48% 50%',  produtoId: 'pa_cappuccino' },
+  blended:       { label: 'Blended',         cor: '210 38% 56%', produtoId: 'pa_blended' },
+  compartilhado: { label: 'Compartilhado',   cor: '40 12% 52%' },
+  geral:         { label: 'Embalagem comum', cor: '40 8% 42%' },
+}
+
+/** Ordem canônica das seções "por produto". */
+export const GRUPO_ORDER: GrupoProduto[] = ['honey', 'cappuccino', 'blended', 'compartilhado', 'geral']
+
+const LINHAS: LinhaProduto[] = ['honey', 'cappuccino', 'blended']
+const PRODUTO_DA_LINHA = new Map<string, LinhaProduto>(LINHAS.map(l => [GRUPO_META[l].produtoId!, l]))
+
+/** itemId → linhas de produto que o usam (PA da própria linha + componentes do BOM). */
+export const VINCULO_PRODUTO: Map<string, LinhaProduto[]> = (() => {
+  const acc = new Map<string, Set<LinhaProduto>>()
+  const add = (itemId: string, linha: LinhaProduto) => {
+    if (!acc.has(itemId)) acc.set(itemId, new Set())
+    acc.get(itemId)!.add(linha)
+  }
+  for (const rec of RECEITAS) {
+    const linha = PRODUTO_DA_LINHA.get(rec.produtoId)
+    if (!linha) continue
+    add(rec.produtoId, linha)
+    rec.componentes.forEach(c => add(c.itemId, linha))
+  }
+  return new Map([...acc].map(([id, set]) => [id, LINHAS.filter(l => set.has(l))]))
+})()
+
+/** Linhas de produto que usam um item (vazio = nenhuma receita o consome). */
+export const linhasDoItem = (itemId: string): LinhaProduto[] => VINCULO_PRODUTO.get(itemId) ?? []
+
+/** Bucket de organização de um item: a linha (1), 'compartilhado' (2+) ou 'geral' (0). */
+export function grupoProduto(itemId: string): GrupoProduto {
+  const l = linhasDoItem(itemId)
+  return l.length === 0 ? 'geral' : l.length === 1 ? l[0] : 'compartilhado'
+}
 
 /** Histórico sintético de movimentos por item (para sparkline/drawer). Determinístico. */
 export function gerarHistorico(item: Item): Movimento[] {

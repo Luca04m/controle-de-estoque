@@ -5,6 +5,7 @@ import {
 } from 'lucide-react'
 import type { Item, StatusEstoque, CategoriaItem } from './types'
 import { statusEstoque, STATUS_LABEL } from './engine'
+import { grupoProduto, GRUPO_META } from './mock'
 
 // ── cor por status (tokens do design system) ──
 export const STATUS_VAR: Record<StatusEstoque, string> = {
@@ -33,6 +34,20 @@ const ICON_MAP: Record<CategoriaItem, typeof Droplet> = {
 export function CategoriaIcon({ categoria, size = 16 }: { categoria: CategoriaItem; size?: number }) {
   const Ico = ICON_MAP[categoria] ?? Package
   return <Ico size={size} strokeWidth={1.6} />
+}
+
+// ── chip de vínculo de produto (Honey / Cappuccino / Blended / Compartilhado / Comum) ──
+export function ProdutoChip({ itemId, className = '' }: { itemId: string; className?: string }) {
+  const meta = GRUPO_META[grupoProduto(itemId)]
+  return (
+    <span
+      className={`inline-flex items-center gap-1 rounded-md text-[9px] font-semibold uppercase tracking-wide px-1.5 py-0.5 leading-none ${className}`}
+      style={{ color: `hsl(${meta.cor})`, background: `hsl(${meta.cor} / 0.12)`, border: `1px solid hsl(${meta.cor} / 0.24)` }}
+    >
+      <span className="w-1 h-1 rounded-full" style={{ background: `hsl(${meta.cor})` }} />
+      {meta.label}
+    </span>
+  )
 }
 
 // ── barra de estoque (saldo vs 2× mínimo) ──

@@ -16,6 +16,16 @@ export type CategoriaItem =
   | 'liquido' | 'po' | 'aditivo'              // matéria-prima
   | 'garrafa' | 'rotulo' | 'pingente' | 'fechamento' | 'caixa' // embalagem
 
+/** Linha de produto acabado. */
+export type LinhaProduto = 'honey' | 'cappuccino' | 'blended'
+
+/**
+ * Bucket de organização de um item por produto (derivado do BOM):
+ * 1 linha = pertence só a ela · 'compartilhado' = entra em 2+ produtos ·
+ * 'geral' = embalagem comum, fora de qualquer receita (ex.: caixas de envio).
+ */
+export type GrupoProduto = LinhaProduto | 'compartilhado' | 'geral'
+
 export interface Item {
   id: string
   sku: string

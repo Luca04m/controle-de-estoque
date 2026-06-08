@@ -1,7 +1,7 @@
 // Produção — receita/BOM, fabricáveis em tempo real e simulador de ordem de produção.
 import { useMemo, useState } from 'react'
 import { toast } from 'sonner'
-import { Factory, AlertTriangle, Check, Zap } from 'lucide-react'
+import { Factory, AlertTriangle, Zap } from 'lucide-react'
 import { useEstoque } from '../store'
 import { RECEITAS, ITEM_BY_ID } from '../mock'
 import { disponibilidade, fmtNum } from '../engine'
@@ -125,11 +125,39 @@ export function Producao() {
               <div className="text-[12px] rounded-lg px-3 py-2.5 mb-3 flex items-center gap-2" style={{ color: 'hsl(var(--crit))', background: 'hsl(var(--crit)/0.12)', border: '1px solid hsl(var(--crit)/0.25)' }}>
                 <AlertTriangle size={14} /> Só dá pra produzir {fmtNum(disp.fabricaveis)} agora{disp.gargaloItemId ? ` (falta ${ITEM_BY_ID(disp.gargaloItemId)!.nome})` : ''}.
               </div>
-            ) : qty > 0 ? (
-              <div className="text-[12px] rounded-lg px-3 py-2.5 mb-3 flex items-center gap-2" style={{ color: 'hsl(var(--ok))', background: 'hsl(var(--ok)/0.1)', border: '1px solid hsl(var(--ok)/0.22)' }}>
-                <Check size={14} /> Consome insumos para {fmtNum(qty)} garrafas e adiciona ao estoque de {pa.nome.replace('Mr. Lion ', '')}.
-              </div>
             ) : null}
+
+            {/* Prévia: insumo → garrafa pronta (antes → depois) */}
+            {podeProduzir && (
+              <div className="mb-3 rounded-xl border border-[hsl(var(--gold)/0.12)] overflow-hidden" style={{ background: 'hsl(var(--surface-overlay))' }}>
+                <div className="px-3.5 py-2.5 border-b border-[hsl(var(--gold)/0.08)]">
+                  <div className="text-[10px] uppercase tracking-wider text-text-muted">Vai gerar</div>
+                  <div className="flex items-center gap-2 mt-1">
+                    {pa.fotoUrl && <img src={pa.fotoUrl} alt="" className="h-7 w-auto object-contain" />}
+                    <span className="font-display text-lg tnum" style={{ color: 'hsl(var(--ok))' }}>+{fmtNum(qty)}</span>
+                    <span className="text-sm text-foreground">{pa.nome.replace('Mr. Lion ', '')}</span>
+                    <span className="ml-auto text-[11px] text-text-muted tnum">{fmtNum(pa.estoque)} → <span className="text-foreground">{fmtNum(pa.estoque + qty)}</span></span>
+                  </div>
+                </div>
+                <div className="px-3.5 py-2.5">
+                  <div className="text-[10px] uppercase tracking-wider text-text-muted mb-1.5">Consome dos insumos</div>
+                  <div className="space-y-1 max-h-44 overflow-y-auto pr-1">
+                    {receita.componentes.map(c => {
+                      const it = ITEM_BY_ID(c.itemId)!
+                      const consumo = c.quantidade * qty
+                      const depois = +(it.estoque - consumo).toFixed(2)
+                      return (
+                        <div key={c.itemId} className="flex items-center gap-2 text-xs">
+                          <span className="flex-1 min-w-0 truncate text-text-secondary">{it.nome}</span>
+                          <span className="tnum shrink-0" style={{ color: 'hsl(var(--crit))' }}>−{fmtNum(consumo)}</span>
+                          <span className="tnum text-text-muted w-[104px] text-right shrink-0">{fmtNum(it.estoque)} → <span style={depois <= 0 ? { color: 'hsl(var(--crit))' } : { color: 'hsl(var(--text-primary))' }}>{fmtNum(depois)}</span> <span className="text-text-muted">{it.uom}</span></span>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              </div>
+            )}
 
             <button onClick={registrar} disabled={!podeProduzir}
               className={`w-full h-11 rounded-xl font-semibold flex items-center justify-center gap-2 transition ${podeProduzir ? 'gradient-gold text-[hsl(30_14%_8%)] hover:brightness-110' : 'bg-[hsl(var(--surface-overlay))] text-text-muted cursor-not-allowed'}`}>
